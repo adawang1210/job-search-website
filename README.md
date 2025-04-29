@@ -35,17 +35,23 @@ npm install
 npm run dev
 ```
 
+4. 在瀏覽器中開啟：http://localhost:5173
+
 ### 後端設置
 
-1. 創建並激活虛擬環境：
+1. 確保你在專案根目錄下，然後創建並激活虛擬環境：
 ```bash
+# 創建虛擬環境
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# 或
-.\venv\Scripts\activate  # Windows
+
+# 激活虛擬環境
+# Mac/Linux:
+source venv/bin/activate
+# Windows:
+.\venv\Scripts\activate
 ```
 
-2. 安裝依賴：
+2. 安裝所有必要的依賴：
 ```bash
 pip install -r requirements.txt
 ```
@@ -55,10 +61,19 @@ pip install -r requirements.txt
 python manage.py migrate
 ```
 
-4. 啟動開發伺服器：
+4. 啟動Django開發伺服器：
 ```bash
+先回到整個資料夾的路徑
+cd..
 python manage.py runserver
 ```
+
+5. 在瀏覽器中開啟：http://127.0.0.1:8000
+
+注意事項：
+- 確保你的Python版本是3.8或更高版本
+- 如果遇到端口被佔用的問題，可以使用 `python manage.py runserver 8001` 來指定不同的端口
+- 要停止伺服器，按 Ctrl+C
 
 ## 功能特性
 

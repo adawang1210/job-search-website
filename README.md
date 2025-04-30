@@ -67,8 +67,26 @@ python manage.py migrate
 cd..
 python manage.py runserver
 ```
+#日後開啟專案
+1.在Vscode中開啟終端機
+```bash
+Crtl + j 
+```
+2.進入frontend資料夾
+```bash
+cd frontend
+```
+3.運行前端項目
+```bash
+npm run dev
+```
 
-5. 在瀏覽器中開啟：http://127.0.0.1:8000
+4.新增終端機（在原終端機視窗右上角的加號）
+
+5.執行後端
+```bash
+python manage.py runserver
+```
 
 注意事項：
 - 確保你的Python版本是3.8或更高版本

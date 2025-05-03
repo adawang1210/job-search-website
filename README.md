@@ -8,11 +8,17 @@
 .
 ├── frontend/          # Vue 3 前端專案
 └── backend/          # Django 後端專案
+    ├── apps/         # Django 應用程式
+    │   ├── jobs/     # 職位相關功能
+    │   ├── companies/# 公司相關功能
+    │   └── users/    # 用戶相關功能
+    ├── config/       # 專案配置
+    └── manage.py     # Django 管理腳本
 ```
 
 ## 技術棧
 
-- 前端：Vue 3 + JavaScript + Pinia + Vue Router
+- 前端：Vue 3 + JavaScript + Pinia + Vue Router + Axios
 - 後端：Django + Django REST framework
 - 資料庫：SQLite（開發環境）
 
@@ -67,39 +73,85 @@ python manage.py migrate
 cd..
 python manage.py runserver
 ```
-#日後開啟專案
-1.在Vscode中開啟終端機
+
+## 日後開啟專案
+
+1. 在Vscode中開啟終端機
 ```bash
 Crtl + j 
 ```
-2.進入frontend資料夾
+
+2. 進入frontend資料夾
 ```bash
 cd frontend
 ```
-3.運行前端項目
+
+3. 運行前端項目
 ```bash
 npm run dev
 ```
 
-4.新增終端機（在原終端機視窗右上角的加號）
+4. 新增終端機（在原終端機視窗右上角的加號）
 
-5.執行後端
+5. 執行後端
 ```bash
 python manage.py runserver
 ```
 
-注意事項：
-- 確保你的Python版本是3.8或更高版本
-- 如果遇到端口被佔用的問題，可以使用 `python manage.py runserver 8001` 來指定不同的端口
-- 要停止伺服器，按 Ctrl+C
+## 後端應用程式說明
+
+### 1. jobs 應用程式
+- 職位管理功能
+- API 端點：`/api/jobs/`
+- 功能：
+  - 職位列表查詢
+  - 職位搜尋和過濾
+  - 職位詳情查看
+  - 職位發布和管理
+
+### 2. companies 應用程式
+- 公司管理功能
+- API 端點：`/api/companies/`
+- 功能：
+  - 公司列表查詢
+  - 公司資訊管理
+  - 公司職位關聯
+  - 公司搜尋和過濾
+
+### 3. users 應用程式
+- 用戶管理功能
+- API 端點：`/api/users/`
+- 功能：
+  - 用戶註冊和登入
+  - 個人資料管理
+  - 權限控制
+  - 用戶認證
 
 ## 功能特性
 
 - 用戶認證系統
-- 職位搜尋和篩選
-- 履歷上傳和管理
-- 職位申請追蹤
-- 公司資訊展示
+  - 註冊和登入
+  - 個人資料管理
+  - 權限控制
+- 職位管理
+  - 職位發布和編輯
+  - 職位搜尋和篩選
+  - 職位詳情查看
+- 公司管理
+  - 公司資訊維護
+  - 公司職位關聯
+  - 公司搜尋和篩選
+- 履歷管理
+  - 履歷上傳
+  - 履歷編輯
+  - 履歷投遞
+
+## 注意事項
+
+- 確保你的Python版本是3.8或更高版本
+- 如果遇到端口被佔用的問題，可以使用 `python manage.py runserver 8001` 來指定不同的端口
+- 要停止伺服器，按 Ctrl+C
+- 開發時請確保同時運行前端和後端服務
 
 ## 貢獻指南
 

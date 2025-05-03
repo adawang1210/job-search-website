@@ -78,7 +78,7 @@ python manage.py runserver
 
 1. 在Vscode中開啟終端機
 ```bash
-Crtl + j 
+Ctrl + j 
 ```
 
 2. 進入frontend資料夾

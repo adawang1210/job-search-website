@@ -6,21 +6,62 @@
 
 ```
 .
-├── frontend/          # Vue 3 前端專案
-└── backend/          # Django 後端專案
-    ├── apps/         # Django 應用程式
-    │   ├── jobs/     # 職位相關功能
-    │   ├── companies/# 公司相關功能
-    │   └── users/    # 用戶相關功能
-    ├── config/       # 專案配置
-    └── manage.py     # Django 管理腳本
+├── frontend/                # Vue 3 前端專案
+│   ├── src/
+│   │   ├── components/     # 組件目錄
+│   │   │   ├── layout/     # 布局組件
+│   │   │   │   ├── BaseLayout.vue    # 基礎布局組件
+│   │   │   │   ├── Navbar.vue        # 導航欄組件
+│   │   │   │   ├── LeftSidebar.vue   # 左側邊欄組件
+│   │   │   │   └── RightSidebar.vue  # 右側邊欄組件
+│   │   │   └── main-panel/ # 主要內容面板組件
+│   │   │       ├── Home.vue          # 首頁面板
+│   │   │       ├── Profile.vue       # 個人資料面板
+│   │   │       └── Company.vue       # 公司面板
+│   │   ├── views/         # 視圖組件
+│   │   │   ├── HomeView.vue
+│   │   │   ├── ProfileView.vue
+│   │   │   └── CompanyView.vue
+│   │   ├── router/        # 路由配置
+│   │   ├── stores/        # Pinia 狀態管理
+│   │   └── assets/        # 靜態資源
+└── backend/               # Django 後端專案
+    ├── apps/             # Django 應用程式
+    │   ├── jobs/        # 職位相關功能
+    │   ├── companies/   # 公司相關功能
+    │   └── users/       # 用戶相關功能
+    ├── config/          # 專案配置
+    └── manage.py        # Django 管理腳本
 ```
 
 ## 技術棧
 
 - 前端：Vue 3 + JavaScript + Pinia + Vue Router + Axios
+  - Axios 配置：
+    - 基礎 URL: `http://localhost:8000`
+    - 請求攔截器：添加認證 token
+    - 響應攔截器：處理錯誤響應
 - 後端：Django + Django REST framework
 - 資料庫：SQLite（開發環境）
+
+## 前端組件結構說明
+
+### 布局組件 (layout/)
+- `BaseLayout.vue`: 基礎布局組件，包含整體頁面結構
+  - 整合了 Navbar、LeftSidebar、RightSidebar
+  - 提供插槽用於放置主要內容
+- `Navbar.vue`: 頂部導航欄
+- `LeftSidebar.vue`: 左側邊欄
+- `RightSidebar.vue`: 右側邊欄
+
+### 主要內容面板 (main-panel/)
+- `Home.vue`: 首頁主要內容
+- `Profile.vue`: 個人資料頁面內容
+- `Company.vue`: 公司頁面內容
+
+### 視圖組件 (views/)
+- 每個視圖組件都使用 BaseLayout 作為基礎布局
+- 通過插槽將對應的 main-panel 組件放入布局中
 
 ## 開發環境設置
 

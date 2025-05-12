@@ -1,13 +1,14 @@
 <template>
-  
+
 </template>
 
 <script>
 export default {
-  name: 'RightSidebar'
+    name: 'Profile'
 }
 </script>
 
 <style scoped>
 
-</style> 
+</style>
+

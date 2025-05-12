@@ -1,31 +1,21 @@
 <template>
-  <div class="company">
-    <h1>公司頁面</h1>
-    <div class="company-content">
-      <!-- 公司資訊區塊 -->
-      <div class="company-info">
-        <h2>公司資料</h2>
-        <!-- 這裡放公司資料表單 -->
-      </div>
-
-      <!-- 職位管理區塊 -->
-      <div class="job-management">
-        <h2>職位管理</h2>
-        <!-- 這裡放職位列表 -->
-      </div>
-
-      <!-- 申請者管理區塊 -->
-      <div class="applicant-management">
-        <h2>申請者管理</h2>
-        <!-- 這裡放申請者列表 -->
-      </div>
-    </div>
-  </div>
+  <BaseLayout>
+    <Company>
+      
+    </Company>
+  </BaseLayout>
 </template>
 
 <script>
+import BaseLayout from '@/components/layout/BaseLayout.vue'
+import Company from '@/components/main-panel/Company.vue'
+
 export default {
   name: 'CompanyView',
+  components: {
+    BaseLayout,
+    Company,
+  },
   data() {
     return {
       // 這裡放資料

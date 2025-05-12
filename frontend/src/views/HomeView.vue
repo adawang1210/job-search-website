@@ -1,16 +1,12 @@
 <script>
-import Navbar from '@/components/layout/Navbar.vue'
-import LeftSidebar from '@/components/layout/LeftSidebar.vue'
-import MainPanel from '@/components/layout/MainPanel.vue'
-import RightSidebar from '@/components/layout/RightSidebar.vue'
+import BaseLayout from '@/components/layout/BaseLayout.vue'
+import Home from '@/components/main-panel/Home.vue'
 
 export default {
   name: 'HomeView',
   components: {
-    Navbar,
-    LeftSidebar,
-    MainPanel,
-    RightSidebar
+    BaseLayout,
+    Home,
   },
   data() {
     return {
@@ -24,30 +20,11 @@ export default {
 </script>
 
 <template>
-  <div class="home">
-    <Navbar />
-    <LeftSidebar />
-    <MainPanel>
-      <h1>歡迎來到求職網站</h1>
-      <p>找到你的理想工作，或是找到理想的人才</p>
-
-      <div class="search-section">
-        <h2>職位搜尋</h2>
-        <!-- 這裡放搜尋表單 -->
-      </div>
-
-      <div class="job-listings">
-        <h2>熱門職位</h2>
-        <!-- 這裡放職位列表 -->
-      </div>
-
-      <div class="company-listings">
-        <h2>熱門公司</h2>
-        <!-- 這裡放公司列表 -->
-      </div>
-    </MainPanel>
-    <RightSidebar />
-  </div>
+  <BaseLayout>
+    <Home>
+      
+    </Home>
+  </BaseLayout>
 </template>
 
 <style scoped>

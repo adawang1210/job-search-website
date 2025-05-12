@@ -1,22 +1,21 @@
 <script>
-import BaseLayout from './components/layout/BaseLayout.vue'
-
 export default {
-  name: 'App',
-  components: {
-    BaseLayout
-  }
+  name: 'App'
 }
 </script>
 
 <template>
-  <BaseLayout>
+  <div id="app">
     <router-view></router-view>
-  </BaseLayout>
+  </div>
 </template>
 
 <style>
 #app {
   height: 100vh;
+  width: 100vw;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
 }
 </style>

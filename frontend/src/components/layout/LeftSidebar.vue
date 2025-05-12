@@ -1,122 +1,266 @@
 <template>
-  <aside class="left-sidebar">
-    <div class="logo">
-      <img src="@/assets/logo.svg" alt="Logo">
+  <div class="left-side-bar" :class="{ active: isCollapsed }">
+    <div class="header1">
+      <p>你的職料庫</p>
+      <button type="button" class="collapse-btn" @click="toggleCollapse">
+        <i class="fas fa-chevron-left"></i>
+      </button>
     </div>
-    <nav class="main-nav">
-      <router-link to="/" class="nav-item">
-        <i class="fas fa-home"></i>
-        <span>首頁</span>
-      </router-link>
-      <router-link to="/search" class="nav-item">
-        <i class="fas fa-search"></i>
-        <span>搜尋</span>
-      </router-link>
-      <router-link to="/profile" class="nav-item">
-        <i class="fas fa-user"></i>
-        <span>個人頁面</span>
-      </router-link>
-      <router-link to="/company" class="nav-item">
-        <i class="fas fa-building"></i>
-        <span>公司頁面</span>
-      </router-link>
-    </nav>
-    <div class="playlist-section">
-      <div class="playlist-header">
-        <h3>我的收藏</h3>
-        <button class="add-button">
-          <i class="fas fa-plus"></i>
-        </button>
-      </div>
-      <div class="playlist-list">
-        <!-- 這裡可以放收藏的職位或公司列表 -->
-      </div>
+    <div class="block1">
+      <p>建立你的第一個收藏清單</p>
+      <button type="button" class="create-btn">建立收藏清單</button>
     </div>
-  </aside>
+    <hr>
+    <p class="header2">瀏覽過的職缺</p>
+    <div class="block2">
+      <div class="viewed-job-frame"></div>
+      <div class="viewed-job-text">
+        <p class="title">信用卡產品經理</p>
+        <p class="info">台北富邦商業銀行股份有限公司</p>
+      </div>
+      <button type="button" class="like-btn" :class="{ active: isLiked }" @click="toggleLike">
+        <i class="fa-regular fa-heart"></i>
+      </button>
+    </div>
+  </div>
 </template>
 
 <script>
 export default {
-  name: 'LeftSidebar'
+  name: 'LeftSidebar',
+  data() {
+    return {
+      isCollapsed: false,
+      isLiked: false
+    }
+  },
+  methods: {
+    toggleCollapse() {
+      this.isCollapsed = !this.isCollapsed;
+    },
+    toggleLike() {
+      this.isLiked = !this.isLiked;
+    }
+  }
 }
 </script>
 
 <style scoped>
-.left-sidebar {
-  width: 240px;
-  background-color: #000;
-  padding: 20px;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  left: 0;
-  top: 60px; /* 與navbar高度相同 */
-  bottom: 0;
+.left-side-bar {
+    width: 240px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+    box-sizing: border-box;
+    color: white;
+    background-color: #383333;
+    border-radius: 10px;
+    height: calc(100vh - 72px); /* 减去Navbar的高度(56px)和padding(16px) */
+    transition: width 0.5s ease;
+    flex-shrink: 0;
+    position: fixed;
+    left: 16px;
+    top: 72px; /* Navbar的高度(56px) + padding(16px) */
+    overflow-y: auto;
 }
 
-.logo {
-  margin-bottom: 20px;
+/* 添加滚动条样式 */
+.left-side-bar::-webkit-scrollbar {
+    width: 6px;
 }
 
-.logo img {
-  width: 120px;
+.left-side-bar::-webkit-scrollbar-track {
+    background: #383333;
+    border-radius: 3px;
 }
 
-.main-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 20px;
+.left-side-bar::-webkit-scrollbar-thumb {
+    background: #594f4f;
+    border-radius: 3px;
 }
 
-.nav-item {
-  color: #b3b3b3;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px;
-  border-radius: 4px;
-  transition: all 0.3s ease;
+.left-side-bar::-webkit-scrollbar-thumb:hover {
+    background: #746a6a;
 }
 
-.nav-item:hover {
-  color: white;
-  background-color: #282828;
+.collapse-btn.active i {
+    transform: rotate(180deg); 
 }
 
-.nav-item.router-link-active {
-  color: white;
-  background-color: #282828;
+.left-side-bar .header1 {
+    height: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.playlist-section {
-  margin-top: auto;
+.left-side-bar .header1 p {   
+    font-size: 14px;
 }
 
-.playlist-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
+.collapse-btn {
+    border: none;
+    background: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: transform 0.5s ease;
 }
 
-.playlist-header h3 {
-  color: #b3b3b3;
-  font-size: 14px;
-  text-transform: uppercase;
+.collapse-btn:hover {
+    transform: scale(1.1);
 }
 
-.add-button {
-  background: none;
-  border: none;
-  color: #b3b3b3;
-  cursor: pointer;
+.left-side-bar .header1 p,
+.left-side-bar .block1,
+.left-side-bar .header2,
+.left-side-bar .viewed-job-text,
+.left-side-bar .create-btn,
+.left-side-bar hr {
+    display: block;
+    opacity: 1;
+    visibility: visible; 
+    transition: opacity 0.3s ease 0.3s, visibility 0.3s ease 0.3s;
 }
 
-.playlist-list {
-  max-height: 200px;
-  overflow-y: auto;
+.left-side-bar .block1 p {
+    font-size: 12px;
+    margin-top: 0;
+}
+
+.left-side-bar .block1 .create-btn {
+    border: none;
+    background: white;
+    color: black;
+    font-size: 10px;
+    border-radius: 50px;
+    padding: 6px 12px;
+    margin-top: 0px;
+    cursor: pointer;
+}
+
+.left-side-bar .block1,
+.left-side-bar .block2 {
+    background-color: #594f4f;
+    border-radius: 5px;
+    padding: 12px;
+}
+
+hr {
+    border: none;
+    height: 1px;
+    background-color: #746a6a;
+    opacity: 50%;
+    margin: 8px 0;
+}
+
+.left-side-bar .header2 {
+    font-size: 14px;
+    margin-top: 0px;
+    margin-bottom: 4px;
+}
+
+.left-side-bar .block2 {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    position: relative;
+}
+
+.left-side-bar .block2 .viewed-job-frame {
+    width: 64px;
+    height: 64px;
+    border-radius: 10px;
+    background-color: #ffffff;
+    background-image: url("/public/台北富邦銀行.jpg");
+    background-size: cover;
+    background-position: center;
+    border: none;
+    padding: 0;
+    flex-shrink: 0; 
+}
+
+.left-side-bar .block2 .viewed-job-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-grow: 1;
+    color: white;
+    overflow: hidden;
+}
+
+.left-side-bar .block2 .viewed-job-text p {
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.left-side-bar .block2 .viewed-job-text .title {
+    font-size: 12px; 
+}
+
+.left-side-bar .block2 .viewed-job-text .info {
+    font-size: 10px;
+}
+
+.left-side-bar .block2 .like-btn {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    border: none;
+    background: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: transform 0.5s ease;
+}
+
+.left-side-bar .block2 .like-btn:hover {
+    transform: scale(1.1);
+}
+
+.left-side-bar .block2 .like-btn.active {
+    color: #ff9f9f;
+}
+
+.left-side-bar * {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.left-side-bar.active {
+    width: 60px;
+    padding: 20px 8px;
+    align-items: center;
+    left: 16px;
+}
+
+.left-side-bar.active p,
+.left-side-bar.active .block1,
+.left-side-bar.active hr,
+.left-side-bar.active .like-btn,
+.left-side-bar.active .viewed-job-text {
+    display: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.left-side-bar.active .block2 {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: transparent;
+    padding: 0;
+    width: 100%;
+}
+
+.left-side-bar.active .viewed-job-frame {
+    width: 40px; 
+    height: 40px;
 }
 </style> 

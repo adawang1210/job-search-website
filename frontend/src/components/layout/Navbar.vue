@@ -1,78 +1,164 @@
 <template>
-  <div class="navbar">
+  <n-layout-header class="navbar">
     <div class="overlay" v-show="showPositionPopup || showRegionPopup" @click="closeAllPopups"></div>
     
     <router-link to="/" class="home-btn">
-      <i class="fa-solid fa-house"></i>
+      <n-icon size="20">
+        <home-icon />
+      </n-icon>
     </router-link>
+
     <div class="search">
-      <div class="popup" :class="{ active: showPositionPopup }">
-        <div class="position-list">
-          <div class="close-btn" @click="closePopup('position')">&times;</div>
-          <button type="button" class="yes-btn" @click="confirmPosition">確認</button>
-          <div class="jobs">
-            <ul class="jobs-column">
-              <li v-for="(position, index) in positions.slice(0, 9)" :key="index">
-                <label>
-                  <input type="checkbox" v-model="selectedPositions" :value="position.value">
-                  {{ position.label }}
-                </label>
-              </li>
-            </ul>
-            <ul class="jobs-column">
-              <li v-for="(position, index) in positions.slice(9)" :key="index">
-                <label>
-                  <input type="checkbox" v-model="selectedPositions" :value="position.value">
-                  {{ position.label }}
-                </label>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-      <button type="button" class="position-btn" @click="togglePopup('position')">
-        職務 <i class="fa-solid fa-caret-down"></i>
-      </button>
 
-      <div class="popup" :class="{ active: showRegionPopup }">
+      <!-- 職務彈出視窗-->
+      <n-popover
+        trigger="click"
+        :show="showPositionPopup"
+        @update:show="(show) => showPositionPopup = show"
+        placement="bottom"
+        :style="{ width: '500px' }"
+      >
+        <template #trigger>
+          <n-button quaternary class="position-btn">
+            職務
+            <template #icon>
+              <n-icon>
+                <chevron-down-icon />
+              </n-icon>
+            </template>
+          </n-button>
+        </template>
+        <n-space vertical>
+          <n-checkbox-group v-model:value="selectedPositions">
+            <n-grid :cols="2" :x-gap="12" :y-gap="8">
+              <n-grid-item v-for="position in positions" :key="position.value">
+                <n-checkbox :value="position.value">
+                  {{ position.label }}
+                </n-checkbox>
+              </n-grid-item>
+            </n-grid>
+          </n-checkbox-group>
+          <n-button type="primary" @click="confirmPosition" block>
+            確認
+          </n-button>
+        </n-space>
+      </n-popover>
+
+      <div class="divider">|</div>
+      <!-- 地區彈出視窗-->
+      <n-popover
+        trigger="click"
+        :show="showRegionPopup"
+        @update:show="(show) => showRegionPopup = show"
+        placement="bottom"
+        :style="{ width: '500px' }"
+      >
+        <template #trigger>
+          <n-button quaternary class="region-btn">
+            地區
+            <template #icon>
+              <n-icon>
+                <chevron-down-icon />
+              </n-icon>
+            </template>
+          </n-button>
+        </template>
         <div class="region-list">
-          <div class="close-btn" @click="closePopup('region')">&times;</div>
-          <button type="button" class="yes-btn" @click="confirmRegion">確認</button>
-          <div class="region">
-            <ul class="region-column" v-for="(column, index) in regionColumns" :key="index">
-              <li v-for="region in column" :key="region.id">
-                <label>
-                  <input type="checkbox" v-model="selectedRegions" :value="region.id">
-                  {{ region.name }}
-                </label>
-              </li>
-            </ul>
-          </div>
+          <n-space vertical>
+            <n-checkbox-group v-model:value="selectedRegions">
+              <n-grid :cols="3" :x-gap="12" :y-gap="8">
+                <n-grid-item v-for="region in regions" :key="region.id">
+                  <n-checkbox :value="region.id">
+                    {{ region.name }}
+                  </n-checkbox>
+                </n-grid-item>
+              </n-grid>
+            </n-checkbox-group>
+            <n-button type="primary" @click="confirmRegion" block>
+              確認
+            </n-button>
+          </n-space>
         </div>
-      </div>
+      </n-popover>
 
-      <button type="button" class="region-btn" @click="togglePopup('region')">
-        地區 <i class="fa-solid fa-caret-down"></i>
-      </button>
-      <input class="search-input" v-model="searchQuery" placeholder="工作職稱、公司名、技能">
-      <button type="submit" class="search-btn" @click="handleSearch">
-        <i class="fa-solid fa-magnifying-glass"></i>
-      </button>
+      <div class="divider">|</div>
+      
+      <n-input
+        v-model:value="searchQuery"
+        placeholder="工作職稱、公司名稱"
+        class="search-input"
+      >
+        <template #suffix>
+          <n-button quaternary @click="handleSearch">
+            <template #icon>
+              <n-icon>
+                <search-icon />
+              </n-icon>
+            </template>
+          </n-button>
+        </template>
+      </n-input>
     </div>
+
     <div class="quick-link">
-      <router-link to="/company" class="all-company">公司</router-link>
-      <router-link to="/profile" class="personal-profile">個人檔案</router-link>
-      <button type="button" class="bell-btn">
-        <i class="fa-solid fa-bell"></i>
-      </button>
+      <router-link to="/company">
+        <n-button quaternary>公司</n-button>
+      </router-link>
+      <router-link to="/profile">
+        <n-button quaternary>個人檔案</n-button>
+      </router-link>
+      <n-button quaternary class="bell-btn">
+        <template #icon>
+          <n-icon>
+            <bell-icon />
+          </n-icon>
+        </template>
+      </n-button>
     </div>
+
     <router-link to="/profile" class="avatar-frame"></router-link>
-  </div>
+  </n-layout-header>
 </template>
 
 <script>
-export default {
+import { defineComponent } from 'vue'
+import {
+  NLayoutHeader,
+  NButton,
+  NInput,
+  NIcon,
+  NPopover,
+  NCheckbox,
+  NCheckboxGroup,
+  NGrid,
+  NGridItem,
+  NSpace
+} from 'naive-ui'
+import {
+  HomeOutline as HomeIcon,
+  SearchOutline as SearchIcon,
+  NotificationsOutline as BellIcon,
+  ChevronDownOutline as ChevronDownIcon
+} from '@vicons/ionicons5'
+
+export default defineComponent({
   name: 'Navbar',
+  components: {
+    NLayoutHeader,
+    NButton,
+    NInput,
+    NIcon,
+    NPopover,
+    NCheckbox,
+    NCheckboxGroup,
+    NGrid,
+    NGridItem,
+    NSpace,
+    HomeIcon,
+    SearchIcon,
+    BellIcon,
+    ChevronDownIcon
+  },
   data() {
     return {
       showPositionPopup: false,
@@ -124,353 +210,174 @@ export default {
       ]
     }
   },
-  computed: {
-    regionColumns() {
-      const chunkSize = 7;
-      const columns = [];
-      for (let i = 0; i < this.regions.length; i += chunkSize) {
-        columns.push(this.regions.slice(i, i + chunkSize));
-      }
-      return columns;
-    }
-  },
   methods: {
-    togglePopup(type) {
-      if (type === 'position') {
-        this.showPositionPopup = !this.showPositionPopup;
-        this.showRegionPopup = false;
-      } else if (type === 'region') {
-        this.showRegionPopup = !this.showRegionPopup;
-        this.showPositionPopup = false;
-      }
-    },
-    closePopup(type) {
-      if (type === 'position') {
-        this.showPositionPopup = false;
-      } else if (type === 'region') {
-        this.showRegionPopup = false;
-      }
-    },
     closeAllPopups() {
       this.showPositionPopup = false;
       this.showRegionPopup = false;
     },
     confirmPosition() {
       this.showPositionPopup = false;
-      // 这里可以添加确认后的处理逻辑
     },
     confirmRegion() {
       this.showRegionPopup = false;
-      // 这里可以添加确认后的处理逻辑
     },
     handleSearch() {
-      // 这里可以添加搜索处理逻辑
       console.log('Search query:', this.searchQuery);
       console.log('Selected positions:', this.selectedPositions);
       console.log('Selected regions:', this.selectedRegions);
     }
   }
-}
+})
 </script>
 
 <style scoped>
-body {
-    background-color: black;
-    font-family: Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100vh;
-    margin: 0;
-    overflow-x: hidden;
-}
-
 .navbar {
-    display: flex;
-    align-items: center;
-    padding: 16px 20px 0px 16px;       
-    background-color: #000000;
-    height: 56px;            
-    box-sizing: border-box;
-    flex-wrap: nowrap;
-    overflow: hidden; 
-    gap: 16px;
-    min-width: 0;
-    flex-shrink: 0;
-    width: 100%;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-}
-
-.navbar .avatar-frame {
-    all: unset; /* 移除所有 bootstrap 繼承樣式 */
-    display: inline-block;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background-color: white;
-    background-image: url("/public/user-avatar.png");
-    background-size: cover;
-    background-position: center;
-    cursor: pointer;
-    flex-shrink: 0;
-    margin-left: auto; 
-}
-
-.navbar a,
-.navbar button {
-    border: none;
-    background: none;
-    font-size: 14px;
-    padding: 4px 8px;
-    color: #ffffff;
-    white-space: nowrap;
-    cursor: pointer; 
-}
-
-.search-btn i,
-.bell-btn i,
-.fa-solid {
-    font-size: 16px;
+  display: flex;
+  align-items: center;
+  padding: 16px 20px 0px 16px;
+  background-color: #000000;
+  height: 56px;
+  box-sizing: border-box;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  gap: 16px;
+  min-width: 0;
+  flex-shrink: 0;
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
 }
 
 .search {
-    display: flex;
-    align-items: center;
-    flex-shrink: 1;     
-    flex-grow: 1;       
-    min-width: 0;
-    min-width: 200px;
-    max-width: 500px;       
-    padding: 4px 8px;
-    gap: 8px;
-    border-radius: 30px;
-    background-color: #383333;    
-    height: 32px;
-    overflow: hidden;
-    box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  flex-shrink: 1;
+  flex-grow: 1;
+  min-width: 0;
+  min-width: 200px;
+  max-width: 500px;
+  margin-bottom: 8px ;
+  padding: 4px 8px;
+  gap: 8px;
+  border-radius: 30px;
+  background-color: #383333;
+  height: 32px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.divider {
+  color: #666666;
+  font-size: 14px;
+  padding: 0 4px;
 }
 
 .search-input {
-    flex-grow: 1;
-    min-width: 0;
-    font-size: 14px;
-    border: none;
-    outline: none;
-    background-color: #383333;
-    caret-color: #ffffff;
-    color: white;
-}
-
-input::placeholder {
-    color: rgb(145, 145, 145); 
-    opacity: 1;  
+  flex-grow: 1;
+  min-width: 0;
 }
 
 .quick-link {
-    display: flex; 
-    align-items: center;
-    gap: clamp(8px, 2vw, 30px);
-    white-space: nowrap;
-    margin-left: clamp(8px, 2vw, 30px);
-    flex-shrink: 0; 
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 2vw, 30px);
+  margin-bottom: 8px;
+  white-space: nowrap;
+  margin-left: clamp(8px, 2vw, 30px);
+  flex-shrink: 0;
 }
 
-.navbar a {
-    text-decoration: none;
-    color: rgb(255, 255, 255);
+.avatar-frame {
+  all: unset;
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  margin-bottom: 8px;
+  border-radius: 50%;
+  background-color: white;
+  background-image: url("/public/user-avatar.png");
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+:deep(.n-button) {
+  background-color: transparent !important;
+  color: white;
+  border: none;
+}
+
+:deep(.n-button:hover),
+:deep(.n-button:focus),
+:deep(.n-button:active) {
+  background-color: transparent !important;
+  color: white !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+:deep(.n-input) {
+  background-color: transparent !important;
+}
+
+:deep(.n-input .n-input__input-el),
+:deep(.n-input .n-input__input-el:focus),
+:deep(.n-input .n-input__input-el:hover) {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  color: #ffffff;
+}
+
+:deep(.n-input .n-input__state-border),
+:deep(.n-input .n-input__border) {
+  display: none !important;
+}
+
+:deep(.n-input .n-input__placeholder) {
+  color: rgb(145, 145, 145);
+}
+
+:deep(.n-input .n-input__input-el::placeholder) {
+  color: rgb(145, 145, 145);
+}
+
+:deep(.n-input .n-input__input-el:focus::placeholder) {
+  color: rgb(145, 145, 145);
+}
+
+:deep(.n-popover .n-popover__content) {
+  padding: 16px;
+}
+
+:deep(.n-checkbox) {
+  --n-color: transparent;
+  --n-color-checked: #2080f0;
+  --n-color-checked-hover: #4098fc;
+  --n-text-color: #333333;
+}
+
+:deep(.n-checkbox__label) {
+  color: #333333;
+}
+
+:deep(.n-grid) {
+  margin: 8px 0;
+}
+
+:deep(.n-space) {
+  width: 100%;
 }
 
 @media (max-width: 480px) {
-    .position-btn,
-    .region-btn {
-      display: none;
-    }
-}
-
-.popup {
+  .position-btn,
+  .region-btn {
     display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    width: 70vw;
-    max-width: 500px;
-    height: 60vh;
-    max-height: 500px;
-    transform: translate(-50%, -50%);
-    border-radius: 10px;
-    padding: 20px 30px 60px;
-    z-index: 1001;
-    overflow-y: auto;
-    background-color: #594f4f;
-}
-
-.popup.active {
-    display: block;
-}
-
-.overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.7);
-    z-index: 1000;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.overlay.active {
-    display: block;
-    opacity: 1;
-}
-
-.popup .position-list,
-.popup .region-list {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    background: #594f4f;
-    border-radius: 10px;
-    padding: 20px 30px 60px;
-    box-sizing: border-box;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: stretch;
-    box-shadow: 0 0 10px rgba(110, 110, 110, 0.3);
-}
-
-.popup .position-list .jobs,.popup .region-list .region {
-    list-style: none;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    gap: 0px; 
-    flex-wrap: nowrap;
-}
-
-.popup .position-list .jobs-column{
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-width: 45%;
-}
-
-.popup .position-list .jobs li{
-    font-size: 14px;
-    cursor: pointer;
-    padding: 2px;
-    margin-left: -30px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.popup .position-list .jobs li label{
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: #ffffff;
-    text-decoration: none;
-    cursor: pointer;
-    white-space: nowrap;             /* 不換行 */
-    overflow: hidden;                /* 超出裁切 */
-    text-overflow: ellipsis;        /* 顯示省略號 */
-    max-width: 100%;
-}
-
-.popup .region-list .region-column {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-width: 45%;
-}
-
-.popup .region-list .region li {
-    font-size: 14px;
-    cursor: pointer;
-    padding: 6px;
-    margin-left: -30px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.popup .region-list .region li label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: #ffffff;
-    text-decoration: none;
-    cursor: pointer;
-    white-space: nowrap;             /* 不換行 */
-    overflow: hidden;                /* 超出裁切 */
-    text-overflow: ellipsis;        /* 顯示省略號 */
-    max-width: 100%;
-}
-
-.popup .close-btn {
-    position:absolute;
-    right:20px;
-    top:20px;
-    width:30px;
-    height:30px;
-    color:#ffffff;
-    font-size:20px;
-    line-height:30px;
-    text-align:center;
-    border-radius:50%;
-    cursor: pointer;
-}
-
-.popup .yes-btn {
-    position: absolute;
-    right: 40px;
-    bottom: 40px;
-    border: #a9a3a1 2px solid;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 50px;
-    font-size: 10px;
-    cursor: pointer;
-}
-
-/* 添加按钮样式 */
-.position-btn,
-.region-btn {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    border: none;
-    background: none;
-    color: white;
-    font-size: 14px;
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.position-btn:hover,
-.region-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-}
-
-.position-btn i,
-.region-btn i {
-    font-size: 12px;
-    transition: transform 0.3s ease;
-}
-
-.position-btn:hover i,
-.region-btn:hover i {
-    transform: rotate(180deg);
+  }
 }
 </style> 

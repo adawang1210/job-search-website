@@ -189,22 +189,24 @@ export default {
 
 <style scoped>
 .middle-content {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    background-color: #383333;
-    max-width: 100%;
+    width: 100%;
+    max-width: 850px;
+    position: fixed; /* 固定位置 */
+    margin-top: -4px;
+    padding: 16px;
     height: calc(100vh - 72px);
+    background-color: #383333;
     border-radius: 10px;
     color: white;
     box-sizing: border-box;
     overflow-x: hidden;
     overflow-y: auto;
-    position: fixed;
-    top: 72px;
-    left: 272px;
-    right: 16px;
-    padding: 16px;
+}
+
+.recommend {
+    position: relative; /* 相对定位 */
+    height: 30%; /* 充满容器高度 */
+    overflow-y: auto; /* 允许内容垂直滚动 */
 }
 
 .middle-content .recommend {

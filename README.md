@@ -31,18 +31,37 @@
     │   ├── companies/   # 公司相關功能
     │   └── users/       # 用戶相關功能
     ├── config/          # 專案配置
+    ├── media/           # 媒體文件目錄
+    │   └── company_logos/  # 公司標誌存儲目錄
     └── manage.py        # Django 管理腳本
 ```
 
 ## 技術棧
 
-- 前端：Vue 3 + JavaScript + Pinia + Vue Router + Axios
-  - Axios 配置：
+- 前端：
+  - Vue 3 + JavaScript + Pinia + Vue Router
+  - UI 框架：Naive UI
+  - HTTP 客戶端：Axios
     - 基礎 URL: `http://localhost:8000`
     - 請求攔截器：添加認證 token
     - 響應攔截器：處理錯誤響應
 - 後端：Django + Django REST framework
+  - 圖片處理：Pillow
+  - API 過濾：django-filter
+  - API 文檔：drf-yasg
 - 資料庫：SQLite（開發環境）
+
+## 圖片處理說明
+
+### 後端圖片存儲
+- 圖片存儲位置：`backend/media/company_logos/`
+- 支持的圖片格式：JPG、JPEG、PNG、GIF
+- 最大圖片大小：5MB
+- 圖片訪問 URL：`http://localhost:8000/media/company_logos/圖片名稱`
+
+### API 響應中的圖片信息
+- `logo` 欄位：圖片的相對路徑
+- `logo_url` 欄位：圖片的完整 URL
 
 ## 前端組件結構說明
 
@@ -201,3 +220,19 @@ python manage.py runserver
 3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
 5. 開啟 Pull Request
+
+## 前端技術說明
+
+### Naive UI 組件使用
+- 使用 Naive UI 作為主要 UI 框架
+- 主要使用的組件：
+  - 布局組件：`n-layout`, `n-grid`
+  - 導航組件：`n-menu`, `n-breadcrumb`
+  - 表單組件：`n-form`, `n-input`, `n-select`
+  - 數據展示：`n-table`, `n-card`, `n-list`
+  - 反饋組件：`n-modal`, `n-message`, `n-notification`
+
+### 主題配置
+- 支持亮色/暗色主題切換
+- 自定義主題變量
+- 響應式設計

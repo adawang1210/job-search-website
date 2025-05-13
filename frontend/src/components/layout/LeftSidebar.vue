@@ -62,7 +62,7 @@ export default {
     flex-shrink: 0;
     position: fixed;
     left: 16px;
-    top: 72px; /* Navbar的高度(56px) + padding(16px) */
+    margin-top: 16px; /* Navbar的高度(56px) + padding(16px) */
     overflow-y: auto;
 }
 

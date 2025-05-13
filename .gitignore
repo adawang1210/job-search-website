@@ -56,4 +56,9 @@ htmlcov/
 .coverage
 .coverage.*
 coverage.xml
-*.cover 
+*.cover
+
+# 保留 media 目錄但忽略其中的文件
+backend/media/*
+!backend/media/company_logos/
+!backend/media/company_logos/.gitkeep 

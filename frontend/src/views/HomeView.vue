@@ -21,34 +21,15 @@ export default {
 
 <template>
   <BaseLayout>
-    <Home>
-      
-    </Home>
+    <Home />
   </BaseLayout>
 </template>
 
 <style scoped>
+/* 只保留最基本的容器样式 */
 .home {
+  width: 100%;
   min-height: 100vh;
   background-color: #121212;
-}
-
-.hero-section {
-  text-align: center;
-  padding: 40px;
-  background-color: #f5f5f5;
-  border-radius: 8px;
-  margin-bottom: 30px;
-}
-
-.search-section,
-.job-listings,
-.company-listings {
-  max-width: 1200px;
-  margin: 0 auto 30px;
-  padding: 20px;
-  border-radius: 8px;
-  background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 </style>

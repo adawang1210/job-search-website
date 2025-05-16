@@ -17,6 +17,7 @@
         @update:show="(show) => showPositionPopup = show"
         placement="bottom"
         :style="{ width: '500px' }"
+        :raw="true"
       >
         <template #trigger>
           <n-button quaternary class="position-btn">
@@ -28,23 +29,25 @@
             </template>
           </n-button>
         </template>
-        <n-space vertical>
-          <n-checkbox-group v-model:value="selectedPositions">
-            <n-grid :cols="2" :x-gap="12" :y-gap="8">
-              <n-grid-item v-for="position in positions" :key="position.value">
-                <n-checkbox :value="position.value">
-                  {{ position.label }}
-                </n-checkbox>
-              </n-grid-item>
-            </n-grid>
-          </n-checkbox-group>
-          <n-button type="primary" @click="confirmPosition" block>
-            確認
-          </n-button>
-        </n-space>
+        <div class="popup-content">
+          <n-space vertical>
+            <n-checkbox-group v-model:value="selectedPositions">
+              <n-grid :cols="2" :x-gap="12" :y-gap="8">
+                <n-grid-item v-for="position in positions" :key="position.value">
+                  <n-checkbox :value="position.value">
+                    {{ position.label }}
+                  </n-checkbox>
+                </n-grid-item>
+              </n-grid>
+            </n-checkbox-group>
+            <n-button type="primary" @click="confirmPosition" block class="confirm-btn">
+              確認
+            </n-button>
+          </n-space>
+        </div>
       </n-popover>
 
-      <div class="divider">|</div>
+      <div class="divider"> | </div>
       <!-- 地區彈出視窗-->
       <n-popover
         trigger="click"
@@ -52,6 +55,7 @@
         @update:show="(show) => showRegionPopup = show"
         placement="bottom"
         :style="{ width: '500px' }"
+        :raw="true"
       >
         <template #trigger>
           <n-button quaternary class="region-btn">
@@ -63,7 +67,7 @@
             </template>
           </n-button>
         </template>
-        <div class="region-list">
+        <div class="popup-content">
           <n-space vertical>
             <n-checkbox-group v-model:value="selectedRegions">
               <n-grid :cols="3" :x-gap="12" :y-gap="8">
@@ -74,7 +78,7 @@
                 </n-grid-item>
               </n-grid>
             </n-checkbox-group>
-            <n-button type="primary" @click="confirmRegion" block>
+            <n-button type="primary" @click="confirmRegion" block class="confirm-btn">
               確認
             </n-button>
           </n-space>
@@ -231,6 +235,16 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
 .navbar {
   display: flex;
   align-items: center;
@@ -269,12 +283,6 @@ export default defineComponent({
   box-sizing: border-box;
 }
 
-.divider {
-  color: #666666;
-  font-size: 14px;
-  padding: 0 4px;
-}
-
 .search-input {
   flex-grow: 1;
   min-width: 0;
@@ -308,15 +316,25 @@ export default defineComponent({
 
 :deep(.n-button) {
   background-color: transparent !important;
-  color: white;
   border: none;
 }
 
-:deep(.n-button:hover),
-:deep(.n-button:focus),
-:deep(.n-button:active) {
-  background-color: transparent !important;
+/* 確認按鈕樣式 - 修改這裡使所有確認按鈕都有同樣樣式 */
+:deep(.confirm-btn) {
+  background-color: #2080f0 !important;
   color: white !important;
+  border: none !important;
+}
+
+:deep(.confirm-btn:hover) {
+  background-color: #4098fc !important;
+}
+
+/* 只針對navbar中的按鈕應用樣式 */
+:deep(.navbar .n-button:hover),
+:deep(.navbar .n-button:focus),
+:deep(.navbar .n-button:active) {
+  background-color: transparent !important;
   box-shadow: none !important;
   outline: none !important;
 }
@@ -351,8 +369,46 @@ export default defineComponent({
   color: rgb(145, 145, 145);
 }
 
+:deep(.n-popover) {
+  position: fixed !important;
+  transform: none !important;
+  left: auto !important;
+}
+
+/* 強制設置彈出菜單背景為白色，不透明 */
+:deep(.n-popover-body) {
+  background-color: white !important;
+  opacity: 1 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 9px 28px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
 :deep(.n-popover .n-popover__content) {
   padding: 16px;
+  background-color: white !important;
+  opacity: 1 !important;
+}
+
+:deep(.position-btn),
+:deep(.region-btn) {
+  color: white !important;
+}
+
+:deep(.position-btn:hover),
+:deep(.region-btn:hover) {
+  color: white !important;
+}
+
+:deep(.quick-link .n-button) {
+  color: white !important;
+}
+
+:deep(.quick-link .n-button:hover) {
+  color: white !important;
+}
+
+:deep(.home-btn) {
+  color: white !important;
 }
 
 :deep(.n-checkbox) {
@@ -366,10 +422,6 @@ export default defineComponent({
   color: #333333;
 }
 
-:deep(.n-grid) {
-  margin: 8px 0;
-}
-
 :deep(.n-space) {
   width: 100%;
 }
@@ -380,4 +432,60 @@ export default defineComponent({
     display: none;
   }
 }
-</style> 
+
+.popup-content {
+  background-color: white !important;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+}
+
+.popup-content .n-checkbox-group {
+  margin: 8px 0;
+}
+
+.popup-content .n-grid {
+  margin-bottom: 16px;
+}
+
+.popup-content .confirm-btn {
+  margin-top: 8px;
+}
+
+:deep(.n-checkbox) {
+  margin: 4px 0;
+}
+
+:deep(.n-popover) {
+  border: none !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+:deep(.n-popover-shared) {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+:deep(.n-popover .n-popover__content) {
+  background-color: white !important;
+}
+
+:deep(.n-popover-body) {
+  background-color: white !important;
+}
+
+:deep(.n-popover .n-popover__arrow-wrapper .n-popover__arrow) {
+  background-color: white !important;
+}
+
+:deep(.n-popover .n-popover__arrow-wrapper .n-popover__arrow-mask) {
+  background-color: white !important;
+}
+
+.divider {
+  color: rgb(137, 137, 137);
+  font-size: 14px;
+  padding: 0 4px;
+}
+</style>

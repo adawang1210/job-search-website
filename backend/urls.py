@@ -17,8 +17,9 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework import permissions
-from drf_yasg.views import get_schema_view
+from drf_yasg.views import get_schema_view 
 from drf_yasg import openapi
+from django.views.generic import RedirectView
 
 schema_view = get_schema_view(
    openapi.Info(
@@ -30,10 +31,12 @@ schema_view = get_schema_view(
    permission_classes=(permissions.AllowAny,),
 )
 
+# 後端api url
 urlpatterns = [
+    path('', RedirectView.as_view(url='/swagger/', permanent=False)),  # 根路径重定向到 swagger
     path('admin/', admin.site.urls),
-    path('api/jobs/', include('apps.jobs.urls')),  # 職位相關 API
-    path('api/companies/', include('apps.companies.urls')),  # 公司相關 API
-    path('api/users/', include('apps.users.urls')),  # 用戶相關 API
+    path('api/jobs/', include('backend.apps.jobs.urls')),  # 職位相關 API
+    path('api/companies/', include('backend.apps.companies.urls')),  # 公司相關 API
+    path('api/users/', include('backend.apps.users.urls')),  # 用戶相關 API
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 ]

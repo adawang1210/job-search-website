@@ -3,13 +3,14 @@ import axios from 'axios'
 // 創建 axios 實例
 const api = axios.create({
   baseURL: 'http://localhost:8000',
-  timeout: 5000,
   headers: {
     'Content-Type': 'application/json'
   }
 })
 
 // 請求攔截器
+/*
+有寫登入登出的話，才需要攔截器
 api.interceptors.request.use(
   (config) => {
     // 從 localStorage 獲取 token
@@ -23,10 +24,13 @@ api.interceptors.request.use(
     return Promise.reject(error)
   }
 )
+*/ 
 
 // 響應攔截器
 api.interceptors.response.use(
   (response) => {
+    //請求成功時，直接傳回 response.data，簡化在前端的處理
+    console.log('response', response)
     return response.data
   },
   (error) => {

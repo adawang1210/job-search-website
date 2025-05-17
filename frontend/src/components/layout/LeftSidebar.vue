@@ -26,6 +26,8 @@
 </template>
 
 <script>
+import api from '@/api/axios';
+
 export default {
   name: 'LeftSidebar',
   data() {
@@ -41,6 +43,14 @@ export default {
     toggleLike() {
       this.isLiked = !this.isLiked;
     }
+  },
+  mounted() {
+    // 這裡的程式會在元件一進畫面就執行一次
+
+    // 收藏清單
+    
+    // 取得瀏覽過的職缺
+    
   }
 }
 </script>

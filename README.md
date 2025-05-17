@@ -1,8 +1,89 @@
 # 求職網站
 
-這是一個使用 Vue 3 和 Django 構建的求職網站專案。
+這是一個使用 Vue 3 和 Django 構建的求職網站。
 
-## 專案結構
+## 後端技術棧
+
+- Python 3.11
+- Django
+- Django REST framework
+- drf-yasg (Swagger/OpenAPI 文檔)
+
+## 前端技術棧
+
+- Vue 3
+- Naive UI
+- Vue Router
+- Pinia (狀態管理)
+- Axios (HTTP 客戶端)
+
+## 安裝和運行
+
+1. 克隆項目：
+```bash
+git clone <repository-url>
+cd job-search-website
+```
+
+2. 創建並激活虛擬環境：
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# 或
+.\venv\Scripts\activate  # Windows
+```
+
+3. 安裝依賴：
+```bash
+pip install -r requirements.txt
+```
+
+4. 運行數據庫遷移：
+```bash
+cd backend
+python manage.py migrate
+```
+
+5. 運行開發服務器：
+```bash
+python manage.py runserver
+```
+
+## API 文檔
+
+本項目使用 Swagger/OpenAPI 提供 API 文檔。
+
+### 訪問 Swagger UI
+
+1. 啟動開發服務器後，訪問：
+   http://127.0.0.1:8000/swagger/
+
+2. Swagger UI 提供以下功能：
+   - 所有 API 端點的詳細文檔
+   - API 請求和響應的模式
+   - 在線 API 測試工具
+
+### API 端點
+
+主要的 API 端點包括：
+
+- 用戶相關：`/api/users/`
+  - 用戶註冊、登錄、個人資料管理
+
+- 職位相關：`/api/jobs/`
+  - 職位列表、詳情、創建、更新、刪除
+
+- 公司相關：`/api/companies/`
+  - 公司信息、職位發布管理
+
+### 開發模式下的 API 測試
+
+1. 訪問 Swagger UI：http://127.0.0.1:8000/swagger/
+2. 在右上角找到 "Authorize" 按鈕（如果需要認證）
+3. 展開任意 API 端點查看詳細信息
+4. 使用 "Try it out" 按鈕測試 API
+
+## 項目結構
 
 ```
 .
@@ -130,7 +211,7 @@ python manage.py migrate
 4. 啟動Django開發伺服器：
 ```bash
 先回到整個資料夾的路徑
-cd..
+cd ..
 python manage.py runserver
 ```
 
@@ -236,3 +317,17 @@ python manage.py runserver
 - 支持亮色/暗色主題切換
 - 自定義主題變量
 - 響應式設計
+
+## 開發說明
+
+- API 文檔自動生成：項目使用 drf-yasg 自動生成 Swagger 文檔
+- RESTful API：遵循 REST 設計原則
+- 權限控制：基於 Django REST framework 的權限系統
+
+## 待開發功能
+
+- [ ] 用戶認證和授權
+- [ ] 職位搜索和過濾
+- [ ] 簡歷上傳和管理
+- [ ] 公司認證
+- [ ] 前端界面開發

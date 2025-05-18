@@ -23,7 +23,11 @@ const router = createRouter({
       alias: '/company',
       component: CompanyView,
     },
-  
+    {
+      path: '/notification',
+      name: 'notification',
+      component: NotificationView,
+    },
   ],
 })
 

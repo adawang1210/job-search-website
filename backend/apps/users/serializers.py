@@ -1,40 +1,93 @@
 from rest_framework import serializers
-from django.contrib.auth.models import User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, ValidationError
-
-# 註冊用
-class RegisterSerializer(serializers.ModelSerializer):
-    confirm_password = serializers.CharField(write_only=True, style={'input_type': 'password'})  # 新增確認密碼欄位
-    password = serializers.CharField(write_only=True,style={'input_type': 'password'})  # 設定為密碼輸入框)
-    email = serializers.EmailField(required=True, allow_blank=False)  # 設定為必填欄位
-    username = serializers.CharField(required=True, allow_blank=False)  # 設定為必填欄位
-    
-    class Meta:
-        model = User
-        fields = ['username', 'email', 'password', 'confirm_password']
-        extra_kwargs = {
-            'password': {'write_only': True}, 
-            'email': {'required': True, 'allow_blank': False}}
-
-    def validate(self, data):
-        # 檢查密碼與確認密碼是否一致
-        if data['password'] != data['confirm_password']:
-            raise ValidationError({"password": "密碼與確認密碼不一致"})
-        return data
-
-    def create(self, validated_data):
-        # 移除 confirm_password，因為它不需要存入資料庫
-        validated_data.pop('confirm_password')
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data.get('email', ''),
-            password=validated_data['password']
-        )
-        return user
+from django.contrib.auth import authenticate
+from .models import (
+    User, UserSkill, UserEducation, 
+    UserWorkExperience, UserProject, UserSkillPackage
+)
 
 # 自訂 Token 取得 serializer（可自定回傳內容）
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
-        data.update({'username': self.user.username})
+        data.update({'email': self.user.email})
         return data
+
+class UserSkillSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserSkill
+        fields = ['id', 'skill', 'proficiency']
+
+class UserEducationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserEducation
+        fields = ['id', 'school', 'major', 'degree', 'start_date', 'end_date', 'description']
+
+class UserWorkExperienceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserWorkExperience
+        fields = ['id', 'company', 'title', 'start_date', 'end_date', 'description']
+
+class UserProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProject
+        fields = ['id', 'cover_photo', 'title']
+
+class UserDetailSerializer(serializers.ModelSerializer):
+    skills = UserSkillSerializer(many=True, read_only=True)
+    educations = UserEducationSerializer(many=True, read_only=True)
+    work_experiences = UserWorkExperienceSerializer(many=True, read_only=True)
+    projects = UserProjectSerializer(many=True, read_only=True)
+    full_address = serializers.CharField(source='get_full_address', read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'name', 'age', 'gender', 'highest_education', 
+            'phone', 'email', 'city', 'district', 'address',
+            'full_address', 'languages', 'introduction',
+            'skills', 'educations', 'work_experiences', 'projects'
+        ]
+
+class UserCreateUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            'name', 'age', 'gender', 'highest_education',
+            'phone', 'email', 'city', 'district', 'address',
+            'languages', 'introduction'
+        ]
+
+class UserRegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['email', 'name', 'password', 'confirm_password']
+
+    def validate(self, data):
+        if data['password'] != data['confirm_password']:
+            raise serializers.ValidationError("密碼不匹配")
+        return data
+
+    def create(self, validated_data):
+        validated_data.pop('confirm_password')
+        user = User(
+            email=validated_data['email'],
+            name=validated_data['name']
+        )
+        user.set_password(validated_data['password'])
+        user.save()
+        return user
+
+class UserLoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
+class UserSkillPackageSerializer(serializers.ModelSerializer):
+    skills = UserSkillSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = UserSkillPackage
+        fields = ['id', 'user', 'name', 'created_at', 'updated_at', 'skills']

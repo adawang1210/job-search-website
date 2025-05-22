@@ -43,11 +43,13 @@ INSTALLED_APPS = [
     'rest_framework',  
     'rest_framework_simplejwt.token_blacklist', # 支援登出
     'drf_spectacular',  # API 文档
+    'corsheaders',  # 添加CORS支持
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # 添加CORS中间件
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -148,3 +150,10 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
 }
+
+# 自定義用戶模型
+AUTH_USER_MODEL = 'users.User'
+
+# CORS设置
+CORS_ALLOW_ALL_ORIGINS = True  # 开发环境下允许所有来源
+CORS_ALLOW_CREDENTIALS = True  # 允许携带cookie

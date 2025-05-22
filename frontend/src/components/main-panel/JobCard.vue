@@ -1,58 +1,131 @@
 <template>
-    <article class="job-card">
-      <div class="job-content">
-        <div class="main-info">
-          <div class="header">
-            <time class="date">{{ job.date }}</time>
-            <h3 class="title">{{ job.title }}</h3>
-          </div>
-          <div class="details">
-            <div class="company-info">
-              <span class="company-name">{{ job.company }}</span>
-              <span class="industry">{{ job.industry }}</span>
-            </div>
-            <div class="job-specs">
-              <span class="spec">{{ job.location }}</span>
-              <span class="spec">{{ job.experience }}</span>
-              <span class="spec">{{ job.education }}</span>
-              <span class="spec">{{ job.salary }}</span>
-            </div>
-            <div class="benefits">
-              <span v-for="(benefit, index) in job.benefits"
-                    :key="index"
-                    class="benefit-tag">
-                {{ benefit }}
-              </span>
-            </div>
-          </div>
+  <article class="job-card " @click="handleCardClick(job)">
+    <div class="job-content">
+      <div class="main-info">
+        <div class="header">
+          <time class="date">{{ job.date }}</time>
+          <h3 class="title" @click.stop="handleTitleClick(job)">{{ job.title }}</h3>
         </div>
-        <div class="actions">
-          <div class="action-icons">
-            <img v-for="(icon, index) in job.actionIcons"
-                 :key="index"
-                 :src="icon"
-                 alt="Action"
-                 class="action-icon" />
+        <div class="details">
+          <div class="company-info">
+            <span class="company-name">{{ job.company }}</span>
+            <span class="industry">{{ job.industry }}</span>
           </div>
-          <p class="applicants">{{ job.applicants }}</p>
+          <div class="job-specs">
+            <span class="spec">{{ job.location }}</span>
+            <span class="spec">{{ job.experience }}</span>
+            <span class="spec">{{ job.education }}</span>
+            <span class="spec">{{ job.salary }}</span>
+          </div>
+          <div class="benefits">
+            <span v-for="(benefit, index) in job.benefits" :key="index" class="benefit-tag">
+              {{ benefit }}
+            </span>
+          </div>
         </div>
       </div>
-    </article>
-  </template>
+      <div class="actions">
+        <button type="button" class="like-btn" :class="{ active: job.isLiked }" @click.stop="handleLikeClick">
+          <n-icon class="heart-icon">
+            <component :is="iconHeart" />
+          </n-icon>
+        </button>
+        <button type="button" class="envelope-btn" :class="{ active: job.isLiked }" @click.stop="handleLikeClick">
+          <n-icon class="envelope-icon">
+            <component :is="iconEnvelope" />
+          </n-icon>
+        </button>
+
+        <p class="applicants">{{ job.applicants }}</p>
+      </div>
+    </div>
+  </article>
+</template>
   
   <script>
-  export default {
-    name: 'JobCard',
-    props: {
-      job: {
-        type: Object,
-        required: true
+  import { defineComponent } from 'vue'
+import { NIcon } from 'naive-ui'
+import { Heart, HeartRegular, Envelope, EnvelopeRegular } from '@vicons/fa'
+
+  export default defineComponent({
+  name: 'JobCard',
+  inject: ['openRightSidebar', 'addViewedItemToSidebar'], // 注入 BaseLayout 的方法
+  components: {
+    NIcon,
+    Heart, HeartRegular, Envelope, EnvelopeRegular,
+  },
+  props: {
+    job: {
+      type: Object,
+      required: true
+    }
+  },
+  computed: {
+    iconHeart() {
+      return this.job.isLiked ? Heart : HeartRegular
+    },
+    iconEnvelope() {
+      return this.job.isLiked ? Envelope : EnvelopeRegular
+    }
+  },
+  methods: {
+    handleLikeClick() {
+      this.$emit('toggle-like', this.job.id)
+    },
+    handleCardClick(jobData) {
+      if (typeof this.addViewedItemToSidebar === 'function') {
+        this.addViewedItemToSidebar(jobData)
+      } else {
+        console.error('addViewedItemToSidebar is not available from BaseLayout')
       }
+
+      if (typeof this.openRightSidebar === 'function') {
+        this.openRightSidebar(jobData)
+      } else {
+        console.error('openRightSidebar is not available from BaseLayout')
+      }
+    },
+    handleTitleClick(job) {
+      console.log('Title clicked for job:', job.title, 'Company:', job.company)
+      alert(`Navigating to company page for: ${job.company}. Implement Vue Router push here.`)
     }
   }
+})
   </script>
   
   <style scoped>
+  .like-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: white; /* 空心愛心預設白色 */
+  font-size: 18px;
+  padding: 3px;
+  transition: transform 0.5s ease, color 0.3s ease;
+}
+
+.like-btn:hover {
+  transform: scale(1.1);
+}
+
+.like-btn.active {
+  color: rgb(235, 178, 189); /* 喜歡後變成粉色實心 */
+}
+
+.envelope-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: white; /* 空心愛心預設白色 */
+  font-size: 18px;
+  padding: 3px;
+  transition: transform 0.5s ease, color 0.3s ease;
+}
+
+.envelope-btn:hover {
+  transform: scale(1.1);
+}
+
   .job-card {
     border-radius: 10px;
     background-color: rgba(255, 255, 255, 0.1);

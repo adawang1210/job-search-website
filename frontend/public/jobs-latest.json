@@ -2,52 +2,52 @@
   "jobs": [
     {
       "id": "job-new-1",
-      "title": "模擬推薦水電技師",
-      "location": "模擬台中市烏日區",
-      "salary": "模擬月薪35,000元",
-      "company": "模擬百皇水電公司",
+      "title": "水電技師",
+      "location": "台中市烏日區",
+      "salary": "月薪35,000元",
+      "company": "百皇水電公司",
       "isLiked": false,
       "image": "/摩斯漢堡.jfif"
     },
     {
       "id": "job-new-2",
-      "title": "模擬推薦前端工程師",
-      "location": "模擬台北市信義區",
-      "salary": "模擬月薪70,000元",
-      "company": "模擬科技先鋒",
+      "title": "前端工程師",
+      "location": "台北市信義區",
+      "salary": "月薪70,000元",
+      "company": "科技先鋒",
       "isLiked": false,
       "image": "/摩斯漢堡.jfif"
     },
         {
       "id": "job-new-3",
       "title": "調酒師",
-      "location": "模擬台中市烏日區",
-      "salary": "模擬月薪35,000元",
-      "company": "模擬百皇水電公司",
+      "location": "台中市烏日區",
+      "salary": "月薪35,000元",
+      "company": "百皇水電公司",
       "isLiked": false,
       "image": "/摩斯漢堡.jfif"
     },    {
       "id": "job-new-4",
       "title": "麵包師傅",
-      "location": "模擬台中市烏日區",
-      "salary": "模擬月薪35,000元",
-      "company": "模擬百皇水電公司",
+      "location": "台中市烏日區",
+      "salary": "月薪35,000元",
+      "company": "百皇水電公司",
       "isLiked": false,
       "image": "/摩斯漢堡.jfif"
     },    {
       "id": "job-new-5",
       "title": "室內設計師",
-      "location": "模擬台中市烏日區",
-      "salary": "模擬月薪35,000元",
-      "company": "模擬百皇水電公司",
+      "location": "台中市烏日區",
+      "salary": "月薪35,000元",
+      "company": "百皇水電公司",
       "isLiked": false,
       "image": "/摩斯漢堡.jfif"
     },    {
       "id": "job-new-6",
       "title": "美髮師",
-      "location": "模擬台中市烏日區",
-      "salary": "模擬月薪35,000元",
-      "company": "模擬百皇水電公司",
+      "location": "台中市烏日區",
+      "salary": "月薪35,000元",
+      "company": "百皇水電公司",
       "isLiked": false,
       "image": "/摩斯漢堡.jfif"
     }

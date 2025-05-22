@@ -19,24 +19,21 @@
              @mouseup="stopDrag"
              @mouseleave="stopDrag"
              :class="{ active: isDragging }">
-          <div class="content-wrapper" v-for="(job, jobIndex) in section.jobs" :key="job.id || jobIndex">
-            <div class="card" @click="handleCardClick(job)">
-              <div class="job-image" :style="{ backgroundImage: 'url(' + job.image + ')' }"></div>
-              <div class="content-container">
-                <p class="title" @click.stop="handleTitleClick(job)">{{ job.title }}</p>
-                <p class="info">{{ job.location }}</p>
-                <p class="info salary-and-like">
-                  {{ job.salary }}
-                  <button type="button" class="like-btn" :class="{ active: job.isLiked }"
-                          @click.stop="toggleLike(section.title, jobIndex)">
-                    <font-awesome-icon :icon="[job.isLiked ? 'fas' : 'far', 'heart']" class="heart-icon" />
-                  </button>
-                </p>
+          <div class="job-card-wrapper" v-for="(job, jobIndex) in section.jobs" :key="job.id || jobIndex" @click="handleCardClick(job)">
+            <p class="job-card-title" @click.stop="handleTitleClick(job)">{{ job.title }}</p>
+            <div class="job-card-image" :style="{ backgroundImage: 'url(' + job.image + ')' }"></div>
+            <div class="job-card-details">
+              <div class="job-card-info-left">
+                <p class="job-card-company">{{ job.company }}</p>
+                <p class="job-card-salary">{{ job.salary }}</p>
               </div>
+              <button type="button" class="like-btn job-card-like-btn" :class="{ active: job.isLiked }"
+                      @click.stop="toggleLike(section.title, jobIndex)">
+                <font-awesome-icon :icon="[job.isLiked ? 'fas' : 'far', 'heart']" class="heart-icon" />
+              </button>
             </div>
-            <p class="company-name">{{ job.company }}</p>
           </div>
-        </div>
+          </div>
         <div v-else class="no-data-message">
           目前沒有 {{ section.title }} 的職缺。
         </div>
@@ -45,15 +42,12 @@
 
     <section class="great-company">
       <h1>優質企業</h1>
-
       <div v-if="isLoadingCompanies" class="loading-message">
         正在載入優質企業...
       </div>
-
       <div v-if="errorCompanies" class="error-message">
         {{ errorCompanies }}
       </div>
-
       <template v-if="!isLoadingCompanies && !errorCompanies">
         <div v-if="companies.length > 0"
              class="recommend-content"
@@ -78,11 +72,9 @@
       <div v-if="isLoadingFavoriteJobs" class="loading-message">
         正在載入最愛職缺...
       </div>
-
       <div v-if="errorFavoriteJobs" class="error-message">
         {{ errorFavoriteJobs }}
       </div>
-
       <template v-if="!isLoadingFavoriteJobs && !errorFavoriteJobs">
         <template v-if="favoriteJobs.length > 0">
           <div class="content-container"
@@ -342,161 +334,153 @@ export default {
   flex-direction: column;
   overflow-x: hidden;
   box-sizing: border-box;
-  background-color: #383333;
+  background-color: #383333; /* 整體背景色 */
   border-radius: 10px;
   color: white;
-  gap: 25px;
+  gap: 10px;
   width: 100%;
   max-width: none;
 }
 
-
 /* 區塊標題與橫向區塊通用樣式 */
 .middle-content .recommend,
-.middle-content .great-company {
+.middle-content .great-company { /* great-company 保持原有樣式 */
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
   white-space: nowrap;
   gap: 8px;
-  padding: 4px 25px;
+  padding: 4px 25px; /* 左右padding */
 }
 
-/* 每個職缺卡片的容器 */
-.middle-content .recommend .recommend-content .content-wrapper,
-.middle-content .great-company .recommend-content .content-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  /* 卡片與下方公司名稱的間距，可酌情調整 */
-}
-
-
-/* 職缺卡片本體樣式 */
-.card {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  background-color: #594f4f;
-  border-radius: 10px;
-  /* 調整圓角以匹配新尺寸 */
-  padding: 8px 8px 8px 12px;
-  /* MODIFIED: 稍微減少 padding */
-  width: 240px;
-  /* MODIFIED: 將寬度從 300px 改為 240px */
-  box-sizing: border-box;
-  transition: box-shadow 0.25s ease-out, transform 0.25s ease-out;
-  /* 保持 hover 效果的 transition */
+.middle-content section h1 {
+  font-size: 20px;
+  padding: 8px 0px;
+  color: white;
 }
 
 /* 橫向滑動內容區塊樣式 */
-.middle-content .recommend-content,
-.middle-content .great-company .recommend-content {
+.middle-content .recommend-content {
   display: flex;
   flex-direction: row;
-  gap: 20px;
-  /* MODIFIED: 如果卡片變小，可以稍微減少卡片間的間距 */
+  gap: 10px; /* 卡片之間的間距 */
   overflow-x: auto;
   flex-wrap: nowrap;
-  max-width: 100%;
   box-sizing: border-box;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   cursor: grab;
-  scrollbar-width: none;
-  /* Firefox */
-  -ms-overflow-style: none;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  padding-bottom: 10px; /* 給滾動條一些空間，如果有的話，或避免內容截斷 */
+}
+.middle-content .recommend-content::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
-/* 文字與圖片的職缺內容容器 */
-.middle-content .recommend .content-container {
+
+/* --- MODIFIED JOB CARD STYLES START --- */
+.job-card-wrapper {
   display: flex;
-  /* MODIFIED: 改為 flex 佈局更好控制內部 */
   flex-direction: column;
-  /* MODIFIED: 讓內部元素垂直排列 */
-  justify-content: center;
-  /* MODIFIED: 垂直居中內容 (可選) */
-  /* width: 200px; */
-  /* MODIFIED: 移除固定寬度，讓 flex-grow 生效 */
-  background-color: #594f4f;
-  /* 與 card 背景色相同，通常不需要單獨設定 */
-  /* border-radius: 5px; */
-  /* 如果 card 有圓角，這裡通常不需要 */
-  box-sizing: border-box;
-  flex-grow: 1;
-  /* 填充 card 內剩餘空間 */
-  margin-left: 8px;
-  /* MODIFIED: 新增圖片和文字容器之間的間距 */
-}
-
-/* 職缺圖片 */
-.middle-content .recommend .job-image {
-  width: 64px;
-  /* MODIFIED: 從 80px 調整為 64px */
-  height: 64px;
-  /* MODIFIED: 從 80px 調整為 64px */
-  border-radius: 6px;
-  /* MODIFIED: 調整圓角 */
-  background-size: cover;
-  background-position: center;
-  flex-shrink: 0;
-}
-
-/* 職缺標題與說明文字 */
-.middle-content section h1 {
-  font-size: 20px;
-  padding: 8px 0px;
-}
-
-.middle-content .recommend .content-container .title {
-  display: inline-block;
-  /* 修改點：讓元素寬度自適應內容 */
-  align-self: flex-start;
-  max-width: 100%;
-  /* 新增：確保在內容過長時，仍能配合 overflow 和 ellipsis */
-  font-size: 14px;
-  margin: 0 0 4px 0;
-  font-weight: bold;
-  white-space: nowrap;
-  /* 保持不換行 */
-  overflow: hidden;
-  /* 超出部分隱藏 */
-  text-overflow: ellipsis;
-  /* 超出部分顯示省略號 */
-  cursor: pointer;
-}
-
-.middle-content .recommend .content-container .title:hover,
-.middle-content .recommend .company-name:hover {
-  text-decoration: underline;
-  /* Underline on hover */
-  cursor: pointer;
-}
-
-/* 優質企業圖示樣式 */
-.middle-content .recommend .content-container .info {
-  font-size: 12px;
-  /* MODIFIED: 從 14px 調整為 12px */
-  margin: 0 0 2px 0;
-  /* MODIFIED: 調整 margin */
-  color: #f4f4f4;
-  white-space: nowrap;
-  /* 確保不換行 */
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* 公司名稱樣式 */
-.middle-content .recommend .content-container .salary-and-like {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 0;
-  /* MODIFIED: 移除底部 margin，因為 content-container 會處理間距 */
+  background-color: #594f4f00; /* 正常狀態背景色 (目前是透明) */
+  border-radius: 5px;
+  padding: 10px 25px 10px 25px;
+  width: 280px; /* 卡片原始寬度 */
+  box-sizing: border-box;
+  color: white;
+  text-align: center;
+  /* MODIFIED: 在 transition 中加入 width 和 background-color */
+  transition: transform 0.5s ease-out,
+              box-shadow 0.5s ease-out,
+              background-color 0.5s ease-out, /* 新增背景色過渡 */
+              width 0.5s ease-out;            /* 新增寬度過渡 */
+  cursor: pointer;
 }
 
-/* 最愛職缺樣式 */
+.job-card-wrapper:hover {
+  background-color: #594f4f; 
+  transform: translateY(-1px);
+  box-shadow: 0 8px 8px rgba(0, 0, 0, 0.3);
+  width: 350px; 
+}
+
+.job-card-title {
+font-size: 15px;
+font-weight: bold;
+margin-bottom: 4px;
+margin-top: -6px;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+width: 100%;
+}
+
+.job-card-title:hover {
+text-decoration: underline;
+}
+
+.job-card-image {
+width: 150px;  
+height: 150px;
+background-color: white;
+background-size: contain; 
+background-position: center;
+background-repeat: no-repeat;
+border-radius: 5px;
+margin-bottom: 5px; 
+}
+
+.job-card-details {
+display: flex;
+justify-content: space-between;
+align-items: flex-end;
+width: 100%;
+}
+
+.job-card-info-left {
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+text-align: left;
+margin-bottom: -8px;
+margin-left: 6px;
+}
+
+.job-card-company {
+font-size: 13px;
+font-weight: bold;
+margin: 0;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+max-width: 110px;
+}
+
+.job-card-salary {
+font-size: 12px;
+color: #E0E0E0;
+margin-top: -2px;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+max-width: 110px;
+}
+
+.job-card-like-btn.like-btn {
+  display: flex;
+  font-size: 18px;
+  align-self: flex-end;
+  margin-bottom: 3px; /* 往上移動按鈕 */
+  margin-right: 6px;
+}
+
+.middle-content .great-company .recommend-content .content-wrapper:hover { /* From hover effect */
+  background-color: #4a4444;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* 優質企業圖示樣式 (great-company section) */
 .middle-content .great-company .company-icon {
   width: 200px;
   height: 200px;
@@ -509,24 +493,21 @@ export default {
   flex-shrink: 0;
 }
 
-
-.middle-content .recommend .recommend-content .content-wrapper .company-name,
+/* 優質企業公司名稱樣式 (great-company section) */
 .middle-content .great-company .recommend-content .content-wrapper .company-name {
   font-size: 14px;
-  /* MODIFIED: 從 16px 調整為 14px，如果需要 */
   font-weight: bold;
   color: white;
   margin-top: 6px;
-  /* 保持與上方卡片的間距 */
   text-align: center;
-  /* 如果希望公司名稱在卡片下方居中對齊 */
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  width: 240px;
-  /* MODIFIED: 讓公司名稱的寬度與卡片寬度一致，以便正確的 text-align: center */
+  width: 200px; /* 配合 company-icon 寬度 */
 }
 
+
+/* 最愛職缺樣式 (favorite-job section) */
 .middle-content .favorite-job {
   display: flex;
   flex-wrap: wrap;
@@ -534,8 +515,7 @@ export default {
   padding: 40px 40px 0px 70px;
   margin-bottom: 20px;
 }
-
-.middle-content .favorite-job .content-container {
+.middle-content .favorite-job .content-container { /* This is the card for favorite jobs */
   display: flex;
   gap: 10px;
   width: 400px;
@@ -548,103 +528,11 @@ export default {
   padding: 25px;
   flex-shrink: 0;
   cursor: pointer;
+  position: relative; /* For hover effect */
+  overflow: hidden; /* For hover effect */
+  transition: transform 0.25s ease-out, box-shadow 0.25s ease-out; /* From hover effect */
 }
-
-.middle-content .favorite-job .content-container p {
-  margin-top: 20px;
-}
-
-.middle-content .favorite-job .content-container .favorite-icon {
-  width: 80px;
-  height: 80px;
-  border-radius: 5px;
-  background-color: #ffffff00;
-  background-size: cover;
-  background-position: center;
-  border: none;
-  padding: 0;
-  flex-shrink: 0;
-}
-
-/* 收藏按鈕樣式 */
-.like-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: white;
-  /* 空心愛心預設白色 */
-  font-size: 18px;
-  /* MODIFIED: 從 20px 調整為 18px */
-  padding: 3px;
-  /* MODIFIED: 稍微減少 padding */
-  transition: transform 0.5s ease;
-}
-
-.middle-content .recommend .content-container .like-btn:hover {
-  transform: scale(1.1);
-}
-
-.like-btn.active {
-  color: rgb(235, 178, 189);
-  /* 喜歡後變成粉色實心 */
-}
-
-.heart-icon {
-  transition: color 0.3s ease;
-}
-
-/* 滑動中游標變成抓取狀態 */
-.middle-content .recommend-content.active {
-  cursor: grabbing;
-  user-select: none;
-}
-
-
-
-
-
-/* --- 新增或修改以下 Hover 效果 --- */
-
-/* 通用：為可交互卡片添加鼠標指針 */
-.card,
-.middle-content .great-company .recommend-content .content-wrapper,
-.middle-content .favorite-job .content-container {
-  cursor: pointer;
-}
-
-/* 職缺卡片 (.card) Hover 效果 - 背景出現陰影 */
-/* .card 的 transition 已在上方定義 */
-
-.card:hover {
-  transform: scale(1.03);
-  /* 可以保持或微調 */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  /* MODIFIED: 陰影也可以微調以適應新尺寸 */
-}
-
-/* 優質企業卡片 (.content-wrapper in .great-company) Hover 效果 - 背景出現陰影 */
-.middle-content .great-company .recommend-content .content-wrapper {
-  border-radius: 10px;
-  padding: 8px;
-  transition: box-shadow 0.25s ease-out, background-color 0.25s ease-out;
-}
-
-.middle-content .great-company .recommend-content .content-wrapper:hover {
-  background-color: #4a4444;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-}
-
-
-
-/* 最愛職缺卡片 (.favorite-job .content-container) Hover 效果 */
-.middle-content .favorite-job .content-container {
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.25s ease-out, box-shadow 0.25s ease-out;
-}
-
-/* 疊加層 */
-.middle-content .favorite-job .content-container::before {
+.middle-content .favorite-job .content-container::before { /* From hover effect */
   content: "";
   position: absolute;
   top: 0;
@@ -657,30 +545,70 @@ export default {
   border-radius: 5px;
   pointer-events: none;
 }
-
-.middle-content .favorite-job .content-container:hover {
+.middle-content .favorite-job .content-container:hover { /* From hover effect */
   transform: scale(1.02) translateY(-3px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
 }
-
-.middle-content .favorite-job .content-container:hover::before {
+.middle-content .favorite-job .content-container:hover::before { /* From hover effect */
   opacity: 1;
 }
-
-/* 確保最愛職缺卡片內的圖示和文字在疊加層之上 (如果需要) */
-.middle-content .favorite-job .content-container .favorite-icon,
-.middle-content .favorite-job .content-container .favorite-name {
-  position: relative;
-  z-index: 1;
+.middle-content .favorite-job .content-container p {
+  margin-top: 20px;
 }
-
-/* 可選：最愛職缺卡片內部圖示的 hover 效果 */
 .middle-content .favorite-job .content-container .favorite-icon {
-  transition: transform 0.25s ease-out;
+  width: 80px;
+  height: 80px;
+  border-radius: 5px;
+  background-color: #ffffff00;
+  background-size: cover;
+  background-position: center;
+  border: none;
+  padding: 0;
+  flex-shrink: 0;
+  position: relative; /* From hover effect */
+  z-index: 1; /* From hover effect */
+  transition: transform 0.25s ease-out; /* From hover effect */
+}
+.middle-content .favorite-job .content-container:hover .favorite-icon { /* From hover effect */
+  transform: scale(1.08);
+}
+.middle-content .favorite-job .content-container .favorite-name { /* From hover effect */
+ position: relative;
+ z-index: 1;
 }
 
-.middle-content .favorite-job .content-container:hover .favorite-icon {
-  transform: scale(1.08);
+
+/* 收藏按鈕通用樣式 */
+.like-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: white;
+  font-size: 18px;
+  padding: 0px;
+  transition: transform 0.5s ease, color 0.3s ease; /* Added color transition */
+}
+.like-btn:hover {
+  transform: scale(1.1);
+}
+.like-btn.active {
+  color: rgb(235, 178, 189); /* 粉色實心 */
+}
+.heart-icon {
+  transition: color 0.3s ease; /* Already here, good */
+}
+
+/* 滑動中游標變成抓取狀態 */
+.middle-content .recommend-content.active { /* Applies to both job and company recommend-content */
+  cursor: grabbing;
+  user-select: none;
+}
+
+/* 通用：為可交互卡片添加鼠標指針 */
+.job-card-wrapper, /* New job card */
+.middle-content .great-company .recommend-content .content-wrapper, /* Company card */
+.middle-content .favorite-job .content-container { /* Favorite job card */
+  cursor: pointer;
 }
 
 .loading-message,
@@ -688,20 +616,17 @@ export default {
 .no-data-message {
   padding: 20px;
   text-align: center;
-  color: #ccc; /* 根據您的背景調整顏色 */
-  width: 100%; /* 確保佔滿寬度，使其在 section 內居中 */
+  color: #ccc;
+  width: 100%;
 }
-
 .error-message {
-  color: #ffffff; /* 紅色系用於錯誤提示 */
-  background-color: rgba(128, 128, 128, 0.1); /* 可選的淡紅色背景 */
+  color: #ffffff;
+  background-color: rgba(128, 128, 128, 0.1);
   border: 1px solid rgba(211, 211, 211, 0.3);
   border-radius: 5px;
-  margin: 10px 0; /* 給予上下間距 */
+  margin: 10px 0;
 }
-
 .loading-message {
   font-style: italic;
 }
-
 </style>

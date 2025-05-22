@@ -475,6 +475,7 @@ max-width: 110px;
   margin-right: 6px;
 }
 
+
 .middle-content .great-company .recommend-content .content-wrapper:hover { /* From hover effect */
   background-color: #4a4444;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
@@ -504,6 +505,13 @@ max-width: 110px;
   white-space: nowrap;
   text-overflow: ellipsis;
   width: 200px; /* 配合 company-icon 寬度 */
+}
+
+/* 只調整「優質企業」區塊中卡片的間距 */
+.middle-content .great-company .recommend-content {
+  gap: 50px;
+  margin-left:25px; /* 設定您希望的「優質企業」卡片間距，例如 25px */
+  margin-top:10px;
 }
 
 

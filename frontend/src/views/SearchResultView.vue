@@ -1,20 +1,20 @@
 <template>
     <BaseLayout>
-        <Notify>
+        <SearchResult>
 
-        </Notify>
+        </SearchResult>
     </BaseLayout>
 </template>
 
 <script>
 import BaseLayout from '@/components/layout/BaseLayout.vue'
-import Notify from '@/components/main-panel/Notify.vue'
+import SearchResult from '@/components/main-panel/SearchResult.vue'
 
 export default {
-  name: 'NotificationView',
+  name: 'SearchResultView',
   components: {
     BaseLayout,
-    Notify,
+    SearchResult,
   },
 }
 </script>

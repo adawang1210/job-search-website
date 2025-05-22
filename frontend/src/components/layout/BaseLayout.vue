@@ -33,7 +33,7 @@
 import Navbar from './Navbar.vue'
 import LeftSidebar from './LeftSidebar.vue'
 import RightSidebar from './RightSidebar.vue'
-// import eventBus from '/src/eventBus.js'; // Potentially needed if BaseLayout emits to Home
+// import eventBus from '/src/eventBus.js';
 
 export default {
   name: 'BaseLayout',
@@ -46,7 +46,7 @@ export default {
     return {
       openRightSidebar: this.handleOpenRightSidebar,
       updateLikedItemInSidebar: this.handleUpdateLikedItemInSidebar,
-      addViewedItemToSidebar: this.handleAddViewedItemToSidebar, // ADDED: Provide method to add viewed items
+      addViewedItemToSidebar: this.handleAddViewedItemToSidebar,
     };
   },
   data() {
@@ -56,9 +56,35 @@ export default {
       rightSidebarWidth: 240,
       isRightSidebarVisible: false,
       selectedJobForRightSidebar: null,
-      likedItemsForLeftSidebar: [],
-      viewedItemsForLeftSidebar: [], // ADDED: Store viewed items
+      likedItemsForLeftSidebar: [], // 將由 localStorage 初始化
+      viewedItemsForLeftSidebar: [], // 將由 localStorage 初始化
     };
+  },
+  created() {
+    // 從 localStorage 加載收藏的項目
+    const storedLikedItems = localStorage.getItem('likedJobItems');
+    if (storedLikedItems) {
+      this.likedItemsForLeftSidebar = JSON.parse(storedLikedItems);
+    }
+    // 從 localStorage 加載瀏覽過的項目
+    const storedViewedItems = localStorage.getItem('viewedJobItems');
+    if (storedViewedItems) {
+      this.viewedItemsForLeftSidebar = JSON.parse(storedViewedItems);
+    }
+  },
+  watch: {
+    likedItemsForLeftSidebar: {
+      handler(newValue) {
+        localStorage.setItem('likedJobItems', JSON.stringify(newValue));
+      },
+      deep: true // 深度監聽，因為是物件陣列
+    },
+    viewedItemsForLeftSidebar: {
+      handler(newValue) {
+        localStorage.setItem('viewedJobItems', JSON.stringify(newValue));
+      },
+      deep: true // 深度監聽，因為是物件陣列
+    }
   },
   methods: {
     toggleCollapse() {
@@ -67,7 +93,7 @@ export default {
     },
     updateLeftSidebarWidth(newWidth) {
       const minWidth = 60;
-      const maxWidth = 280; // Or 400 if LeftSidebar's max is 400
+      const maxWidth = 280;
       this.leftSidebarWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
       this.isSidebarCollapsed = this.leftSidebarWidth <= 120;
     },
@@ -88,48 +114,48 @@ export default {
       this.isRightSidebarVisible = false;
       this.selectedJobForRightSidebar = null;
     },
-
-    // MODIFIED: To also handle viewed items list
     handleUpdateLikedItemInSidebar(jobData, isLiked) {
       if (isLiked) {
-        // Add item to the liked list if it's not already there
         const existingItem = this.likedItemsForLeftSidebar.find(item => item.id === jobData.id);
         if (!existingItem) {
-          this.likedItemsForLeftSidebar.unshift({ ...jobData }); // Add to top for liked items
+          this.likedItemsForLeftSidebar.unshift({ ...jobData });
         }
-        // Remove from viewed items list if it exists there
         this.viewedItemsForLeftSidebar = this.viewedItemsForLeftSidebar.filter(item => item.id !== jobData.id);
       } else {
-        // Remove item from the liked list
         this.likedItemsForLeftSidebar = this.likedItemsForLeftSidebar.filter(item => item.id !== jobData.id);
-        // Optional: If unliking should add it to viewed, do it here. Current spec doesn't require this.
+        // 注意：如果您希望取消收藏後自動加入到瀏覽列表，
+        // 您可能需要調用 this.handleAddViewedItemToSidebar(jobData) (並確保 jobData 是完整的物件)
+        // 但目前的邏輯是瀏覽列表僅通過點擊卡片來添加。
       }
+      // localStorage 的更新將由 watcher 自動處理
     },
-
     handleRemoveItemFromLikedList(itemId) {
-      this.likedItemsForLeftSidebar = this.likedItemsForLeftSidebar.filter(item => item.id !== itemId);
-      // Optional: If unliking should add it to viewed, find the jobData and call handleAddViewedItemToSidebar.
-      // This would require finding the original jobData. Simpler to keep current behavior.
-    },
+      // 先找到要移除的項目，以便之後可能將其加入瀏覽列表
+      // const itemToRemove = this.likedItemsForLeftSidebar.find(item => item.id === itemId);
 
-    // ADDED: New method to handle adding items to the viewed list
+      this.likedItemsForLeftSidebar = this.likedItemsForLeftSidebar.filter(item => item.id !== itemId);
+
+      // 如果希望從側邊欄取消收藏後，該項目加入到「瀏覽過」的列表 (且不在裡面)
+      // if (itemToRemove) {
+      //   const isAlreadyViewed = this.viewedItemsForLeftSidebar.some(viewedItem => viewedItem.id === itemToRemove.id);
+      //   const isStillLiked = this.likedItemsForLeftSidebar.some(likedItem => likedItem.id === itemToRemove.id); // 應該為 false
+      //   if (!isAlreadyViewed && !isStillLiked) {
+      //     //  this.handleAddViewedItemToSidebar(itemToRemove); // 確保 itemToRemove 是完整物件
+      //   }
+      // }
+      // localStorage 的更新將由 watcher 自動處理
+    },
     handleAddViewedItemToSidebar(jobData) {
-      // Don't add to viewed if it's already liked
       const isAlreadyLiked = this.likedItemsForLeftSidebar.some(item => item.id === jobData.id);
       if (isAlreadyLiked) {
         return;
       }
-
-      // Remove if already in viewed list (to move to top)
       this.viewedItemsForLeftSidebar = this.viewedItemsForLeftSidebar.filter(item => item.id !== jobData.id);
-
-      // Add to the beginning of the viewed list
       this.viewedItemsForLeftSidebar.unshift({ ...jobData });
-
-      // Ensure viewed list does not exceed 10 items
       if (this.viewedItemsForLeftSidebar.length > 10) {
-        this.viewedItemsForLeftSidebar.pop(); // Remove the oldest item
+        this.viewedItemsForLeftSidebar.pop();
       }
+      // localStorage 的更新將由 watcher 自動處理
     }
   }
 }

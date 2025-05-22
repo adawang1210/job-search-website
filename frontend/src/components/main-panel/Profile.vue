@@ -38,10 +38,11 @@
       <section class="skills">
         <ul>
           <li v-for="(skill, index) in profile.skills" :key="index">
-            {{ skill }}
+            {{ skill.skill }}（熟練度：{{ skill.proficiency }}%）
           </li>
         </ul>
       </section>
+
 
       <!-- 簡介 -->
       <h2>履歷表</h2>
@@ -195,24 +196,57 @@ export default {
   },
 
   mounted() {
-    axios.get('/profile.json')
-      .then(res => {
-        this.profile = res.data;
+    Promise.all([
+    axios.get('http://127.0.0.1:8000/api/users/skill-packages/2/'),
+    axios.get('http://127.0.0.1:8000/api/users/education/')
+  ])
+  
+    .then(([skillsRes, educationRes]) => {
+      this.profile = {
+        skills: skillsRes.data.skills,
+        profile: {
+          img: '/default.jpg',
+          user_name: '劉子源',
+          user_info: '簡介略',
+        },
+        about: {
+          user_name: '劉子源',
+          age: 30,
+          sex: '男',
+          education: '碩士',
+          phone_number: '0912-345-678',
+          mail: 'liou@example.com',
+          address: '台北市中正區',
+          language: '中文, 日文, 英文'
+        },
+        resume: {
+          introduction: '',
+          education: educationRes.data.map(item => ({
+            year_start: item.start_date.slice(0, 4),
+            year_end: item.end_date.slice(0, 4),
+            degree: `${item.school}（${item.degree}）`,
+            content: `${item.major} - ${item.description}`
+          })),
+          work_experience: []
+        },
+        projects: [],
+        liked: [],
+        following: []
+      };
 
-        this.$nextTick(() => {
-          const img = this.$refs.avatar;
-          if (!img) return;
-          if (img.complete) {
-            this.handleImage(img);
-          } else {
-            img.onload = () => this.handleImage(img);
-          }
-        });
-      })
-      .catch(error => {
-        console.error('讀取 profile.json 發生錯誤：', error);
+      this.$nextTick(() => {
+        const img = this.$refs.avatar;
+        if (img?.complete) {
+          this.handleImage(img);
+        } else if (img) {
+          img.onload = () => this.handleImage(img);
+        }
       });
-  }
+    })
+    .catch(error => {
+      console.error('讀取資料發生錯誤：', error);
+    });
+}
 };
 </script>
 

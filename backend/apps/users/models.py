@@ -1,35 +1,75 @@
 from django.db import models
 
-class UserProfile(models.Model):
-    name = models.CharField(max_length=100)
-    title = models.CharField(max_length=100, blank=True)
-    contact = models.CharField(max_length=255, blank=True)
-    avatar = models.ImageField(upload_to='avatars/', blank=True)
+# Create your models here.
+class User(models.Model):
 
-    # 技能可以用多對多
-    skills = models.ManyToManyField('Skill', blank=True)
+    MALE = '男性'
+    FEMALE = '女性'
+    OTHER = '其他'
+    GENDER_CHOICES = [
+        (MALE, '男性'),
+        (FEMALE, '女性'),
+        (OTHER, '其他'),
+    ]
+    name = models.CharField(max_length=150)
+    age = models.IntegerField()
+    sex = models.CharField(max_length=10, choices=GENDER_CHOICES) 
+    highest_education = models.CharField(max_length=100)
+    phone = models.CharField(max_length=20)
+    email = models.EmailField(unique=True)
+    city = models.CharField(max_length=10) 
+    district = models.CharField(max_length=10)
+    address = models.CharField(max_length=100)
+    language = models.CharField(max_length=100)
+    
+    # first_name = models.CharField(max_length=30, blank=True)
+    # last_name = models.CharField(max_length=30, blank=True)
+    # is_active = models.BooleanField(default=True)
+    # is_staff = models.BooleanField(default=False)
+    # date_joined = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        verbose_name = "user"
+        verbose_name_plural = "users"
 
-class Skill(models.Model):
-    name = models.CharField(max_length=50)
+    def __str__(self):
+        return self.name
 
-class Experience(models.Model):
-    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='experiences')
-    description = models.TextField()
+class UserSkill(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='skills')
+    skill = models.CharField(max_length=100)
 
-#我的專案
-class ProjectFolder(models.Model):
-    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='project_folders')
-    name = models.CharField(max_length=100)
-    image = models.ImageField(upload_to='project_folders/', blank=True)
-#已按讚
-class Company(models.Model):
-    name = models.CharField(max_length=100)
-    logo = models.ImageField(upload_to='company_logos/', blank=True)
-    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='companies')
+    def __str__(self):
+        return f"{self.user.name} 技能： {self.skill}"
 
-#已追蹤
-#透過user外來鍵來顯示已按讚的公司
-class ReferencePerson(models.Model):
-    name = models.CharField(max_length=100)
-    photo = models.ImageField(upload_to='reference_photos/', blank=True)
-    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='references')
+class UserEducation(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='educations')
+    school = models.CharField(max_length=100)
+    major = models.CharField(max_length=100)
+    degree = models.CharField(max_length=100)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    content = models.TextField()
+
+    def __str__(self):
+        return f"{self.user.name} 學歷 {self.school}{self.major}{self.degree}"
+    
+class UserWorkExperience(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='work_experiences')
+    title = models.CharField(max_length=100)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    content = models.TextField()
+
+    def __str__(self):
+        return f"{self.user.name} 工作經歷 {self.title}"
+    
+class UserProject(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='projects')
+    title = models.CharField(max_length=100)
+    cover_photo = models.FileField(upload_to='project_cover_photo/')
+    # start_date = models.DateField()
+    # end_date = models.DateField()
+    # content = models.TextField()
+
+    def __str__(self):
+        return f"{self.user.name} 專案經歷 {self.title}"

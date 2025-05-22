@@ -1,0 +1,56 @@
+{
+  "jobs": [
+    {
+      "id": "job-hot-1",
+      "title": "行政專員",
+      "location": "台中市烏日區",
+      "salary": "月薪35,000元",
+      "company": "百皇水電公司",
+      "isLiked": false,
+      "image": "/摩斯漢堡.jfif"
+    },
+    {
+      "id": "job-hot-2",
+      "title": "兒童美語老師",
+      "location": "台北市信義區",
+      "salary": "月薪70,000元",
+      "company": "科技先鋒",
+      "isLiked": false,
+      "image": "/摩斯漢堡.jfif"
+    },
+        {
+      "id": "job-hot-3",
+      "title": "建築設計師",
+      "location": "台中市烏日區",
+      "salary": "月薪35,000元",
+      "company": "百皇水電公司",
+      "isLiked": false,
+      "image": "/摩斯漢堡.jfif"
+    },    {
+      "id": "job-hot-4",
+      "title": "小貨車司機",
+      "location": "台中市烏日區",
+      "salary": "月薪35,000元",
+      "company": "百皇水電公司",
+      "isLiked": false,
+      "image": "/摩斯漢堡.jfif"
+    },    {
+      "id": "job-hot-5",
+      "title": "電話行銷客服人員",
+      "location": "台中市烏日區",
+      "salary": "月薪35,000元",
+      "company": "百皇水電公司",
+      "isLiked": false,
+      "image": "/摩斯漢堡.jfif"
+    },    {
+      "id": "job-hot-6",
+      "title": "業務經理",
+      "location": "台中市烏日區",
+      "salary": "月薪35,000元",
+      "company": "百皇水電公司",
+      "isLiked": false,
+      "image": "/摩斯漢堡.jfif"
+    }
+
+  ]
+}

@@ -167,9 +167,9 @@ export default defineComponent({
     return {
       showPositionPopup: false,
       showRegionPopup: false,
-      selectedPositions: [],
-      selectedRegions: [],
-      searchQuery: '',
+      selectedPositions: [], // 已選職務 (value 陣列)
+      selectedRegions: [], // 已選地區 (id 陣列)
+      searchQuery: '', // 關鍵字
       positions: [
         { value: 'position1', label: '經營/人資類' },
         { value: 'position2', label: '行政/總務/法務類' },
@@ -221,9 +221,13 @@ export default defineComponent({
     },
     confirmPosition() {
       this.showPositionPopup = false;
+      // 確認職務後可以選擇立即搜尋，或等用戶按 Enter/搜尋按鈕
+      // this.performSearch();
     },
     confirmRegion() {
       this.showRegionPopup = false;
+      // 確認地區後可以選擇立即搜尋，或等用戶按 Enter/搜尋按鈕
+      // this.performSearch();
     },
     handleSearch() {
       console.log('Search query:', this.searchQuery);
@@ -306,7 +310,7 @@ export default defineComponent({
   margin-bottom: 8px;
   border-radius: 50%;
   background-color: white;
-  background-image: url("/public/user-avatar.png");
+  background-image: url("/user-avatar.png");
   background-size: cover;
   background-position: center;
   cursor: pointer;

@@ -1,0 +1,50 @@
+{
+  "jobs": [
+    {
+      "id": "job-rec-1",
+      "title": "儲備店長",
+      "salary": "月薪35,000元",
+      "company": "百皇水電公司",
+      "isLiked": false,
+      "image": "/摩斯漢堡.jfif"
+    },
+    {
+      "id": "job-rec-2",
+      "title": "營運經理",
+      "salary": "月薪70,000元",
+      "company": "科技先鋒",
+      "isLiked": false,
+      "image": "/摩斯漢堡.jfif"
+    },
+        {
+      "id": "job-rec-3",
+      "title": "正職廚房人員",
+      "salary": "月薪35,000元",
+      "company": "百皇水電公司",
+      "isLiked": false,
+      "image": "/摩斯漢堡.jfif"
+    },    {
+      "id": "job-rec-4",
+      "title": "外勤業務助理",
+      "salary": "月薪35,000元",
+      "company": "百皇水電公司",
+      "isLiked": false,
+      "image": "/摩斯漢堡.jfif"
+    },    {
+      "id": "job-rec-5",
+      "title": "會計師",
+      "salary": "月薪35,000元",
+      "company": "百皇水電公司",
+      "isLiked": false,
+      "image": "/摩斯漢堡.jfif"
+    },    {
+      "id": "job-rec-6",
+      "title": "藏壽司儲備幹部",
+      "salary": "月薪35,000元",
+      "company": "百皇水電公司",
+      "isLiked": false,
+      "image": "/摩斯漢堡.jfif"
+    }
+
+  ]
+}

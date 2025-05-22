@@ -1,225 +1,165 @@
 <template>
-    <div class="middle-content">
-        <div class="container">
-            <section class="profile">
-                <img ref="avatar" src="/photo-20706-u.jpg" alt="劉子源大頭照" class="avatar">
-                <div class="info">
-                    <h1>劉子源</h1>
-                    <p>桃園中壢・30歲・應屆畢業生</p>
-                </div>
-            </section>
-
-
-            <!-- 編輯按鈕放在 profile 與 about 之間 -->
-            <i class="fa-solid fa-pen edit-icon"></i>
-
-            <h2>關於</h2>
-            <section class="about">
-                <ul>
-                    <li><strong>姓名：</strong>劉子源</li>
-                    <li><strong>年齡：</strong>30歲</li>
-                    <li><strong>性別：</strong>男</li>
-                    <li><strong>學歷：</strong>國立政治大學資訊科學學系博士</li>
-                    <li><strong>手機：</strong>0800 000 000</li>
-                    <li><strong>信箱：</strong>zylu@ncu.edu.tw</li>
-                    <li><strong>地址：</strong>320桃園市中壢區中大路300號</li>
-                    <li><strong>語言：</strong>中文/英文</li>
-                </ul>
-            </section>
-
-
-            <h2>技能</h2>
-            <section class="skills">
-                <ul>
-                    <li> 密碼學</li>
-                    <li> 資訊安全</li>
-                    <li> 隱私保護技術</li>
-                    <li> 網頁程式設計</li>
-                </ul>
-            </section>
-
-
-            <h2>履歷表</h2>
-            <!-- 簡介區塊 -->
-            <section class="intro">
-            <h3><i class="fa-solid fa-circle-info"></i> 簡介</h3>
-            <p>
-                我在大學與研究所期間專注於應用密碼學，尤其著重在搜尋加密、身分基礎加密與抗量子電腦攻擊的加密系統設計。這些背景構成了我後續研究與教學的核心方向。
-            </p>
-            </section>
-
-            <!-- 學歷區塊（使用節點式時間軸風格顯示） -->
-            <section class="education timeline-section">
-            <h3><i class="fa-solid fa-graduation-cap"></i> 學歷</h3>
-            <div class="timeline">
-
-                <!-- 第一段：2010 - 2014 -->
-                <div class="timeline-segment"> <!-- 一段學歷經歷區塊 -->
-                <div class="timeline-point">
-                    <span class="year-label">2010</span>
-                    <div class="dot"></div>
-                </div>
-                <div class="timeline-line"></div>
-                <div class="timeline-point">
-                    <span class="year-label">2014</span>
-                    <div class="dot"></div>
-                </div>
-                <div class="timeline-entry">
-                    <h4>國立清華大學資訊工程學士</h4>
-                    <p>我的主要研究重點是應用密碼學領域，尤其專注於搜尋加密和基於身分的加密等領域。此外，我還關注基於格的密碼系統，由於它們能夠抗重量學電腦攻擊，很可能成為下個世紀的關鍵密碼學。</p>
-                </div>
-                </div>
-
-                <!-- 第二段：2015 - 2018 -->
-                <div class="timeline-segment">
-                <div class="timeline-point">
-                    <span class="year-label">2015</span>
-                    <div class="dot"></div>
-                </div>
-                <div class="timeline-line"></div>
-                <div class="timeline-point">
-                    <span class="year-label">2018</span>
-                    <div class="dot"></div>
-                </div>
-                <div class="timeline-entry">
-                    <h4>國立清華大學資訊工程碩士</h4>
-                    <p>我的主要研究重點是應用密碼學領域，尤其專注於搜尋加密和基於身分的加密等領域。此外，我還關注基於格的密碼系統，由於它們能夠抗重量學電腦攻擊，很可能成為下個世紀的關鍵密碼學。</p>
-                </div>
-                </div>
-
-                <!-- 第三段：2019 - 2024 -->
-                <div class="timeline-segment">
-                <div class="timeline-point">
-                    <span class="year-label">2019</span>
-                    <div class="dot"></div>
-                </div>
-                <div class="timeline-line"></div>
-                <div class="timeline-point">
-                    <span class="year-label">2024</span>
-                    <div class="dot"></div>
-                </div>
-                <div class="timeline-entry">
-                    <h4>國立政治大學資訊科學博士</h4>
-                    <p>博士學位畢業於台灣國立政治大學資訊學系，師從 Raylin Tso 教授。此外，我還獲得了另一個博士學位，畢業於日本金澤大學自然科學技術研究生院，師從 Masahiro Mambo 教授（雙學位課程）。</p>
-                </div>
-                </div>
-
-            </div>
-            </section>
-
-            <!-- 工作經歷區塊（使用節點式時間軸風格顯示） -->
-            <section class="experience timeline-section">
-            <h3><i class="fa-solid fa-briefcase"></i> 工作經歷</h3>
-            <div class="timeline">
-
-                <!-- 第一段：2025 - 現在 -->
-                <div class="timeline-segment">
-                <div class="timeline-point">
-                    <span class="year-label">2025</span>
-                    <div class="dot"></div>
-                </div>
-                <div class="timeline-line"></div>
-                <div class="timeline-point">
-                    <span class="year-label">現在</span>
-                    <div class="dot"></div>
-                </div>
-                <div class="timeline-entry">
-                    <h4>國立中央大學資訊管理系助理教授</h4>
-                    <p>在中央大學資訊管理系任職，教授網頁程式設計以及企業資料通訊和隱私課，同時帶領碩博士進行研究，通常辦公時間為周一和周三。</p>
-                </div>
-                </div>
-
-            </div>
-            </section>
-
-
-
-
-            <h2>我的專案</h2>
-            <section class="projects">
-                <div class="logo-scroll-container">
-                    <div><img src="/螢幕擷取畫面 2025-05-07 001948.png" alt="流量動物視覺化分析" draggable="false">
-                        <p>流量動物視覺化分析</p>
-                    </div>
-                    <div><img src="/螢幕擷取畫面 2025-05-07 001948.png" alt="食安機器人" draggable="false">
-                        <p>食安機器人</p>
-                    </div>
-                    <div><img src="/螢幕擷取畫面 2025-05-07 001948.png" alt="台北通徵服務" draggable="false">
-                        <p>台北通徵服務</p>
-                    </div>
-                    <div><img src="/螢幕擷取畫面 2025-05-07 001948.png" alt="開源" draggable="false">
-                        <p>開源</p>
-                    </div>
-                </div>
-            </section>
-
-
-            <h2>已按讚</h2>
-            <section class="companies">
-                <div class="logo-scroll-container">
-                    <div><img src="/ogimage.png" alt="LINE" draggable="false">
-                        <p>LINE</p>
-                    </div>
-                    <div><img src="/研華科技.jpg" alt="研華科技" draggable="false">
-                        <p>研華科技</p>
-                    </div>
-                    <div><img src="/A-Social-Technology-Company-Meta-1.jpg" alt="Meta" draggable="false">
-                        <p>Meta</p>
-                    </div>
-                    <div><img src="/amazon.png" alt="Amazon" draggable="false">
-                        <p>Amazon</p>
-                    </div>
-                </div>
-            </section>
-
-            <h2>已追蹤</h2>
-            <section class="technologies">
-                <div class="logo-scroll-container">
-                    <div><img src="/17061913美簽.jpg" alt="張李治華" draggable="false">
-                        <p>張李治華</p>
-                    </div>
-                    <div><img src="/ycchen.jpg" alt="陳以錚" draggable="false">
-                        <p>陳以錚</p>
-                    </div>
-                    <div><img src="/胡雅涵老師大頭照1121211.jpg" alt="胡雅涵" draggable="false">
-                        <p>胡雅涵</p>
-                    </div>
-                    <div><img src="/官網.jpg" alt="曾筱珽" draggable="false">
-                        <p>曾筱珽</p>
-                    </div>
-                    <div><img src="/T123603300.jpg" alt="周恩頤" draggable="false">
-                        <p>周恩頤</p>
-                    </div>
-                    <div><img src="/F125393020.jpg" alt="柯士文" draggable="false">
-                        <p>柯士文</p>
-                    </div>
-                </div>
-            </section>
-
-
+  <div class="middle-content" v-if="profile">
+    <div class="container">
+      <!-- 個人資料區 -->
+      <section class="profile">
+        <img :src="profile.profile.img" ref="avatar" alt="大頭照" class="avatar" />
+        <div class="info">
+          <h1>{{ profile.profile.user_name }}</h1>
+          <p>{{ profile.profile.user_info }}</p>
         </div>
+      </section>
+
+      <!-- 編輯 icon -->
+      <n-icon :size="30" class="edit-icon">
+        <create-outline />
+      </n-icon>
+
+
+
+
+      <!-- 關於 -->
+      <h2>關於</h2>
+      <section class="about">
+        <ul>
+          <li><strong>姓名：</strong>{{ profile.about.user_name }}</li>
+          <li><strong>年齡：</strong>{{ profile.about.age }}</li>
+          <li><strong>性別：</strong>{{ profile.about.sex }}</li>
+          <li><strong>學歷：</strong>{{ profile.about.education }}</li>
+          <li><strong>手機：</strong>{{ profile.about.phone_number }}</li>
+          <li><strong>信箱：</strong>{{ profile.about.mail }}</li>
+          <li><strong>地址：</strong>{{ profile.about.address }}</li>
+          <li><strong>語言：</strong>{{ profile.about.language }}</li>
+        </ul>
+      </section>
+
+      <!-- 技能 -->
+      <h2>技能</h2>
+      <section class="skills">
+        <ul>
+          <li v-for="(skill, index) in profile.skills" :key="index">
+            {{ skill }}
+          </li>
+        </ul>
+      </section>
+
+      <!-- 簡介 -->
+      <h2>履歷表</h2>
+      <section class="intro">
+        <h3><n-icon :size="25"><person-outline class="person-outline"/></n-icon> 簡介</h3>
+        <p>{{ profile.resume.introduction }}</p>
+      </section>
+
+      <!-- 學歷 -->
+      <section class="education timeline-section">
+        <h3><n-icon :size="25"><school-outline class="school-outline"/></n-icon> 學歷</h3>
+        <div class="timeline">
+          <div class="timeline-segment" v-for="(edu, index) in profile.resume.education" :key="index">
+            <div class="timeline-point">
+              <span class="year-label">{{ edu.year_start }}</span>
+              <div class="dot"></div>
+            </div>
+            <div class="timeline-line"></div>
+            <div class="timeline-point">
+              <span class="year-label">{{ edu.year_end }}</span>
+              <div class="dot"></div>
+            </div>
+            <div class="timeline-entry">
+              <h4>{{ edu.degree }}</h4>
+              <p>{{ edu.content }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 工作經歷 -->
+      <section class="experience timeline-section">
+        <h3><nIcon :size="25"><BriefcaseOutline class="BriefcaseOutline"/></nIcon> 工作經歷</h3>
+        <div class="timeline">
+          <div class="timeline-segment" v-for="(work, index) in profile.resume.work_experience" :key="index">
+            <div class="timeline-point">
+              <span class="year-label">{{ work.year_start }}</span>
+              <div class="dot"></div>
+            </div>
+            <div class="timeline-line"></div>
+            <div class="timeline-point">
+              <span class="year-label">{{ work.year_end }}</span>
+              <div class="dot"></div>
+            </div>
+            <div class="timeline-entry">
+              <h4>{{ work.job_title }}</h4>
+              <p>{{ work.content }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 我的專案 -->
+      <h2>我的專案</h2>
+      <section class="projects">
+        <div class="logo-scroll-container">
+          <div v-for="(proj, index) in profile.projects" :key="index">
+            <img :src="proj.img" :alt="proj.project_name" draggable="false">
+            <p>{{ proj.project_name }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 已按讚 -->
+      <h2>已按讚</h2>
+      <section class="companies">
+        <div class="logo-scroll-container">
+          <div v-for="(liked, index) in profile.liked" :key="index">
+            <img :src="liked.img" :alt="liked.company" draggable="false">
+            <p>{{ liked.company }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 已追蹤 -->
+      <h2>已追蹤</h2>
+      <section class="technologies">
+        <div class="logo-scroll-container">
+          <div v-for="(person, index) in profile.following" :key="index">
+            <img :src="person.img" :alt="person.name" draggable="false">
+            <p>{{ person.name }}</p>
+          </div>
+        </div>
+      </section>
     </div>
+  </div>
 </template>
 
-<script>
-export default {
-    name: 'Profile',
 
-    data() {
+<script>
+import axios from 'axios';
+import { NIcon } from 'naive-ui';
+import {
+  CreateOutline,
+  PersonOutline,
+  SchoolOutline,
+  BriefcaseOutline
+} from '@vicons/ionicons5';
+
+export default {
+  name: 'Profile',
+  components: {
+    NIcon, 
+    CreateOutline,
+    PersonOutline,
+    SchoolOutline,
+    BriefcaseOutline
+  },
+
+  data() {
     return {
-      // 你的資料
-    }
+      profile: null
+    };
   },
 
   methods: {
-    // 你的方法
-  },
-
-  mounted() {
-    // 這裡寫圖片抓色的邏輯
-    const img = this.$refs.avatar;
-
-    img.onload = () => {
+    handleImage(img) {
+      if (!img) return;
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
 
@@ -244,18 +184,38 @@ export default {
 
       const avgColor = `rgb(${r}, ${g}, ${b})`;
 
-      // 改變背景
       const contentEl = document.querySelector('.middle-content');
       contentEl.style.background = `linear-gradient(
-                                    to bottom,
-                                    ${avgColor} 0%,
-                                    #2b2b2b 20%,
-                                    #2b2b2b 100%
-                                    )`;
-    };
+        to bottom,
+        ${avgColor} 0%,
+        #2b2b2b 20%,
+        #2b2b2b 100%
+      )`;
+    }
+  },
+
+  mounted() {
+    axios.get('/profile.json')
+      .then(res => {
+        this.profile = res.data;
+
+        this.$nextTick(() => {
+          const img = this.$refs.avatar;
+          if (!img) return;
+          if (img.complete) {
+            this.handleImage(img);
+          } else {
+            img.onload = () => this.handleImage(img);
+          }
+        });
+      })
+      .catch(error => {
+        console.error('讀取 profile.json 發生錯誤：', error);
+      });
   }
-}
+};
 </script>
+
 
 <style scoped>
 /* middle-content 區塊 */
@@ -270,13 +230,13 @@ export default {
     overflow: hidden;
 }
 
-
-
 /* middle-content 區塊內的 h2 樣式 */
 .middle-content h2 {
     margin-top: 0;
     margin-bottom: -15px;
-    /* 你想要的距離，自己調整 */
+    font-weight: Bold;      /* 粗體 */
+    font-size: 21px;       /* 字體大小 */
+    letter-spacing: 1.1px; 
 }
 
 /* container 區塊 */
@@ -326,8 +286,6 @@ export default {
 /* 編輯 icon 顯示 */
 .edit-icon {
     display: block;
-    font-size: 20px;
-    color: white;
     cursor: pointer;
     margin: 0 0 12px auto;
     /* 自動靠右並與下方區塊有距離 */
@@ -338,6 +296,24 @@ export default {
 /* 編輯 icon hover 效果 */
 .edit-icon:hover {
     opacity: 0.7;
+}
+
+.person-outline {
+    position: relative;
+    top: 5px; 
+    right: 5px; 
+}
+
+.school-outline {
+    position: relative;
+    top: 5px; 
+    right: 5px;
+}
+
+.BriefcaseOutline {
+    position: relative;
+    top: 5px; 
+    right: 5px;
 }
 
 /* 區塊標題通用樣式 */
@@ -413,58 +389,52 @@ section {
 }
 
 
-/* logo user-select 設定 */
-.logo-scroll-container {
-    display: flex;
-    overflow-x: auto;
-    gap: 24px;
-    padding: 12px 0;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-}
 
-/* logo 滾動區 scrollbar 隱藏 */
+/* 隱藏橫向滾動條（僅針對 Webkit 瀏覽器：Chrome、Safari 等） */
 .logo-scroll-container::-webkit-scrollbar {
     display: none;
 }
 
-/* logo 拖曳 cursor */
+/* 當滑鼠拖曳時，改變滑鼠指標樣式（手抓） */
 .logo-scroll-container.dragging {
     cursor: grabbing;
     cursor: -webkit-grabbing;
 }
 
+/* Logo 區域的容器設置：水平排列、可滑動 */
 .logo-scroll-container {
-    user-select: none;
-    -webkit-user-select: none;
-    /* Safari */
-    -moz-user-select: none;
-    /* Firefox */
-    -ms-user-select: none;
-    /* IE/Edge */
+  display: flex;                           /* 使用 flex 排列橫向 */
+  overflow-x: auto;                        /* 允許橫向滾動 */
+  gap: 20px;                               /* 每個 logo 間距 */
+  padding: 0px 0;                         /* 上下內距 */
+  scroll-snap-type: x mandatory;          /* 啟用滾動吸附效果 */
+  -webkit-overflow-scrolling: touch;      /* iOS 裝置平滑滾動 */
 }
 
-.logo-scroll-container>div {
-    flex: 0 0 calc(25% - 18px);
-    /* 每排 4 個 */
-    text-align: center;
-    scroll-snap-align: start;
+/* 設定每個 logo 項目的寬度 */
+.logo-scroll-container > div {
+  flex: 0 0 150px;                         /* 固定寬度 150px，不會縮放 */
+  scroll-snap-align: start;               /* 滾動時對齊起始位置 */
+  text-align: left;                     /* 文字置中 */
 }
 
-.logo-scroll-container>div img {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    object-fit: cover;
-    border-radius: 12px;
-    background-color: white;
-    box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+/* 每個 logo 圖片的樣式設定 */
+.logo-scroll-container > div img {
+  width: 100%;                            /* 填滿父容器寬度 */
+  aspect-ratio: 1 / 1;                    /* 維持 1:1 的方形比例 */
+  object-fit: cover;                      /* 填滿但不變形，裁切多餘 */
+  border-radius: 5px;                    /* 圓角效果 */
+  background-color: white;                /* 背景白色，若圖片透明就會顯示白底 */
 }
 
-.logo-scroll-container>div p {
-    color: white;
-    margin-top: 6px;
-    font-size: 14px;
+/* logo 圖片下方的文字樣式 */
+.logo-scroll-container > div p {
+  margin-top: 6px;                        /* 與圖片的距離 */
+  font-size: 15px;                        /* 字體大小 */
+  color: white;                           /* 文字顏色白色 */
 }
+
+
 
 .intro h3{
   position: relative;
@@ -552,4 +522,39 @@ section {
   line-height: 1.6;
   color: #ffffff;
 }
+
+/* 我的專案 */
+.projects {
+  background: transparent;  /* 透明背景 */
+  box-shadow: none;         /* 移除陰影（如果有） */
+  border: none;
+  border-radius: 0;
+  margin-top: -25px;
+  margin-left: -20px;
+}
+
+
+/* 已按讚 */
+.companies {
+  background: transparent;  /* 透明背景 */
+  box-shadow: none;         /* 移除陰影（如果有） */
+  border: none;
+  border-radius: 0;
+  margin-top: -25px;
+  margin-left: -20px;
+}
+
+/* 已追蹤 */
+.technologies {
+  background: transparent;  /* 透明背景 */
+  box-shadow: none;         /* 移除陰影（如果有） */
+  border: none;
+  border-radius: 0;
+  margin-top: -25px;
+  margin-left: -20px;
+  overflow-x: auto;
+}
+
+
+
 </style>

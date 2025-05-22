@@ -1,0 +1,74 @@
+{
+  "profile": {
+    "img": "/photo-20706-u.jpg",
+    "user_name": "劉子源",
+    "user_info": "桃園中壢・30歲・應屆畢業生"
+  },
+  "about": {
+    "user_name": "劉子源",
+    "age": "30歲",
+    "sex": "男",
+    "education": "國立政治大學資訊科學學系博士",
+    "phone_number": "0800 000 000",
+    "mail": "zylu@ncu.edu.tw",
+    "address": "320桃園市中壢區中大路300號",
+    "language": "中文/英文"
+  },
+  "skills": [
+    "密碼學",
+    "資訊安全",
+    "隱私保護技術",
+    "網頁程式設計"
+  ],
+  "resume": {
+    "introduction": "我在大學與研究所期間專注於應用密碼學，尤其著重在搜尋加密、身分基礎加密與抗量子電腦攻擊的加密系統設計。這些背景構成了我後續研究與教學的核心方向。",
+    "education": [
+      {
+        "year_start": "2010",
+        "year_end": "2014",
+        "degree": "國立清華大學資訊工程學士",
+        "content": "我的主要研究重點是應用密碼學領域，尤其專注於搜尋加密和基於身分的加密等領域。此外，我還關注基於格的密碼系統，由於它們能夠抗重量學電腦攻擊，很可能成為下個世紀的關鍵密碼學。"
+      },
+      {
+        "year_start": "2015",
+        "year_end": "2018",
+        "degree": "國立清華大學資訊工程碩士",
+        "content": "我的主要研究重點是應用密碼學領域，尤其專注於搜尋加密和基於身分的加密等領域。此外，我還關注基於格的密碼系統，由於它們能夠抗重量學電腦攻擊，很可能成為下個世紀的關鍵密碼學。"
+      },
+      {
+        "year_start": "2019",
+        "year_end": "2024",
+        "degree": "國立政治大學資訊科學博士",
+        "content": "博士學位畢業於台灣國立政治大學資訊學系，師從 Raylin Tso 教授。此外，我還獲得了另一個博士學位，畢業於日本金澤大學自然科學技術研究生院，師從 Masahiro Mambo 教授（雙學位課程）。"
+      }
+    ],
+    "work_experience": [
+      {
+        "year_start": "2025",
+        "year_end": "現在",
+        "job_title": "國立中央大學資訊管理系助理教授",
+        "content": "在中央大學資訊管理系任職，教授網頁程式設計以及企業資料通訊和隱私課，同時帶領碩博士進行研究，通常辦公時間為周一和周三。"
+      }
+    ]
+  },
+  "projects": [
+    { "img": "/螢幕擷取畫面 2025-05-07 001948.png", "project_name": "流量動物視覺化分析" },
+    { "img": "/螢幕擷取畫面 2025-05-07 001948.png", "project_name": "食安機器人" },
+    { "img": "/螢幕擷取畫面 2025-05-07 001948.png", "project_name": "台北通徵服務" },
+    { "img": "/螢幕擷取畫面 2025-05-07 001948.png", "project_name": "開源" }
+  ],
+  "liked": [
+    { "img": "/ogimage.png", "company": "LINE" },
+    { "img": "/研華科技.jpg", "company": "研華科技" },
+    { "img": "/A-Social-Technology-Company-Meta-1.jpg", "company": "Meta" },
+    { "img": "/amazon.png", "company": "Amazon" }
+  ],
+  "following": [
+    { "img": "/1.png", "name": "張李治華" },
+    { "img": "/2.png", "name": "陳以錚" },
+    { "img": "/3.png", "name": "胡雅涵" },
+    { "img": "/4.png", "name": "曾筱珽" },
+    { "img": "/5.png", "name": "周恩頤" },
+    { "img": "/6.png", "name": "柯士文" }
+  ]
+}

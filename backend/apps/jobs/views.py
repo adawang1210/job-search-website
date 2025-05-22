@@ -1,19 +1,36 @@
+from django.shortcuts import render
 from rest_framework import viewsets
-from .models import Job
-from .serializers import JobSerializer
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+from .models import JobOpening
+from .serializers import JobOpeningSerializer
+# Create your views here.
 
-#這個要放在navbar
-class JobViewSet(viewsets.ModelViewSet):
-    queryset = Job.objects.all()
-    serializer_class = JobSerializer
+class JobOpeningViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    職位列表接口
+    
+    list:
+    獲取所有職位列表
+    
+    retrieve:
+    獲取單個職位詳情
+    """
+    queryset = JobOpening.objects.all()
+    serializer_class = JobOpeningSerializer
 
-    def get_queryset(self):
-        """
-        可以根據查詢參數過濾職位
-        例如：/api/jobs/?company=Google
-        """
-        queryset = Job.objects.all()
-        company = self.request.query_params.get('company', None)
-        if company:
-            queryset = queryset.filter(company__icontains=company)
-        return queryset 
+    @swagger_auto_schema(
+        operation_summary="獲取職位列表",
+        operation_description="返回所有可用的職位列表",
+        responses={200: JobOpeningSerializer(many=True)}
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="獲取職位詳情",
+        operation_description="根據 ID 返回單個職位的詳細信息",
+        responses={200: JobOpeningSerializer()}
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)

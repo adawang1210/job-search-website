@@ -13,8 +13,15 @@
           <div v-if="item.image" class="job-image-sidebar" :style="{ backgroundImage: 'url(' + item.image + ')' }">
           </div>
           <div class="content-container-sidebar" v-show="!collapsed">
-            <p class="title-sidebar">{{ item.title }}</p>
-            <p v-if="item.company" class="company-sidebar">{{ item.company }}</p>
+            <!-- 暫時用id判斷是job-rec-1 or company-null-11 -->
+            <div v-if="item.id.split('-')[0] === 'job'"><!-- 如果是job -->
+              <p class="title-sidebar">{{ item.title }}</p>
+              <p v-if="item.company" class="company-sidebar">{{ item.company }}</p>
+            </div>
+            <div v-else-if="item.id.split('-')[0] === 'company'"><!-- 如果是company -->
+              <p class="title-sidebar">{{ item.title }}</p>
+              <!-- <p v-if="item.company" class="company-sidebar">{{ item.company }}</p> -->
+            </div>
           </div>
           <button type="button" class="like-btn active" @click="handleUnlikeFromSidebar(item)" v-show="!collapsed">
             <font-awesome-icon :icon="['fas', 'heart']" class="heart-icon" />

@@ -290,21 +290,7 @@ export default defineComponent({
       dropdownOpenProfile: false,
       isModalOpen: false,     // 控制彈窗是否顯示
       company: {
-        "companys": [
-          {
             "isLiked": false
-          }
-        ]
-      },
-      jobs: {
-        "jobs": [
-          {
-            "isLiked": false
-          },
-          {
-            "isLiked": false
-          }
-        ]
       },
       jjobs: [],
       ccompany: null
@@ -415,6 +401,7 @@ export default defineComponent({
         item = list.find(i => i.id === itemId);
       }
       if (item) {
+        console.log(item.isLiked);
         item.isLiked = !item.isLiked;
 
         if (typeof this.updateLikedItemInSidebar === 'function') {

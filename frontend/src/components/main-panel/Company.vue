@@ -18,7 +18,7 @@
                 <span class="info-label">公司</span>
                 <h1 class="company-name">{{ ccompany.name }}</h1>
                 <p class="company-tags">{{ ccompany.bg_color_hex }}</p>
-                <p class="job-count">26個工作機會</p>
+                <p class="job-count">{{ jjobs.length }}個工作機會</p>
               </div>
             </div>
           </div>
@@ -27,7 +27,7 @@
           <button type="button" class="like-btn" :class="{ active: ccompany.isLiked }"
             @click.stop="handleLikeClick('company')">
             <n-icon class="heart-icon">
-              <component :is="toggleIconHeart(company)" />
+              <component :is="company.isLiked ? iconHeartSolid : iconHeartRegular" />
             </n-icon>
           </button>
           <div class="ellipsis-button">
@@ -101,7 +101,7 @@
               <button type="button" class="like-btn" :class="{ active: job.isLiked }"
                 @click.stop="handleLikeClick(job.id)">
                 <n-icon class="heart-icon">
-                  <component :is="toggleIconHeart(job)" />
+                  <component :is="job.isLiked ? iconHeartSolid : iconHeartRegular" />
                 </n-icon>
               </button>
               <button type="button" class="envelope-btn" :class="{ active: job.isLiked }"
@@ -188,13 +188,15 @@
             <div class="benefits-grid">
               <div class="benefit-tags">
                 <div class="benefit-group">
-                  <div class="benefit-tag" v-for="(tag, index) in ccompany.benefits[0].statutory" :key="'tag' + index">{{ tag.benefit }}
+                  <div class="benefit-tag" v-for="(tag, index) in ccompany.benefits[0].statutory" :key="'tag' + index">
+                    {{ tag.benefit }}
                   </div>
                 </div>
                 <h4>法定項目</h4>
 
                 <div class="benefit-group">
-                  <div class="benefit-tag" v-for="(law, index) in ccompany.benefits[0].others" :key="'legal' + index">{{ law.benefit }}</div>
+                  <div class="benefit-tag" v-for="(law, index) in ccompany.benefits[0].others" :key="'legal' + index">{{
+                    law.benefit }}</div>
                 </div>
                 <h4>其他福利</h4>
               </div>
@@ -287,6 +289,23 @@ export default defineComponent({
       dropdownOpenJob: false,
       dropdownOpenProfile: false,
       isModalOpen: false,     // 控制彈窗是否顯示
+      company: {
+        "companys": [
+          {
+            "isLiked": false
+          }
+        ]
+      },
+      jobs: {
+        "jobs": [
+          {
+            "isLiked": false
+          },
+          {
+            "isLiked": false
+          }
+        ]
+      },
       jjobs: [],
       ccompany: null
     };
@@ -316,16 +335,12 @@ export default defineComponent({
   },
   mounted() {
     Promise.all([
-      axios.get('/company.json'),
-      axios.get('/jobs.json'),  // 第二個 JSON
       axios.get('http://127.0.0.1:8000/api/jobs/'),
       axios.get('http://127.0.0.1:8000/api/companies/'),
 
     ])
-      .then(([companyRes, jobsRes, jjobsRes, ccompanyRes]) => {
-        this.company = companyRes.data.companys[0];
-        this.jobs = jobsRes.data.jobs;
-                this.ccompany = ccompanyRes.data[0];
+      .then(([jjobsRes, ccompanyRes]) => {
+        this.ccompany = ccompanyRes.data[0];
 
         this.jjobs = jjobsRes.data;
         //console.log(this.ccompany);
@@ -348,21 +363,13 @@ export default defineComponent({
   },
   methods: {
     // data format
-    // process job.created_at
-    formatDate(isoString) {
+    formatDate(isoString) {    // process job.created_at
       const date = new Date(isoString);
       return `${date.getMonth() + 1}/${date.getDate()}`
     },
     formatLocation(location) {
-      const loc = location.slice(0,3);
+      const loc = location.slice(0, 3);
       return loc
-    },
-    // toggle icon
-    toggleIconHeart(obj) {
-      return obj.isLiked ? Heart : HeartRegular
-    },
-    toggleIconEnvelope() {
-
     },
     // dropdown 顯示
     toggleDropdownJob() {
@@ -373,7 +380,7 @@ export default defineComponent({
     },
     selectPageSize(size) {
       this.pageSize = size
-      this.dropdownOpen = false
+      this.dropdownOpenProfile = false
     },
     // heart is clicked
     handleLikeClick(Id) {
@@ -398,8 +405,8 @@ export default defineComponent({
       }
     },
     handleTitleClick(job) {
-      console.log('Title clicked for job:', job.title, 'Company:', job.company)
-      alert(`Navigating to company page for: ${job.company}. Implement Vue Router push here.`)
+      console.log('Title clicked for job:', job.title, 'Company:', job.company.name)
+      alert(`Navigating to company page for: ${job.company.name}. Implement Vue Router push here.`)
     },
     //like 處理
     handleToggleLike(list, itemId) {

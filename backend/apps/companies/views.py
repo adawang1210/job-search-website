@@ -1,9 +1,12 @@
 from django.shortcuts import render
 from rest_framework import viewsets
-from .models import Company
-from .serializers import CompanySerializer
+from .models import Company, CompanyPhoto, CompanyMedia
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from .serializers import CompanySerializer, CompanyPhotoSerializer
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from .serializers import CompanyMediaSerializer
 
 # Create your views here.
 
@@ -27,3 +30,12 @@ class CompanyViewSet(viewsets.ReadOnlyModelViewSet):
     )
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
+    
+class CompanyMediaViewSet(viewsets.ModelViewSet):
+    queryset = CompanyMedia.objects.all()
+    serializer_class = CompanyMediaSerializer
+# class CompanyPhotoViewSet(APIView):
+#     def get(self, request):
+#         photos = CompanyPhoto.objects.all()
+#         serializer = CompanyPhotoSerializer(photos, many=True, context={'request': request})
+#         return Response(serializer.data)

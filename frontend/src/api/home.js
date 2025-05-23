@@ -12,7 +12,7 @@ export function getRecommendedJobs(params) {
 // 獲取熱門職缺
 export function getHotJobs(params) {
   return request({
-    url: '/api/jobs/hot',
+    url: '/api/jobs',
     method: 'get',
     params
   })

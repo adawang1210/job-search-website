@@ -87,7 +87,7 @@
                     <span class="spec">{{ job.experience_required }}</span>
                     <span class="spec">{{ job.education_required }}</span>
                     <!-- <span class="spec">{{ job.major_required }}</span> -->
-                    <span class="spec">{{ job.salary }}</span>
+                    <span class="spec">{{ formattedSalary(job.id) }}</span>
                   </div>
                   <div class="benefits">
                     <span v-for="(benefit, index) in job.benefits" :key="index" class="benefit-tag-job">
@@ -397,6 +397,17 @@ export default defineComponent({
       const loc = location.slice(0, 3);
       return loc
     },
+    formattedSalary(jobId) {
+      const job = this.jjobs.find(i => i.id === jobId)
+
+      if (job.salary_type === '月薪') {
+        return `月薪${job.salary_min}~${job.salary_max}元`;
+      } else if (job.salary_type === '時薪') {
+        return `時薪${job.salary_number}元`;
+      } else {
+        return '薪資未提供';
+      }
+    },
     // dropdown 顯示
     toggleDropdownJob() {
       this.dropdownOpenJob = !this.dropdownOpenJob
@@ -677,7 +688,7 @@ export default defineComponent({
   display: flex;
   width: 100%;
   flex-direction: column;
-  padding: 40px 36px 28px 28px;
+  padding: 48px 28px 40px;
   background: transparent;
 }
 
@@ -748,14 +759,14 @@ export default defineComponent({
   font-family: 'Noto Sans', sans-serif;
   font-size: 32px;
   font-weight: 600;
-  margin: 80px 0 30px;
+  margin-bottom: 16px;
 }
 
 /* job listings */
 .job-listings {
   margin: 0;
   padding: 28px;
-  background: transparent;
+  background-color: rgba(0, 0, 0, 0.3);
 }
 
 .listings-header {
@@ -798,6 +809,7 @@ export default defineComponent({
 }
 
 .date-block {
+  margin-top: 3px;
   width: 40px;
 }
 
@@ -829,7 +841,7 @@ export default defineComponent({
 }
 
 .details {
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .company-info-job {
@@ -853,7 +865,7 @@ export default defineComponent({
 .job-specs {
   display: flex;
   align-items: center;
-  margin-top: 3px;
+  margin-top: 10px;
   gap: 24px;
   font-family: Noto Sans, -apple-system, Roboto, Helvetica, sans-serif;
   color: #f5f5f5;
@@ -861,9 +873,13 @@ export default defineComponent({
   font-weight: 600;
 }
 
+.spec {
+  font-weight: bold;
+}
+
 .benefits {
   display: flex;
-  margin: 8px 0;
+  margin: 6px 0;
   flex-wrap: wrap;
   gap: 12px;
 }
@@ -891,7 +907,7 @@ export default defineComponent({
 .company-information {
   margin: 0;
   padding: 28px;
-  background: transparent;
+  background-color: rgba(0, 0, 0, 0.3);
 }
 
 .cards {

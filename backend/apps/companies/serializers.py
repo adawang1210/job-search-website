@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from .models import CompanyPhoto
 from .models import Company, CompanyBenefit, StatutoryBenefit, OtherBenefit, Contact, CompanyWebsite, CompanyMedia, CompanyPhoto 
 
 class StatutoryBenefitSerializer(serializers.ModelSerializer):
@@ -32,18 +33,19 @@ class CompanyWebsiteSerializer(serializers.ModelSerializer):
 class CompanyPhotoSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompanyPhoto
-        fields = ['image']
-
+        fields = ['id', 'photo']
+    
 class CompanyMediaSerializer(serializers.ModelSerializer):
     photos = CompanyPhotoSerializer(many=True, read_only=True)
     class Meta:
         model = CompanyMedia
-        fields = ['logo']
+        fields = ['id', 'logo', 'photos']
 
 class CompanySerializer(serializers.ModelSerializer):
     benefits = CompanyBenefitSerializer(many=True, read_only=True)
     contacts = CompanyContactSerializer(many=True, read_only=True)
     websites = CompanyWebsiteSerializer(many=True, read_only=True)
+    media = CompanyMediaSerializer(read_only=True)
     class Meta:
         model = Company
         fields = '__all__'

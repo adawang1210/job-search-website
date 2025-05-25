@@ -3,27 +3,21 @@
   <div class="layout">
     <Navbar />
     <div class="content">
-      <LeftSidebar
-        :width="leftSidebarWidth"
-        :collapsed="isSidebarCollapsed"
-        :liked-items="likedItemsForLeftSidebar"
+      <LeftSidebar :width="leftSidebarWidth" :collapsed="isSidebarCollapsed" :liked-items="likedItemsForLeftSidebar"
         :viewed-items="viewedItemsForLeftSidebar" @update-width="updateLeftSidebarWidth"
-        @toggle-collapse="toggleCollapse"
-        @remove-item-from-liked-list="handleRemoveItemFromLikedList"
-      />
+        @toggle-collapse="toggleCollapse" @remove-item-from-liked-list="handleRemoveItemFromLikedList" />
 
       <div class="main-panel">
-        <slot></slot>
+        <div class="main-panel-slot-wrapper">
+          <slot></slot>
+        </div>
+        <SiteFooter />
       </div>
 
       <div v-if="isRightSidebarVisible" class="right-sidebar-wrapper" :style="{ width: rightSidebarWidth + 'px' }">
-        <RightSidebar
-          :is-visible="isRightSidebarVisible"
-          :job-data="selectedJobForRightSidebar"
-          :current-actual-width="rightSidebarWidth"
-          @close="closeRightSidebar"
-          @update-width="updateRightSidebarWidth"
-        />
+        <RightSidebar :is-visible="isRightSidebarVisible" :job-data="selectedJobForRightSidebar"
+          :current-actual-width="rightSidebarWidth" @close="closeRightSidebar"
+          @update-width="updateRightSidebarWidth" />
       </div>
     </div>
   </div>
@@ -33,6 +27,7 @@
 import Navbar from './Navbar.vue'
 import LeftSidebar from './LeftSidebar.vue'
 import RightSidebar from './RightSidebar.vue'
+import SiteFooter from './Footer.vue';
 // import eventBus from '/src/eventBus.js';
 
 export default {
@@ -41,6 +36,7 @@ export default {
     Navbar,
     LeftSidebar,
     RightSidebar,
+    SiteFooter
   },
   provide() {
     return {
@@ -74,10 +70,13 @@ export default {
   },
   watch: {
     likedItemsForLeftSidebar: {
-      handler(newValue) {
+      handler(newValue, oldValue) {
+        console.log('[BaseLayout Watch] likedItemsForLeftSidebar changed.');
+        console.log('New value:', JSON.parse(JSON.stringify(newValue)));
+        // console.log('Old value:', JSON.parse(JSON.stringify(oldValue))); // 可選
         localStorage.setItem('likedJobItems', JSON.stringify(newValue));
       },
-      deep: true // 深度監聽，因為是物件陣列
+      deep: true
     },
     viewedItemsForLeftSidebar: {
       handler(newValue) {
@@ -115,19 +114,29 @@ export default {
       this.selectedJobForRightSidebar = null;
     },
     handleUpdateLikedItemInSidebar(jobData, isLiked) {
+      console.log('[BaseLayout] handleUpdateLikedItemInSidebar called with jobData:', JSON.parse(JSON.stringify(jobData)), 'isLiked:', isLiked);
+      if (!jobData || typeof jobData.id === 'undefined') {
+        console.error('[BaseLayout] Received jobData with undefined id:', JSON.parse(JSON.stringify(jobData)));
+        return;
+      }
+
       if (isLiked) {
         const existingItem = this.likedItemsForLeftSidebar.find(item => item.id === jobData.id);
+        console.log('[BaseLayout] Is item already in liked list (by id ' + jobData.id + ')?', existingItem ? JSON.parse(JSON.stringify(existingItem)) : 'No');
         if (!existingItem) {
-          this.likedItemsForLeftSidebar.unshift({ ...jobData });
+          this.likedItemsForLeftSidebar.unshift({ ...jobData }); // 確保 jobData 包含所有必要欄位
+          console.log('[BaseLayout] Item added to likedItemsForLeftSidebar. New list:', JSON.parse(JSON.stringify(this.likedItemsForLeftSidebar)));
+        } else {
+          console.log('[BaseLayout] Item already in liked list. Not adding again.');
+          // 如果項目已存在，確保其 isLiked 狀態與 jobData 一致 (如果需要)
+          // existingItem.isLiked = true; // 或其他需要的屬性更新
         }
         this.viewedItemsForLeftSidebar = this.viewedItemsForLeftSidebar.filter(item => item.id !== jobData.id);
       } else {
+        const initialLength = this.likedItemsForLeftSidebar.length;
         this.likedItemsForLeftSidebar = this.likedItemsForLeftSidebar.filter(item => item.id !== jobData.id);
-        // 注意：如果您希望取消收藏後自動加入到瀏覽列表，
-        // 您可能需要調用 this.handleAddViewedItemToSidebar(jobData) (並確保 jobData 是完整的物件)
-        // 但目前的邏輯是瀏覽列表僅通過點擊卡片來添加。
+        console.log(`[BaseLayout] Item with id ${jobData.id} removed (or attempted). Liked list count changed from ${initialLength} to ${this.likedItemsForLeftSidebar.length}. New list:`, JSON.parse(JSON.stringify(this.likedItemsForLeftSidebar)));
       }
-      // localStorage 的更新將由 watcher 自動處理
     },
     handleRemoveItemFromLikedList(itemId) {
       // 先找到要移除的項目，以便之後可能將其加入瀏覽列表
@@ -162,7 +171,6 @@ export default {
 </script>
 
 <style scoped>
-/* Styles remain the same */
 .layout {
   display: flex;
   flex-direction: column;
@@ -181,23 +189,38 @@ export default {
   gap: 8px;
   box-sizing: border-box;
   overflow: hidden;
+  min-height: 0;
+  /* Flexbox 修正，防止內容溢出時 flex item 計算錯誤 */
 }
 
 .main-panel {
   flex-grow: 1;
+  /* main-panel 佔據 content 中除了 sidebar 的剩餘空間 */
   min-width: 0;
+  /* 防止內容過多時撐開佈局 */
+
+  display: flex;
+  /* 使 main-panel 成為 flex 容器 */
+  flex-direction: column;
+  /* 使 slot-wrapper 和 footer 垂直排列 */
+
   overflow-y: auto;
+  /* 關鍵：main-panel 自身垂直滾動 */
   border-radius: 10px;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease;
+
 }
 
 .main-panel::-webkit-scrollbar {
   display: none;
 }
 
+
 .right-sidebar-wrapper {
   flex-shrink: 0;
   transition: width 0.3s ease;
   height: 100%;
+  /* overflow-y: auto; */
+  /* 如果 RightSidebar 也需要獨立滾動 */
 }
 </style>

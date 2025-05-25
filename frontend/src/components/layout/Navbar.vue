@@ -1,7 +1,7 @@
 <template>
   <n-layout-header class="navbar">
     <div class="overlay" v-show="showPositionPopup || showRegionPopup" @click="closeAllPopups"></div>
-    
+
     <router-link to="/" class="home-btn">
       <n-icon size="20">
         <home-icon />
@@ -11,14 +11,8 @@
     <div class="search">
 
       <!-- 職務彈出視窗-->
-      <n-popover
-        trigger="click"
-        :show="showPositionPopup"
-        @update:show="(show) => showPositionPopup = show"
-        placement="bottom"
-        :style="{ width: '500px' }"
-        :raw="true"
-      >
+      <n-popover trigger="click" :show="showPositionPopup" @update:show="(show) => showPositionPopup = show"
+        placement="bottom" :style="{ width: '500px' }" :raw="true">
         <template #trigger>
           <n-button quaternary class="position-btn">
             職務
@@ -49,14 +43,8 @@
 
       <div class="divider"> | </div>
       <!-- 地區彈出視窗-->
-      <n-popover
-        trigger="click"
-        :show="showRegionPopup"
-        @update:show="(show) => showRegionPopup = show"
-        placement="bottom"
-        :style="{ width: '500px' }"
-        :raw="true"
-      >
+      <n-popover trigger="click" :show="showRegionPopup" @update:show="(show) => showRegionPopup = show"
+        placement="bottom" :style="{ width: '500px' }" :raw="true">
         <template #trigger>
           <n-button quaternary class="region-btn">
             地區
@@ -86,12 +74,8 @@
       </n-popover>
 
       <div class="divider">|</div>
-      
-      <n-input
-        v-model:value="searchQuery"
-        placeholder="工作職稱、公司名稱"
-        class="search-input"
-      >
+
+      <n-input v-model:value="searchQuery" placeholder="工作職稱、公司名稱" @keydown.enter.prevent="handleSearch">
         <template #suffix>
           <n-button quaternary @click="handleSearch">
             <template #icon>
@@ -221,18 +205,44 @@ export default defineComponent({
     },
     confirmPosition() {
       this.showPositionPopup = false;
-      // 確認職務後可以選擇立即搜尋，或等用戶按 Enter/搜尋按鈕
-      // this.performSearch();
+      // 可以在這裡考慮是否自動觸發搜尋，如果 searchQuery 有值
+      if (this.searchQuery.trim() !== '') this.handleSearch();
     },
     confirmRegion() {
       this.showRegionPopup = false;
-      // 確認地區後可以選擇立即搜尋，或等用戶按 Enter/搜尋按鈕
-      // this.performSearch();
+      // 同上
+      if (this.searchQuery.trim() !== '') this.handleSearch();
     },
     handleSearch() {
-      console.log('Search query:', this.searchQuery);
-      console.log('Selected positions:', this.selectedPositions);
-      console.log('Selected regions:', this.selectedRegions);
+      const query = {};
+
+      if (this.searchQuery && this.searchQuery.trim() !== '') {
+        query.q = this.searchQuery.trim();
+      }
+      if (this.selectedPositions && this.selectedPositions.length > 0) {
+        query.positions = this.selectedPositions.join(','); // 將陣列轉為逗號分隔的字串
+      }
+      if (this.selectedRegions && this.selectedRegions.length > 0) {
+        query.regions = this.selectedRegions.join(','); // 將陣列轉為逗號分隔的字串
+      }
+
+      // 確保 $router 存在
+      if (this.$router) {
+        if (Object.keys(query).length > 0) {
+          this.$router.push({
+            name: 'SearchResult', // 確保路由名稱正確
+            query: query
+          });
+        } else {
+          if (this.$route.name !== 'SearchResult') {
+             this.$router.push({ name: 'SearchResult' });
+          }
+        }
+      } else {
+        console.error("Vue Router instance is not available.");
+      }
+
+      this.closeAllPopups();
     }
   }
 })
@@ -277,7 +287,7 @@ export default defineComponent({
   min-width: 0;
   min-width: 200px;
   max-width: 500px;
-  margin-bottom: 8px ;
+  margin-bottom: 8px;
   padding: 4px 8px;
   gap: 8px;
   border-radius: 30px;
@@ -431,6 +441,7 @@ export default defineComponent({
 }
 
 @media (max-width: 480px) {
+
   .position-btn,
   .region-btn {
     display: none;

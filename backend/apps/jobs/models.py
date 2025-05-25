@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings 
 from apps.companies.models import Company  
 
 class JobOpening(models.Model):
@@ -17,6 +18,12 @@ class JobOpening(models.Model):
     description = models.TextField()  # 職位描述
     created_at = models.DateTimeField(auto_now_add=True)  # 創建時間
     # posting_date = models.DateField()  # 職位發布日期
+
+    liked_by = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,  # 指向 Django 設定中定義的使用者模型
+        related_name='liked_job_openings', # 讓您可以從 User 模型反向查詢 user.liked_job_openings.all()
+        blank=True # 表示此欄位可以為空 (也就是一個職缺一開始沒有被任何人收藏)
+    )
 
     def __str__(self):
         return self.title

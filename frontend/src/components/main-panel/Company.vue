@@ -227,7 +227,7 @@
         <div v-if="showApplyModal" class="modal-overlay" @click="closeModal">
           <div class="modal" @click.stop>
             <div class="modal-header">
-              <h2 class="modal-title">編輯 {{ currentItem }}</h2>
+              <h2 class="modal-title">{{ currentItem.title }}</h2>
             </div>
 
             <form @submit.prevent>
@@ -323,7 +323,7 @@ export default defineComponent({
       pageSize: 10,
       dropdownOpenJob: false,
       dropdownOpenProfile: false,
-      profileOptions: ['分享', '檢舉', '忘了'],
+      profileOptions: ['分享', '檢舉'],
       showApplyModal: false,
       showShare: false,
       showReport: false,
@@ -481,8 +481,8 @@ export default defineComponent({
         console.warn(`找不到 id 為 ${itemId} 的項目`);
       }
     },
-    openModal(itemName) {
-      this.currentItem = itemName;
+    openModal(id) {
+      this.currentItem = this.paginatedJobs.find(job => job.id === id);
       this.showApplyModal = true;
       // 重置表單
       this.formData = {
@@ -1055,78 +1055,78 @@ div h3 {
 
 /* Modal 樣式 */
 .modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.8);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  backdrop-filter: blur(10px);
+  position: fixed; /* 固定定位，覆蓋整個視窗 */
+  top: 0; /* 從畫面最上方開始 */
+  left: 0; /* 從畫面最左側開始 */
+  width: 100%; /* 寬度為整個視窗寬 */
+  height: 100%; /* 高度為整個視窗高 */
+  background-color: rgba(0, 0, 0, 0.8); /* 背景為半透明黑色 */
+  display: flex; /* 使用 Flex 排版，置中內容 */
+  justify-content: center; /* 水平置中 */
+  align-items: center; /* 垂直置中 */
+  z-index: 1000; /* 疊層順序，確保在最上層 */
+  backdrop-filter: blur(10px); /* 模糊背景效果 */
 }
 
 .modal {
-  background: linear-gradient(135deg, #191414, #2a2a2a);
-  border-radius: 20px;
-  width: 90%;
-  max-width: 500px;
-  padding: 30px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, #191414, #2a2a2a); /* 漸層背景 */
+  border-radius: 5px; /* 圓角邊框 */
+  width: 90%; /* 寬度為螢幕的 90% */
+  max-width: 500px; /* 最大寬度限制為 500px */
+  padding: 30px; /* 內距為 30px */
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); /* 投影效果 */
+  position: relative; /* 相對定位，可用於內部絕對定位元素 */
 }
 
 .modal-header {
-  margin-bottom: 30px;
-  text-align: center;
+  margin-bottom: 30px; /* 底部間距 */
+  text-align: center; /* 文字置中對齊 */
 }
 
 .modal-title {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #1db954;
-  margin-bottom: 10px;
+  font-size: 18px;           /* 文字大小 */
+  font-weight: bold;         /* 字體粗體 */
+  color: #D2691E; /* 橘色標題 */
+  margin-bottom: 10px; /* 標題與下方元素的間距 */
 }
 
+
+/* 表單區塊 */
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 20px; /* 元素間的底部間距 */
 }
 
 .form-label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: #b3b3b3;
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  display: block; /* 佔滿整行 */
+  margin-bottom: 8px; /* 與輸入欄的間距 */
+  font-weight: bold; /* 字體粗體 */
+  color: #ffffff; /* 白色文字 */
+  font-size: 16px; /* 標籤字體大小 */
+  text-transform: uppercase; /* 字母大寫 */
+  letter-spacing: 1px; /* 字元間距 */
 }
 
 .form-input {
-  width: 100%;
-  padding: 15px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  background-color: rgba(255, 255, 255, 0.05);
-  color: white;
-  font-size: 1rem;
-  transition: all 0.3s ease;
+  width: 100%; /* 寬度佔滿父容器 */
+  padding: 15px; /* 內距 */
+  border: 2px solid rgba(255, 255, 255, 0.1); /* 淡白色邊框 */
+  border-radius: 5px; /* 圓角 */
+  background-color: rgba(255, 255, 255, 0.05); /* 半透明白背景 */
+  color: white; /* 輸入文字為白色 */
+  font-size: 1rem; /* 標準字體大小 */
+  transition: all 0.3s ease; /* 動畫過渡效果 */
 }
 
 .form-input:focus {
-  outline: none;
-  border-color: #1db954;
-  background-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 0 3px rgba(29, 185, 84, 0.2);
+  outline: none; /* 移除瀏覽器預設外框 */
+  border-color: #D2691E; /* 聚焦時變成橘色邊框 */
+  background-color: rgba(255, 255, 255, 0.1); /* 背景稍微變亮 */
 }
 
 .form-textarea {
-  resize: vertical;
-  min-height: 80px;
-  font-family: inherit;
+  resize: vertical; /* 垂直方向可調整大小 */
+  min-height: 80px; /* 最小高度為 80px */
+  font-family: inherit; /* 使用繼承字體 */
 }
 
 .file-upload-container {
@@ -1137,10 +1137,10 @@ div h3 {
 .file-upload-btn {
   width: 100%;
   padding: 15px;
-  border: 2px dashed rgba(29, 185, 84, 0.5);
+  border: 2px dashed #D2691E;
   border-radius: 10px;
-  background-color: rgba(29, 185, 84, 0.1);
-  color: #1db954;
+  background-color: rgba(244, 188, 103, 0.1);
+  color: #D2691E;
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
@@ -1148,8 +1148,8 @@ div h3 {
 }
 
 .file-upload-btn:hover {
-  border-color: #1db954;
-  background-color: rgba(29, 185, 84, 0.2);
+  border-color: #D2691E;
+  background-color: rgba(244, 188, 103, 0.4);
 }
 
 .file-input {
@@ -1168,14 +1168,14 @@ div h3 {
 }
 /* btns for modal */
 .btn {
-  padding: 12px 30px;
+  padding: 4px 20px;
   border: none;
   border-radius: 25px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: 100px;
+  min-width: 50px;
 }
 
 .btn-cancel {
@@ -1191,14 +1191,14 @@ div h3 {
 }
 
 .btn-submit {
-  background: linear-gradient(135deg, #1db954, #1ed760);
+  background: linear-gradient(135deg, #D2691E, #D2691E);
   color: white;
-  box-shadow: 0 4px 15px rgba(29, 185, 84, 0.3);
+  box-shadow: 0 4px 10px rgba(244, 188, 103, 0.3);
 }
 
 .btn-submit:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(29, 185, 84, 0.4);
+  box-shadow: 0 6px 10px rgba(244, 188, 103, 0.4);
 }
 
 .btn-submit:active {

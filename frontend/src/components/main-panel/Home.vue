@@ -86,15 +86,7 @@
 
 <script>
 import eventBus from '/src/eventBus.js';
-
-import {
-  getRecommendedJobs,
-  getHotJobs,
-  getLatestJobs,
-  getTopCompanies,
-  likeJob,
-  unlikeJob,
-} from '@/api/home.js';
+import {  getJobs, getGreatCompanies, likeJob, unlikeJob, getJobDetail } from '@/api/home.js';
 
 export default {
   name: 'Home',
@@ -110,265 +102,267 @@ export default {
           jobs: [],
           isLoading: false,
           error: null,
-          apiService: getRecommendedJobs, // 對應 home.js 中的函數
-          apiParams: { limit: 10 }       // 傳遞給 API 的參數 (可選)
         },
         {
           title: '熱門職缺',
           jobs: [],
           isLoading: false,
           error: null,
-          apiService: getHotJobs,
-          apiParams: { limit: 10, sort: 'popularity' } // 假設 API 支持這些參數
         },
         {
           title: '最新職缺',
           jobs: [],
           isLoading: false,
           error: null,
-          apiService: getLatestJobs,
-          apiParams: { limit: 10, sort: 'newest' }
         },
       ],
+      allApiJobs: [], // 用於存儲從 API 獲取並轉換格式後的所有職缺
       companies: [],
-      favoriteJobs: [
-        { id: 'fav_dentist', name: '最愛牙醫師', image: '/favorite-bg-1.jpg', icon: '/favorite-icon-1.png', description: '雅德斯牙醫診所、蒔美牙醫集團和更多' },
-        { id: 'fav_designer', name: '最愛室內設計師', image: '/favorite-bg-2.jpg', icon: '/favorite-icon-2.png', description: '雅和室內設計、拾間室內裝修設計有限公司和更多' },
-        { id: 'fav_barista', name: '最愛咖啡師', image: '/favorite-bg-3.jpeg', icon: '/favorite-icon-3.png', description: '咖碼股份有限公司、路易莎職人咖啡股份有限公司和更多' },
-        { id: 'fav_baker', name: '最愛烘焙技師', image: '/favorite-bg-4.jpg', icon: '/favorite-icon-4.png', description: '歐立食品股份有限公司、亞尼克菓子工房股份有限公司和更多' },
+      favoriteJobs: [ 
+        { id: 'fav_dentist', name: '最愛牙醫師', image: '/favorite-bg-1.jpg', icon: '/favorite-icon-1.png', description: '雅德斯牙醫診所、蒔美牙醫集團和更多', isLiked: false },
+        { id: 'fav_designer', name: '最愛室內設計師', image: '/favorite-bg-2.jpg', icon: '/favorite-icon-2.png', description: '雅和室內設計、拾間室內裝修設計有限公司和更多', isLiked: false },
+        { id: 'fav_barista', name: '最愛咖啡師', image: '/favorite-bg-3.jpeg', icon: '/favorite-icon-3.png', description: '咖碼股份有限公司、路易莎職人咖啡股份有限公司和更多', isLiked: false },
+        { id: 'fav_baker', name: '最愛烘焙技師', image: '/favorite-bg-4.jpg', icon: '/favorite-icon-4.png', description: '歐立食品股份有限公司、亞尼克菓子工房股份有限公司和更多', isLiked: false },
+        { id: 'fav_engineer', name: '最愛半導體工程師', image: '/favorite-bg-5.jpg', icon: '/favorite-icon-5.png', description: 'nvidia台灣分公司、台積電和更多', isLiked: false },
+        { id: 'fav_staff', name: '最愛門市人員', image: '/favorite-bg-6.jpg', icon: '/favorite-icon-6.png', description: '宜得利家居股份有限公司、無印良品和更多', isLiked: false }
       ],
       isLoadingCompanies: false,
       errorCompanies: null,
     };
   },
-  mounted() {
+  async mounted() {
+    this.loadInitialData(); // 2. 組件掛載時獲取數據
+
     eventBus.on('unlike-item-in-home-via-sidebar', this.handleUnlikeFromSidebar);
     eventBus.on('like-item-in-home-via-sidebar', this.handleLikeFromSidebar);
-    this.fetchAllData();
   },
   beforeUnmount() {
     eventBus.off('unlike-item-in-home-via-sidebar', this.handleUnlikeFromSidebar);
     eventBus.off('like-item-in-home-via-sidebar', this.handleLikeFromSidebar);
   },
   methods: {
-    async fetchAllData() {
-      const promises = [];
-
-      // 獲取各個職缺區塊的資料
+    async loadInitialData() {
+      // 同時開始加載職缺和公司數據
       this.sections.forEach(section => {
-        promises.push(this.fetchSectionData(section));
+        section.isLoading = true;
+        section.error = null;
       });
-
-      // 獲取優質企業資料
-      promises.push(this.fetchCompaniesFromAPI());
-
-      console.log('Starting to fetch all initial data for Home.vue...');
-      try {
-        await Promise.all(promises);
-        console.log('All initial data for Home.vue has been loaded (or attempted).');
-      } catch (error) {
-        // 單個 fetch 方法內部已處理各自的錯誤狀態用於UI。
-        // 此處的 catch 主要用於記錄 Promise.all 本身的失敗或未被捕獲的全局性錯誤。
-        console.error('One or more initial data fetches failed globally for Home.vue:', error);
-      }
-    },
-
-    async fetchSectionData(section) {
-      if (!section || typeof section.apiService !== 'function') {
-        console.error('無效的 section 或 apiService 未定義:', section);
-        if (section) section.error = '無法載入此區塊的設定。';
-        return;
-      }
-      section.isLoading = true;
-      section.error = null;
-      try {
-        const jobsData = await section.apiService(section.apiParams || {});
-        console.log(`Data received in Home.vue for section [${section.title}]:`, JSON.parse(JSON.stringify(jobsData))); // 使用 JSON.parse(JSON.stringify()) 來避免打印 Proxy 物件
-        if (Array.isArray(jobsData) && jobsData.length > 0) {
-          console.log(`First job data for [${section.title}]:`, JSON.parse(JSON.stringify(jobsData[0])));
-        }
-        section.jobs = jobsData;
-      } catch (err) {
-        console.error(`Error fetching ${section.title} for Home.vue:`, err);
-        section.error = `無法載入 ${section.title} 資料，請稍後再試。`;
-        section.jobs = []; // 出錯時確保 jobs 是空陣列
-      } finally {
-        section.isLoading = false;
-      }
-    },
-
-    async fetchCompaniesFromAPI() {
       this.isLoadingCompanies = true;
       this.errorCompanies = null;
+
       try {
-        this.companies = await getTopCompanies(); // home.js 返回已轉換的數據
-      } catch (err) {
-        console.error('Error fetching top companies for Home.vue:', err);
-        this.errorCompanies = '無法載入優質企業資料。';
-        this.companies = [];
+        // 使用 Promise.all 並行獲取數據
+        const [jobsData, companiesData] = await Promise.all([
+          getJobs(),
+          getGreatCompanies(),
+        ]);
+
+        // 3. 處理職缺數據
+        const rawJobs = jobsData.results || jobsData || [];
+        this.allApiJobs = rawJobs.map(job => ({
+          id: job.id,
+          title: job.title, 
+          image: job.company_logo || 'default_job_image.png',
+          company: job.company && job.company.name ? job.company.name : '未知公司',
+          salary: job.salary_max ? `$${job.salary_max}` : '面議', 
+          isLiked: job.is_liked_by_user || false, // 初始收藏狀態
+          originalData: job, // 保留原始API數據，方便後續使用
+        }));
+        this.distributeJobsRandomly(); // 將獲取的職缺隨機分配到各區塊
+
+        // 4. 處理企業數據
+        const rawCompanies = companiesData.results || companiesData || [];
+        this.companies = rawCompanies.map(company => ({
+          id: company.id,
+          name: company.name, 
+          image: company.media && company.media.logo ? company.media.logo : 'default_company_logo_path.png',
+          originalData: company,
+        }));
+
+      } catch (error) {
+        console.error('Error fetching initial data:', error);
+          let jobErrorOccurred = false;
+          let companyErrorOccurred = false;
+        if (error.message && error.message.toLowerCase().includes('network error')) {
+            // 網路錯誤可能影響所有請求
+            jobErrorOccurred = true;
+            companyErrorOccurred = true;
+        } else if (error.config && error.config.url) { // 如果錯誤對象包含請求配置
+            if (error.config.url.includes('/api/jobs')) jobErrorOccurred = true;
+            if (error.config.url.includes('/api/companies')) companyErrorOccurred = true;
+        } else if (error.isAxiosError && error.request && error.request.responseURL) {
+            // 另一種判斷方式
+            if (error.request.responseURL.includes('/api/jobs')) jobErrorOccurred = true;
+            if (error.request.responseURL.includes('/api/companies')) companyErrorOccurred = true;
+        }
+        else { // 如果無法判斷，假設兩個都可能出錯或是一個通用錯誤
+            jobErrorOccurred = true;
+            companyErrorOccurred = true;
+        }
+
+        if (jobErrorOccurred) {
+          this.sections.forEach(section => {
+            section.error = '無法載入職缺資訊，請稍後再試。';
+          });
+        }
+        if (companyErrorOccurred) {
+          this.errorCompanies = '無法載入企業資訊，請稍後再試。';
+        }
+        
+        // 如果沒有特定錯誤，但依然進入catch，顯示通用錯誤
+        if (!this.sections.some(s => s.error) && !this.errorCompanies && (jobErrorOccurred || companyErrorOccurred) ) {
+            const generalErrorMsg = '資料載入失敗，請檢查網路連線或稍後重試。';
+            this.sections.forEach(section => {
+                if(!section.error) section.error = generalErrorMsg;
+            });
+            if(!this.errorCompanies) this.errorCompanies = generalErrorMsg;
+        }
+
       } finally {
+        this.sections.forEach(section => section.isLoading = false);
         this.isLoadingCompanies = false;
       }
     },
 
-    async toggleLike(sectionTitle, jobIndex) {
+    distributeJobsRandomly() {
+      if (!this.allApiJobs.length) return;
 
-      // --- 步驟 1: 檢查登入狀態 ---
-      if (!this.isUserLoggedIn) {
-        // --- 步驟 2: 提示使用者並可選擇導向 ---
-        alert('您需要先登入才能收藏職缺！'); // 或使用更美觀的提示框，例如 Vuetify 的 v-snackbar 或 Element Plus 的 ElMessage
+      let availableJobs = [...this.allApiJobs]; // 創建一個可修改的副本
 
-        // 可選：導向到登入頁面
-        // 確保您的 Vue Router 中有設定名為 'Login' 或路徑為 '/login' 的路由
-        if (this.$router) { // 檢查 $router 是否可用
-          this.$router.push({ path: '/login' }); // 或者 this.$router.push({ name: 'Login' });
-        } else {
-          console.warn('Vue Router instance ($router) is not available. Cannot redirect to login.');
-        }
-        return; // 停止後續的收藏操作
+      // 打亂職缺順序
+      for (let i = availableJobs.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [availableJobs[i], availableJobs[j]] = [availableJobs[j], availableJobs[i]];
       }
-      // --- 如果已登入，則執行原有的收藏邏輯 ---
-      const section = this.sections.find(s => s.title === sectionTitle);
-      let jobToUpdate = null;
+      
+      // 為每個區塊分配職缺，盡量不重複，且數量可自訂
+      const jobsPerSection = 10; // 您希望每個區塊顯示的職缺數量
 
-      if (section && section.jobs && section.jobs[jobIndex]) {
-        jobToUpdate = section.jobs[jobIndex];
-      }
-
-      if (!jobToUpdate) {
-        console.error('Home.vue: Job not found for toggleLike', sectionTitle, jobIndex);
-        return;
-      }
-      const originalLikedStatus = jobToUpdate.isLiked;
-      const newLikedStatus = !jobToUpdate.isLiked;
-      jobToUpdate.isLiked = newLikedStatus; // 樂觀更新
-      try {
-        if (newLikedStatus) {
-          await likeJob(jobToUpdate.id); // 使用 home.js 中的 likeJob
-          console.log(`Job ID ${jobToUpdate.id} liked successfully via API.`);
-        } else {
-          await unlikeJob(jobToUpdate.id);
-          console.log(`Job ID ${jobToUpdate.id} unliked successfully via API.`);
-        }
-
-        if (typeof this.updateLikedItemInSidebar === 'function') {
-          this.updateLikedItemInSidebar(jobToUpdate, newLikedStatus);
-        } else {
-          console.error('updateLikedItemInSidebar is not available from BaseLayout');
-        }
-        this.syncLikeStatusAcrossSections(jobToUpdate.id, newLikedStatus);
-      } catch (error) {
-        console.error(`Error toggling like status for job ID ${jobToUpdate.id} via API:`, error);
-        // API 失敗，恢復 UI 狀態
-        jobToUpdate.isLiked = originalLikedStatus;
-        
-        // 這裡可以根據 API 返回的錯誤狀態碼做更細緻的處理
-        // 例如，如果錯誤是 401/403，即使前端檢查已登入，也可能表示 token 失效，同樣提示登入
-        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-          alert('您的登入已失效或無權限，請重新登入後再嘗試收藏。');
-          if (this.$router) {
-            this.$router.push({ path: '/login' });
-          }
-        } else {
-          alert(`更新 "${jobToUpdate.title}" 的收藏狀態失敗，請稍後再試。`);
-        }
-      }
+      this.sections.forEach(section => {
+        section.jobs = []; // 清空現有職缺
+        // 從打亂後的職缺中取N個，如果職缺不夠，則取剩餘所有
+        const jobsForThisSection = availableJobs.splice(0, Math.min(jobsPerSection, availableJobs.length));
+        section.jobs = jobsForThisSection;
+      });
     },
 
-    // 新增輔助方法，用於同步收藏狀態 (如果同一個職缺可能出現在多個列表)
+    async toggleLike(sectionTitle, jobIndex) {
+      const section = this.sections.find(s => s.title === sectionTitle);
+      if (!section) return;
+
+      const job = section.jobs[jobIndex];
+      if (!job) return;
+
+      const originalLikedStatus = job.isLiked;
+      job.isLiked = !job.isLiked; // UI先行，樂觀更新
+
+      this.updateLikedItemInSidebar(job.id, job.isLiked, job.originalData);
+      this.syncLikeStatusAcrossSections(job.id, job.isLiked); // 同步所有地方的收藏狀態
+
+      //5. (可選) 連接真實後端 API
+      try {
+        if (job.isLiked) {
+          await likeJob(job.id); // 假設 likeJob 是 API 請求函數
+        } else {
+          await unlikeJob(job.id); // 假設 unlikeJob 是 API 請求函數
+        }
+       } catch (error) {
+         console.error('Failed to update like status:', error);
+         job.isLiked = originalLikedStatus; // API 失敗，回滾UI狀態
+         this.updateLikedItemInSidebar(job.id, job.isLiked, job.originalData);
+         this.syncLikeStatusAcrossSections(job.id, job.isLiked);
+         alert('收藏操作失敗，請稍後再試。');
+       }
+    },
+
     syncLikeStatusAcrossSections(jobId, newLikedStatus) {
+      // 同步 sections 中的職缺收藏狀態
       this.sections.forEach(section => {
         const jobInSection = section.jobs.find(j => j.id === jobId);
         if (jobInSection && jobInSection.isLiked !== newLikedStatus) {
           jobInSection.isLiked = newLikedStatus;
         }
       });
-      // 如果 favoriteJobs 也包含這些職缺對象實例，它們應該已經通過 jobToUpdate 被更新了。
-      // 但如果 favoriteJobs 是獨立複製的物件，則這裡也需要更新：
+      // 同步 favoriteJobs 中的職缺收藏狀態 (如果 id 匹配)
       const favJob = this.favoriteJobs.find(j => j.id === jobId);
       if (favJob && favJob.isLiked !== newLikedStatus) {
         favJob.isLiked = newLikedStatus;
       }
     },
 
-    handleUnlikeFromSidebar(itemId) { // itemId 應為職缺的 id
+    handleUnlikeFromSidebar(item) { // 假設 item 是包含 id 的對象，或者直接是 id
+      const itemId = typeof item === 'object' ? item.originalData.id || item.id : item;
       this.syncLikeStatusAcrossSections(itemId, false);
-      // 以下邏輯保留，但 syncLikeStatusAcrossSections 應該已經處理了
-      let jobFound = false;
-      for (const section of this.sections) {
-        const job = section.jobs.find(j => j.id === itemId);
-        if (job) {
-          job.isLiked = false;
-          jobFound = true;
-          // 不跳出，繼續檢查其他 section 是否有同一個 job
-        }
-      }
+      // 如果您在 toggleLike 中啟用了 API 調用，這裡也可以考慮調用 unlikeJob(itemId)
     },
 
-    handleLikeFromSidebar(itemId) { // itemId 應為職缺的 id
+    handleLikeFromSidebar(item) { // 假設 item 是包含 id 的對象，或者直接是 id
+      const itemId = typeof item === 'object' ? item.originalData.id || item.id : item;
       this.syncLikeStatusAcrossSections(itemId, true);
-      // 以下邏輯保留，但 syncLikeStatusAcrossSections 應該已經處理了
-      let jobFound = false;
-      for (const section of this.sections) {
-        const job = section.jobs.find(j => j.id === itemId);
-        if (job) {
-          if (!job.isLiked) {
-            job.isLiked = true;
-            // Sidebar 應已調用 updateLikedItemInSidebar
-          }
-          jobFound = true;
-          // 不跳出，繼續檢查其他 section 是否有同一個 job
-        }
-      }
+      // 如果您在 toggleLike 中啟用了 API 調用，這裡也可以考慮調用 likeJob(itemId)
     },
 
     startDrag(e) {
+      const RContent = e.currentTarget;
       this.isDragging = true;
-      this.startX = e.pageX - e.currentTarget.offsetLeft;
-      this.scrollLeft = e.currentTarget.scrollLeft;
+      this.startX = e.pageX - RContent.offsetLeft;
+      this.scrollLeft = RContent.scrollLeft;
+      // RContent.classList.add('active'); // 如果模板中有 .active 樣式可以加上
     },
     onDrag(e) {
       if (!this.isDragging) return;
       e.preventDefault();
-      const x = e.pageX - e.currentTarget.offsetLeft;
-      const walk = (x - this.startX) * 2; // 調整滾動速度
-      e.currentTarget.scrollLeft = this.scrollLeft - walk;
+      const RContent = e.currentTarget;
+      const x = e.pageX - RContent.offsetLeft;
+      const walk = (x - this.startX) * 2; // 可以調整滑動速度
+      RContent.scrollLeft = this.scrollLeft - walk;
     },
-    stopDrag() {
+    stopDrag(e) {
+      // const RContent = e.currentTarget;
       this.isDragging = false;
+      // RContent.classList.remove('active');
     },
 
     handleCardClick(jobData) {
-      // jobData 是從 home.js 轉換後的格式，它內部有 originalData
       const dataForSidebar = jobData.originalData || jobData;
-
       if (typeof this.addViewedItemToSidebar === 'function') {
         this.addViewedItemToSidebar(dataForSidebar);
-      } else {
-        console.error('addViewedItemToSidebar is not available from BaseLayout');
       }
       if (typeof this.openRightSidebar === 'function') {
         this.openRightSidebar(dataForSidebar);
-      } else {
-        console.error('openRightSidebar is not available from BaseLayout');
       }
     },
-    handleTitleClick(job) { // job 是轉換後的職缺對象
+    handleTitleClick(job) {
       console.log('Title clicked for job:', job.title, 'Company:', job.company);
-      alert(`預計導航至公司頁面: ${job.company}. (請實現 Vue Router 功能)`);
-      // 實際導航:
-      // if (job.originalData && job.originalData.company && job.originalData.company.id) {
-      //   this.$router.push({ name: 'CompanyDetail', params: { id: job.originalData.company.id } });
-      // } else {
-      //   console.warn('無法獲取公司ID進行導航');
-      // }
+      // 通常點擊職位標題或公司名稱會導航到公司或職缺詳情頁
+      // 假設您有一個路由到公司頁面，並且需要公司ID
+      // job.originalData.company.id
+      alert(`預計導航至公司頁面: ${job.company}. (此功能需 Vue Router 支持)`);
     },
-    handleCompanyCardClick(company) { // company 是轉換後的公司對象
+    handleCompanyCardClick(company) {
       console.log('Company card clicked:', company);
-      alert(`點擊了公司: ${company.name}`);
-      // 實際導航或打開 sidebar:
-      // const dataForSidebar = company.originalData || company;
-      // this.openRightSidebar({ ...dataForSidebar, type: 'company' });
+      // company.originalData.id
+      alert(`點擊了公司: ${company.name}. (此功能需 Vue Router 支持)`);
+    },
+    // 如果 favorite-job-card 有點擊事件，也需要實現
+    handleFavoriteJobCardClick(favJob) {
+        console.log('Favorite job card clicked:', favJob);
+        // 創建一個與普通職缺結構相似的對象傳給 sidebar
+        const dataForSidebar = {
+            id: favJob.id,
+            title: favJob.name,
+            image: favJob.icon, // 或者 favJob.image
+            company: favJob.description.split('、')[0] || '相關企業', // 嘗試從描述中獲取
+            salary: 'N/A',
+            isLiked: favJob.isLiked !== undefined ? favJob.isLiked : true, // 收藏列表預設為已收藏
+            originalData: favJob
+        };
+        if (typeof this.addViewedItemToSidebar === 'function') {
+            this.addViewedItemToSidebar(dataForSidebar);
+        }
+        if (typeof this.openRightSidebar === 'function') {
+            this.openRightSidebar(dataForSidebar);
+        }
     }
   }
 }
@@ -382,7 +376,6 @@ export default {
   overflow-x: hidden;
   box-sizing: border-box;
   background-color: #383333;
-  /* 整體背景色 */
   border-radius: 10px;
   color: white;
   gap: 10px;
@@ -394,13 +387,11 @@ export default {
 .middle-content .recommend,
 .middle-content .great-company,
 .middle-content .favorite-job-section {
-  /* great-company 保持原有樣式 */
   display: flex;
   flex-direction: column;
   white-space: nowrap;
   gap: 8px;
   padding: 4px 25px;
-  /* 左右padding */
 }
 
 .middle-content section h1 {
@@ -414,7 +405,6 @@ export default {
   display: flex;
   flex-direction: row;
   gap: 10px;
-  /* 卡片之間的間距 */
   overflow-x: auto;
   flex-wrap: nowrap;
   box-sizing: border-box;
@@ -422,16 +412,12 @@ export default {
   -webkit-overflow-scrolling: touch;
   cursor: grab;
   scrollbar-width: none;
-  /* Firefox */
   -ms-overflow-style: none;
-  /* IE and Edge */
   padding-bottom: 10px;
-  /* 給滾動條一些空間，如果有的話，或避免內容截斷 */
 }
 
 .middle-content .recommend-content::-webkit-scrollbar {
   display: none;
-  /* Chrome, Safari, Opera */
 }
 
 
@@ -441,21 +427,16 @@ export default {
   flex-direction: column;
   align-items: center;
   background-color: #594f4f00;
-  /* 正常狀態背景色 (目前是透明) */
   border-radius: 5px;
   padding: 10px 25px 10px 25px;
   width: 280px;
-  /* 卡片原始寬度 */
   box-sizing: border-box;
   color: white;
   text-align: center;
-  /* MODIFIED: 在 transition 中加入 width 和 background-color */
   transition: transform 0.5s ease-out,
     box-shadow 0.5s ease-out,
     background-color 0.5s ease-out,
-    /* 新增背景色過渡 */
     width 0.5s ease-out;
-  /* 新增寬度過渡 */
   cursor: pointer;
 }
 
@@ -504,8 +485,7 @@ export default {
   flex-direction: column;
   align-items: flex-start;
   text-align: left;
-  margin-bottom: -8px;
-  margin-left: 6px;
+  padding-right: 8px;
 }
 
 .job-card-company {
@@ -515,7 +495,7 @@ export default {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 110px;
+  width: 100%; 
 }
 
 .job-card-salary {
@@ -525,21 +505,17 @@ export default {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 110px;
 }
 
 .job-card-like-btn.like-btn {
   display: flex;
   font-size: 18px;
   align-self: flex-end;
-  margin-bottom: 3px;
-  /* 往上移動按鈕 */
   margin-right: 6px;
 }
 
 
 .middle-content .great-company .recommend-content .content-wrapper:hover {
-  /* From hover effect */
   background-color: #4a4444;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
@@ -568,40 +544,31 @@ export default {
   white-space: nowrap;
   text-overflow: ellipsis;
   width: 200px;
-  /* 配合 company-icon 寬度 */
 }
 
-/* 只調整「優質企業」區塊中卡片的間距 */
 .middle-content .great-company .recommend-content {
   gap: 50px;
   margin-left: 25px;
-  /* 設定您希望的「優質企業」卡片間距，例如 25px */
   margin-top: 10px;
 }
 
-
-/* --- FAVORITE JOB SECTION STYLES (修改後) --- */
 .favorite-job-section {
-  /* padding 已在 .middle-content .favorite-job-section 統一設定 */
   margin-bottom: 20px;
-  /* 與下方內容的間距 */
 }
 
 .favorite-job-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  /* 響應式網格，最小寬度320px */
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 25px;
-  /* 卡片之間的間距 */
   width: 100%;
 }
 
 .favorite-job-card {
   aspect-ratio: 16 / 10;
-  /* 卡片寬高比，可根據內容調整 */
-  min-height: 220px;
-  /* 最小高度 */
-  border-radius: 8px;
+  border-radius: 4px;
+  max-width: 320px; /* 例如 */
+  min-height: 320px;
+  width: 100%; /* 確保它能縮小 */
   background-size: cover;
   background-position: center;
   position: relative;
@@ -609,18 +576,13 @@ export default {
   cursor: pointer;
   transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
   display: flex;
-  /* 使內部 .card-overlay-content 能使用 flex 定位 */
   flex-direction: column;
-  /* 使內容垂直排列 */
   justify-content: space-between;
-  /* 將頂部信息和描述文字推向兩端 */
   padding: 18px;
-  /* 卡片內部 padding */
   box-sizing: border-box;
 }
 
 .favorite-job-card::before {
-  /* 添加一個遮罩層，使文字更易讀 */
   content: "";
   position: absolute;
   top: 0;
@@ -628,86 +590,65 @@ export default {
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.35);
-  /* 調整透明度和顏色以匹配圖片 */
   border-radius: inherit;
-  /* 繼承父元素的圓角 */
   z-index: 1;
-  /* 在背景圖之上，內容之下 */
   transition: background-color 0.3s ease;
 }
 
 .favorite-job-card:hover {
-  transform: translateY(-6px) scale(1.03);
+  transform: translateY(-3px) scale(1.01);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
 }
 
 .favorite-job-card:hover::before {
   background-color: rgba(0, 0, 0, 0.2);
-  /* Hover 時遮罩可稍微變淡 */
 }
 
 .card-overlay-content {
   position: relative;
-  /* 確保內容在 ::before 遮罩之上 */
   z-index: 2;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  /* 分散頂部信息和底部描述 */
   height: 100%;
-  /* 佔滿卡片高度 */
   color: white;
 }
 
 .card-top-info {
   display: flex;
   align-items: flex-start;
-  /* 圖標和標題頂部對齊 */
-  gap: 12px;
-  /* 圖標和標題之間的間距 */
+  margin-left:-20px;
 }
 
 .favorite-job-icon {
-  width: 50px;
-  /* 根據附圖調整圖標大小 */
-  height: 50px;
-  background-size: cover;
-  /* 或 cover，根據圖標類型 */
-  background-position: center;
+  width: 100px;
+  height: 100px;
+  background-size: contain;
   background-repeat: no-repeat;
   border-radius: 4px;
-  /* 圖標輕微圓角 */
   flex-shrink: 0;
 }
 
 .favorite-job-name {
-  font-size: 17px;
-  /* 調整字體大小 */
+  font-size: 15px;
   font-weight: bold;
   margin: 0;
-  padding-top: 10px;
-  /* 微調，使其與圖標看起來更對齊 */
+  padding-top: 15px;
+  margin-left: -10px;
 }
 
 .favorite-job-description {
   font-size: 13px;
-  /* 調整字體大小 */
   line-height: 1.5;
   color: #e0e0e0;
-  /* 稍淺的文字顏色 */
   margin: 0;
-  /* white-space: normal; (預設就是 normal) */
-  /* text-align: left; (預設) */
-  /* 確保它在底部 */
   align-self: flex-start;
-  /* 確保文字從左邊開始 */
   margin-top: auto;
-  /* 將其推到底部，如果 card-overlay-content 的 justify-content 不是 space-between */
-  /* 但因為 card-overlay-content 和 favorite-job-card 都是 flex space-between，這行可能非必要 */
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-
-
-
 
 /* 收藏按鈕通用樣式 */
 .like-btn {
@@ -718,7 +659,6 @@ export default {
   font-size: 18px;
   padding: 0px;
   transition: transform 0.5s ease, color 0.3s ease;
-  /* Added color transition */
 }
 
 .like-btn:hover {
@@ -727,28 +667,20 @@ export default {
 
 .like-btn.active {
   color: rgb(235, 178, 189);
-  /* 粉色實心 */
 }
 
 .heart-icon {
   transition: color 0.3s ease;
-  /* Already here, good */
 }
 
-/* 滑動中游標變成抓取狀態 */
 .middle-content .recommend-content.active {
-  /* Applies to both job and company recommend-content */
   cursor: grabbing;
   user-select: none;
 }
 
-/* 通用：為可交互卡片添加鼠標指針 */
 .job-card-wrapper,
-/* New job card */
 .middle-content .great-company .recommend-content .content-wrapper,
-/* Company card */
 .middle-content .favorite-job .content-container {
-  /* Favorite job card */
   cursor: pointer;
 }
 

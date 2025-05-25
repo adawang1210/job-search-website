@@ -230,12 +230,12 @@ export default defineComponent({
       if (this.$router) {
         if (Object.keys(query).length > 0) {
           this.$router.push({
-            name: 'SearchResult', // 確保路由名稱正確
+            name: 'searchresult', // 確保路由名稱正確
             query: query
           });
         } else {
-          if (this.$route.name !== 'SearchResult') {
-             this.$router.push({ name: 'SearchResult' });
+          if (this.$route.name !== 'searchresult') {
+             this.$router.push({ name: 'searchresult' });
           }
         }
       } else {

@@ -38,8 +38,8 @@
 </template>
 
 <script>
-// 導入您在 home.js 中定義的真實 API 函數
-import { searchJobsApi, likeJob as likeJobApi, unlikeJob as unlikeJobApi } from '@/api/home.js'; // 確保路徑正確
+
+import {  getJobs, likeJob, unlikeJob, getJobDetail } from '@/api/home.js';
 
 export default {
   name: 'SearchResult',
@@ -49,10 +49,10 @@ export default {
       searchQuery: '',
       activePositions: [],
       activeRegions: [],
-      searchResults: [], // 儲存從 API 獲取的完整結果
+      searchResults: [],
       isLoading: false,
       error: null,
-      defaultImage: 'https://via.placeholder.com/150/CCCCCC/FFFFFF?Text=No+Image', // 預設圖片
+      defaultImage: 'default_company_logo_path.png', 
       // 假設的登入狀態，您需要根據您的實際應用來實現
       // isUserLoggedIn: true, // 或者從 store, localStorage 等地方獲取
     };
@@ -120,43 +120,43 @@ export default {
       this.isLoading = true;
       this.error = null;
       // this.searchResults = []; // 可以在 watch 中清空
-
-      console.log(`準備根據關鍵字 "${this.searchQuery}" 獲取搜尋結果...`);
       try {
-        console.log(`準備根據以下條件獲取搜尋結果:
-          關鍵字: "${this.searchQuery}",
-          職務: "${this.activePositions.join(', ')}",
-          地區: "${this.activeRegions.join(', ')}"`
-        );
-         const criteria = {
-          keyword: this.searchQuery,
-          positions: this.activePositions, // 這些是陣列
-          regions: this.activeRegions     // 這些是陣列
+        const criteria = {
+          search: this.searchQuery,
+          positions: this.activePositions.join(','), // 這些是陣列
+          regions: this.activeRegions.join(','),     // 這些是陣列
         };
 
-        const apiResponse = await searchJobsApi(criteria);
+        // Remove parameters that are empty, so they don't get sent as empty strings
+        const nonEmptyCriteria = {};
+        if (criteria.search) nonEmptyCriteria.search = criteria.search;
+        if (this.activePositions.length > 0) nonEmptyCriteria.positions = criteria.positions;
+        if (this.activeRegions.length > 0) nonEmptyCriteria.regions = criteria.regions;
+
+        const apiResponse = await getJobs(nonEmptyCriteria);
+        const rawJobs = apiResponse.results || apiResponse || [];
 
               // 處理 apiResponse (假設 searchJobsApi 返回 { jobs: [], pagination: ... })
-        if (apiResponse && Array.isArray(apiResponse.jobs)) {
-          this.searchResults = apiResponse.jobs.map(job => ({ // home.js 中的 searchJobsApi 已經做了 transform
-            ...job,
-            // 如果 isLiked 不是由 searchJobsApi 的 transformJobDataMinimal 處理，
-            // 或者您希望在這裡根據其他來源（例如 localStorage）再次確認，
-            // 否則可以直接使用 job.isLiked
-            isLiked: job.isLiked !== undefined ? job.isLiked : false,
-          }));
+        if (Array.isArray(rawJobs)) {
+          this.searchResults = rawJobs.map(job => ({
+            id: job.id,
+            title: job.title, // Backend field name for title
+            image: job.company_logo || this.defaultImage, // Backend field for image
+            company: job.company && job.company.name ? job.company.name : '未知公司', // Backend field for company name
+            salary: job.salary_max ? `$${job.salary_max}` : '面議', // Backend field for salary
+            isLiked: job.is_liked_by_user || false, // Backend field for like status
+            originalData: job, // Store the original API object
+        }));
           // this.paginationData = apiResponse.pagination; // 如果您需要處理分頁
           if (this.searchResults.length === 0 && (this.searchQuery || this.activePositions.length > 0 || this.activeRegions.length > 0)) {
               // 提示已在模板中處理
           }
         } else {
-          console.warn("API 回傳格式非預期 (SearchResult.vue):", apiResponse);
           this.searchResults = [];
           // this.paginationData = null;
           this.error = '無法獲取搜尋結果，回傳格式不正確。'; // 或其他合適的錯誤訊息
         }
       } catch (err) {
-        console.error("搜尋時發生錯誤:", err);
         this.error = '搜尋時發生錯誤，請稍後再試。';
         this.searchResults = [];
       } finally {
@@ -187,28 +187,25 @@ export default {
       job.isLiked = newLikedStatus;
 
       try {
-        // **修改此處：調用真實的 API 函數**
-        if (newLikedStatus) { // 或者 job.isLiked (因為已經樂觀更新了)
-          await likeJobApi(job.id);
+        if (newLikedStatus) { 
+          await likeJob(job.id);
         } else {
-          await unlikeJobApi(job.id);
+          await unlikeJob(job.id);
         }
 
         if (typeof this.updateLikedItemInSidebar === 'function') {
-          this.updateLikedItemInSidebar(job.originalData || job, newLikedStatus);
+          this.updateLikedItemInSidebar(job.id, newLikedStatus, job.originalData || job);
         }
       } catch (error) {
-        console.error(`Error toggling like status for job ID ${job.id}:`, error);
         // API 失敗，恢復 UI 狀態
         job.isLiked = originalLikedStatus;
         alert(`更新 "${job.title}" 的收藏狀態失敗，請稍後再試。`);
-        // 可以在此處處理特定錯誤，如 token 失效等
+        console.error("Error toggling like in SearchResult:", error);
       }
     },
     handleTitleClick(job) {
       // 與 Home.vue 保持一致的行為，例如導航到公司頁面
       // 這裡可以先 console.log 或 alert
-      console.log('Title clicked for job:', job.title, 'Company:', job.company);
       alert(`職缺標題 "${job.title}" 被點擊，預計導航或執行其他操作。`);
       // 實際導航邏輯:
       // if (job.originalData && job.originalData.company && job.originalData.company.id) {
@@ -225,7 +222,6 @@ export default {
   padding: 20px;
   color: white;
   background-color: #383333;
-  /* 與 Home.vue .middle-content 類似背景 */
   border-radius: 10px;
   width: 100%;
   box-sizing: border-box;
@@ -239,7 +235,6 @@ export default {
 }
 
 .search-results-page>p {
-  /* 針對 "你搜尋的是：" 和 "請輸入關鍵字" 的段落 */
   margin-bottom: 15px;
   font-size: 1em;
 }
@@ -248,7 +243,7 @@ export default {
 /* --- 網格佈局 --- */
 .search-results-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   /* 響應式，最小260px，嘗試填滿4列 */
   gap: 20px;
   /* 卡片間距 */
@@ -259,34 +254,37 @@ export default {
 .job-card-wrapper {
   display: flex;
   flex-direction: column;
+  align-items: center;
   background-color: transparent; /* 或 #594f4f00 */
   border-radius: 5px;
-  padding: 10px 15px; /* 上下10px，左右15px，您可以根據喜好調整 */
+  padding: 10px 25px 10px 25px; /* 上下10px，左右15px，您可以根據喜好調整 */
   box-sizing: border-box;
   color: white;
   transition: transform 0.3s ease-out, box-shadow 0.3s ease-out, background-color 0.3s ease-out;
   cursor: pointer;
   min-width: 0;
+  width: 200px; 
 }
 
 .job-card-wrapper:hover {
   background-color: #524a4a;
   /* hover 時的背景色 */
-  transform: translateY(-3px);
+  transform: translateY(-1px);
   /* 稍微上浮 */
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 6px 6px rgba(0, 0, 0, 0.25);
   /* 移除了 width 變化，因為在網格中會導致佈局問題 */
+
 }
 
 .job-card-title {
   font-size: 15px;
   font-weight: bold;
-  margin-top: 0;       /* 與頂部無額外間距 */
-  margin-bottom: 8px;  /* 標題與圖片之間的間距，可微調 */
+  margin-bottom: 4px;
+  margin-top: -6px; 
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  width: 150px;        /* 與圖片寬度一致 */
+  width: 150px; 
 }
 
 .job-card-title:hover {
@@ -294,14 +292,14 @@ export default {
 }
 
 .job-card-image {
-  width: 150px;        /* **修改**: 與標題寬度一致 */
-  height: 150px;       /* **修改**: 保持正方形 */
+  width: 150px;        
+  height: 150px;       
   background-color: white; /* 占位符背景 */
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
   border-radius: 5px;
-  margin-bottom: 8px;  /* 圖片與下方詳情的間距 */
+  margin-bottom: 5px;  /* 圖片與下方詳情的間距 */
 }
 
 .job-card-details {
@@ -338,8 +336,8 @@ export default {
 
 .job-card-salary {
   font-size: 12px;
+  margin-top: -2px;
   color: #E0E0E0;
-  margin-top: 2px;
 }
 
 .job-card-like-btn.like-btn { /* .like-btn 已有通用樣式，這裡可微調 */
@@ -347,7 +345,7 @@ export default {
   align-items: center; /* 確保愛心垂直居中（如果按鈕有高度） */
   font-size: 18px;
   flex-shrink: 0; /* 防止按鈕被壓縮 */
-  /* align-self: flex-end; /* .job-card-details 的 align-items: flex-end 已經處理了底部對齊 */
+  margin-right: 6px;
 }
 
 /* --- 收藏按鈕通用樣式 (來自 Home.vue，保持一致) --- */
@@ -362,7 +360,7 @@ export default {
 }
 
 .like-btn:hover {
-  transform: scale(1.15);
+  transform: scale(1.1);
 }
 
 .like-btn.active {
@@ -371,6 +369,7 @@ export default {
 
 .heart-icon {
   transition: color 0.3s ease;
+
 }
 
 /* --- 載入/錯誤/無數據訊息樣式 --- */

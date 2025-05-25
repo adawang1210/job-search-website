@@ -141,6 +141,16 @@ import {
   SchoolOutline,
   BriefcaseOutline
 } from '@vicons/ionicons5';
+import {
+  getUserProfile,
+  getUserSkills,
+  getUserEducation,
+  getUserExperience,
+  getUserProjects,
+  getLikedCompanies,
+  getFollowedUsers
+} from '@/api/profile'; // 這裡的路徑依你的實際目錄結構調整
+
 
 export default {
   name: 'Profile',
@@ -197,39 +207,54 @@ export default {
 
   mounted() {
     Promise.all([
-    axios.get('http://127.0.0.1:8000/api/users/skill-packages/2/'),
-    axios.get('http://127.0.0.1:8000/api/users/education/')
-  ])
-  
-    .then(([skillsRes, educationRes]) => {
+      getUserProfile(),
+      getUserSkills(),
+      getUserEducation(),
+      getUserExperience(),
+      getUserProjects(),
+      //getLikedCompanies(),
+      //getFollowedUsers()
+    ])
+      .then(([profileRes, skillsRes, educationRes, experienceRes, projectRes]) => {
+      // ✅ 找出你要顯示的使用者資料（假設目前只抓 id=2）
+      console.log('Profile Data:', profileRes);
+      const userData = profileRes.find(user => user.id === 2) || {};
+
       this.profile = {
-        skills: skillsRes.data.skills,
         profile: {
           img: '/default.jpg',
-          user_name: '劉子源',
-          user_info: '簡介略',
+          user_name: userData.name,
+          user_info: userData.city && userData.age && userData.gender
+          ? `${userData.city} , ${userData.age} 歲 , ${userData.gender}`
+          : ''
         },
         about: {
-          user_name: '劉子源',
-          age: 30,
-          sex: '男',
-          education: '碩士',
-          phone_number: '0912-345-678',
-          mail: 'liou@example.com',
-          address: '台北市中正區',
-          language: '中文, 日文, 英文'
+          user_name: userData.name,
+          age: userData.age,
+          sex: userData.gender,
+          education: userData.highest_education,
+          phone_number: userData.phone,
+          mail: userData.email,
+          address: userData.full_address,
+          language: userData.languages
         },
+        skills: userData.skills || [],
         resume: {
-          introduction: '',
-          education: educationRes.data.map(item => ({
-            year_start: item.start_date.slice(0, 4),
-            year_end: item.end_date.slice(0, 4),
+          introduction: userData.introduction || '',
+          education: (userData.educations || []).map(item => ({
+            year_start: item.start_date?.slice(0, 4),
+            year_end: item.end_date?.slice(0, 4),
             degree: `${item.school}（${item.degree}）`,
             content: `${item.major} - ${item.description}`
           })),
-          work_experience: []
+          work_experience: (userData.work_experiences || []).map(item => ({
+            year_start: item.start_date?.slice(0, 4),
+            year_end: item.end_date?.slice(0, 4),
+            job_title: item.job_title,
+            content: item.description
+          }))
         },
-        projects: [],
+        projects: userData.projects || [],
         liked: [],
         following: []
       };
@@ -243,9 +268,9 @@ export default {
         }
       });
     })
-    .catch(error => {
-      console.error('讀取資料發生錯誤：', error);
-    });
+      .catch(error => {
+        console.error('Error fetching profile data:', error);
+      });
 }
 };
 </script>

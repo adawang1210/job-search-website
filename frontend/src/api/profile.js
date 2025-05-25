@@ -3,7 +3,7 @@ import request from './axios'
 // 獲取用戶基本信息
 export function getUserProfile() {
   return request({
-    url: '/api/user/profile',
+    url: '/api/users/profiles',
     method: 'get'
   })
 }
@@ -20,7 +20,7 @@ export function updateUserProfile(data) {
 // 獲取用戶技能列表
 export function getUserSkills() {
   return request({
-    url: '/api/user/skills',
+    url: '/api/users/skill-packages',
     method: 'get'
   })
 }
@@ -37,7 +37,7 @@ export function updateUserSkills(data) {
 // 獲取用戶教育經歷
 export function getUserEducation() {
   return request({
-    url: '/api/user/education',
+    url: '/api/users/education',
     method: 'get'
   })
 }
@@ -54,7 +54,7 @@ export function updateUserEducation(data) {
 // 獲取用戶工作經歷
 export function getUserExperience() {
   return request({
-    url: '/api/user/experience',
+    url: '/api/users/work-experience',
     method: 'get'
   })
 }
@@ -71,7 +71,7 @@ export function updateUserExperience(data) {
 // 獲取用戶專案經歷
 export function getUserProjects() {
   return request({
-    url: '/api/user/projects',
+    url: '/api/users/projects',
     method: 'get'
   })
 }

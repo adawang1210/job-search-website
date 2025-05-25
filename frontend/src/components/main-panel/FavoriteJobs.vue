@@ -87,7 +87,7 @@
                     <span class="spec">{{ job.experience_required }}</span>
                     <span class="spec">{{ job.education_required }}</span>
                     <!-- <span class="spec">{{ job.major_required }}</span> -->
-                    <span class="spec">{{ formattedSalary(job.id) }}</span>
+                    <span class="spec">{{ job.salary }}</span>
                   </div>
                   <div class="benefits">
                     <span v-for="(benefit, index) in job.benefits" :key="index" class="benefit-tag-job">
@@ -117,111 +117,6 @@
         </article>
       </section>
 
-      <section class="company-information">
-        <h2 class="section-title">關於</h2>
-        <div class="cards">
-          <div class="info-card">
-            <h3>公司介紹</h3>
-            <div class="company-details">
-              <div>
-                <div class="detail-group">
-                  <div class="detail-item">
-                    <div class="label">{{ ccompany?.industry }}</div>
-                    <div class="value">產業類別</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="label">{{ ccompany?.industry_description }}</div>
-                    <div class="value">產業描述</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="label">{{ ccompany?.employees }}</div>
-                    <div class="value">員工人數</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="label">{{ ccompany?.capital }}</div>
-                    <div class="value">資本額</div>
-                  </div>
-                </div>
-
-                <div class="detail-group">
-                  <div class="detail-item">
-                    <div class="label">{{ ccompany?.contacts[0].name }}</div>
-                    <div class="value">聯絡人</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="label">{{ ccompany?.contacts[0].phone }}</div>
-                    <div class="value">電話</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="label">{{ ccompany?.contacts[0].fax }}</div>
-                    <div class="value">傳真</div>
-                  </div>
-                  <div class="detail-item">
-                    <div class="label">{{ ccompany?.contacts[0].email }}</div>
-                    <div class="value">地址</div>
-                  </div>
-                </div>
-
-                <div class="detail-group">
-                  <div class="detail-item" v-for="(link, index) in ccompany.websites" :key="index">
-                    <div class="label">{{ link.website }}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="description" v-html="ccompany.introduction.replace(/\n/g, '<br><br>')"></div>
-            </div>
-          </div>
-
-          <!-- 主要商品 -->
-          <div class="info-card">
-            <h3>主要商品</h3>
-            <div class="description">
-              對外：{{ ccompany?.main_product }}<br>
-              <!-- 對內：{{ ccompany?.main_product }}<br><br> -->
-            </div>
-          </div>
-
-          <!-- 福利制度 -->
-          <div class="info-card">
-            <h3>福利制度</h3>
-            <div class="benefits-grid">
-              <div class="benefit-tags">
-                <div class="benefit-group">
-                  <div class="benefit-tag" v-for="(tag, index) in ccompany.benefits[0].statutory" :key="'tag' + index">
-                    {{ tag.benefit }}
-                  </div>
-                </div>
-                <h4>法定項目</h4>
-
-                <div class="benefit-group">
-                  <div class="benefit-tag" v-for="(law, index) in ccompany.benefits[0].others" :key="'legal' + index">{{
-                    law.benefit }}</div>
-                </div>
-                <h4>其他福利</h4>
-              </div>
-
-              <div class="description">
-                <div class="content" v-html="ccompany.benefits[0].benefits_description.replace(/\n/g, '<br>')"></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="gallery">
-            <h3>企業照片</h3>
-            <div class="gallery-scroll-wrapper">
-              <div class="gallery-grid">
-                <div class="gallery-item"><img src="/company-photo1.jpg" alt="Photo 1"></div>
-                <div class="gallery-item"><img src="/company-photo2.jpg" alt="Photo 2"></div>
-                <div class="gallery-item"><img src="/company-photo3.jpg" alt="Photo 3"></div>
-                <div class="gallery-item"><img src="/company-photo4.jpg" alt="Photo 4"></div>
-                <div class="gallery-item"><img src="/company-photo5.jpg" alt="Photo 5"></div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
       <!-- Modal 彈窗 -->
       <transition name="modal">
         <div v-if="showApplyModal" class="modal-overlay" @click="closeModal">
@@ -304,6 +199,7 @@
     </div>
   </div>
 </template>
+<!-- 最愛xxx main-panel -->
 
 <script>
 import { ref } from 'vue'
@@ -313,7 +209,7 @@ import { NIcon } from 'naive-ui'
 import { Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular } from '@vicons/fa'
 
 export default defineComponent({
-  name: 'Company',
+  name: 'FavoriteJobs',
   inject: ['updateLikedItemInSidebar', 'openRightSidebar', 'addViewedItemToSidebar'], // 注入來自 BaseLayout 的方法
   components: {
     NIcon, Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular,
@@ -397,17 +293,6 @@ export default defineComponent({
       const loc = location.slice(0, 3);
       return loc
     },
-    formattedSalary(jobId) {
-      const job = this.jjobs.find(i => i.id === jobId)
-
-      if (job.salary_type === '月薪') {
-        return `月薪${job.salary_min}~${job.salary_max}元`;
-      } else if (job.salary_type === '時薪') {
-        return `時薪${job.salary_number}元`;
-      } else {
-        return '薪資未提供';
-      }
-    },
     // dropdown 顯示
     toggleDropdownJob() {
       this.dropdownOpenJob = !this.dropdownOpenJob
@@ -481,6 +366,7 @@ export default defineComponent({
         console.warn(`找不到 id 為 ${itemId} 的項目`);
       }
     },
+    //打開應徵彈窗
     openModal(itemName) {
       this.currentItem = itemName;
       this.showApplyModal = true;
@@ -688,7 +574,7 @@ export default defineComponent({
   display: flex;
   width: 100%;
   flex-direction: column;
-  padding: 48px 28px 40px;
+  padding: 40px 36px 28px 28px;
   background: transparent;
 }
 
@@ -759,14 +645,14 @@ export default defineComponent({
   font-family: 'Noto Sans', sans-serif;
   font-size: 32px;
   font-weight: 600;
-  margin-bottom: 16px;
+  margin: 80px 0 30px;
 }
 
 /* job listings */
 .job-listings {
   margin: 0;
   padding: 28px;
-  background-color: rgba(0, 0, 0, 0.3);
+  background: transparent;
 }
 
 .listings-header {
@@ -809,7 +695,6 @@ export default defineComponent({
 }
 
 .date-block {
-  margin-top: 3px;
   width: 40px;
 }
 
@@ -841,7 +726,7 @@ export default defineComponent({
 }
 
 .details {
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .company-info-job {
@@ -865,7 +750,7 @@ export default defineComponent({
 .job-specs {
   display: flex;
   align-items: center;
-  margin-top: 10px;
+  margin-top: 3px;
   gap: 24px;
   font-family: Noto Sans, -apple-system, Roboto, Helvetica, sans-serif;
   color: #f5f5f5;
@@ -873,13 +758,9 @@ export default defineComponent({
   font-weight: 600;
 }
 
-.spec {
-  font-weight: bold;
-}
-
 .benefits {
   display: flex;
-  margin: 6px 0;
+  margin: 8px 0;
   flex-wrap: wrap;
   gap: 12px;
 }
@@ -901,156 +782,6 @@ export default defineComponent({
   font-weight: 500;
   text-align: right;
   margin: 6px 0 0;
-}
-
-/*company information*/
-.company-information {
-  margin: 0;
-  padding: 28px;
-  background-color: rgba(0, 0, 0, 0.3);
-}
-
-.cards {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-div h3 {
-  font-family: 'Noto Sans', sans-serif;
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 20px;
-}
-
-/* Info Cards */
-.info-card {
-  background: rgba(255, 255, 255, 0.1);
-  margin: 0;
-  padding: 24px;
-  border-radius: 10px;
-}
-
-.company-details {
-  display: grid;
-  grid-template-columns: 227px 1fr;
-  gap: 30px;
-}
-
-.detail-group {
-  margin-bottom: 50px;
-  overflow: hidden;
-}
-
-.detail-item {
-  margin-bottom: 20px;
-}
-
-.detail-item .label {
-  font-size: 16px;
-  font-weight: 600;
-  font-family: 'Noto Sans', sans-serif;
-}
-
-.detail-item .value {
-  font-size: 14px;
-  color: #b3b3b3;
-  margin-top: 5px;
-}
-
-.description {
-  font-size: 16px;
-  line-height: 1.6;
-  color: #b3b3b3;
-}
-
-.benefits-section {
-  background: rgba(255, 255, 255, 0.1);
-  margin: 30px 40px;
-  padding: 24px;
-  border-radius: 10px;
-}
-
-.benefits-grid {
-  display: grid;
-  grid-template-columns: 227px 1fr;
-  gap: 30px;
-}
-
-.benefit-tags h4 {
-  font-family: 'Noto Sans', sans-serif;
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 20px;
-}
-
-.benefit-group {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.benefit-tag {
-  background: rgba(179, 179, 179, 0.25);
-  padding: 5px 10px;
-  border-radius: 16px;
-  font-size: 14px;
-  width: fit-content;
-}
-
-.benefits-description {
-  grid-column: span 2;
-  margin-top: 30px;
-}
-
-.benefits-description h4 {
-  font-size: 14px;
-  color: #b3b3b3;
-  margin-bottom: 10px;
-}
-
-.benefits-description .content {
-  color: #b3b3b3;
-  line-height: 1.6;
-}
-
-/* Gallery */
-.gallery {
-  background: rgba(255, 255, 255, 0.1);
-  margin: 0;
-  padding: 24px;
-  border-radius: 10px;
-}
-
-.gallery-scroll-wrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.gallery-grid {
-  display: flex;
-  gap: 24px;
-  width: max-content;
-  height: 200px;
-  background: transparent;
-  margin: 0;
-}
-
-.gallery-item {
-  flex: 0 0 auto;
-  aspect-ratio: 3 / 2;
-  background: transparent;
-  box-shadow: 0 0 24px rgba(0, 0, 0, 0.25);
-  overflow: hidden;
-}
-
-.gallery-item img {
-  height: 100%;
-  max-height: 200px;
-  width: auto;
-  object-fit: contain;
-  display: block;
 }
 
 /* Modal 樣式 */

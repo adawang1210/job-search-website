@@ -38,10 +38,11 @@
       <section class="skills">
         <ul>
           <li v-for="(skill, index) in profile.skills" :key="index">
-            {{ skill }}
+            {{ skill.skill }}（熟練度：{{ skill.proficiency }}%）
           </li>
         </ul>
       </section>
+
 
       <!-- 簡介 -->
       <h2>履歷表</h2>
@@ -140,6 +141,16 @@ import {
   SchoolOutline,
   BriefcaseOutline
 } from '@vicons/ionicons5';
+import {
+  getUserProfile,
+  getUserSkills,
+  getUserEducation,
+  getUserExperience,
+  getUserProjects,
+  getLikedCompanies,
+  getFollowedUsers
+} from '@/api/profile'; // 這裡的路徑依你的實際目錄結構調整
+
 
 export default {
   name: 'Profile',
@@ -195,24 +206,72 @@ export default {
   },
 
   mounted() {
-    axios.get('/profile.json')
-      .then(res => {
-        this.profile = res.data;
+    Promise.all([
+      getUserProfile(),
+      getUserSkills(),
+      getUserEducation(),
+      getUserExperience(),
+      getUserProjects(),
+      //getLikedCompanies(),
+      //getFollowedUsers()
+    ])
+      .then(([profileRes, skillsRes, educationRes, experienceRes, projectRes]) => {
+      // ✅ 找出你要顯示的使用者資料（假設目前只抓 id=2）
+      console.log('Profile Data:', profileRes);
+      const userData = profileRes.find(user => user.id === 2) || {};
 
-        this.$nextTick(() => {
-          const img = this.$refs.avatar;
-          if (!img) return;
-          if (img.complete) {
-            this.handleImage(img);
-          } else {
-            img.onload = () => this.handleImage(img);
-          }
-        });
-      })
-      .catch(error => {
-        console.error('讀取 profile.json 發生錯誤：', error);
+      this.profile = {
+        profile: {
+          img: '/default.jpg',
+          user_name: userData.name,
+          user_info: userData.city && userData.age && userData.gender
+          ? `${userData.city} , ${userData.age} 歲 , ${userData.gender}`
+          : ''
+        },
+        about: {
+          user_name: userData.name,
+          age: userData.age,
+          sex: userData.gender,
+          education: userData.highest_education,
+          phone_number: userData.phone,
+          mail: userData.email,
+          address: userData.full_address,
+          language: userData.languages
+        },
+        skills: userData.skills || [],
+        resume: {
+          introduction: userData.introduction || '',
+          education: (userData.educations || []).map(item => ({
+            year_start: item.start_date?.slice(0, 4),
+            year_end: item.end_date?.slice(0, 4),
+            degree: `${item.school}（${item.degree}）`,
+            content: `${item.major} - ${item.description}`
+          })),
+          work_experience: (userData.work_experiences || []).map(item => ({
+            year_start: item.start_date?.slice(0, 4),
+            year_end: item.end_date?.slice(0, 4),
+            job_title: item.job_title,
+            content: item.description
+          }))
+        },
+        projects: userData.projects || [],
+        liked: [],
+        following: []
+      };
+
+      this.$nextTick(() => {
+        const img = this.$refs.avatar;
+        if (img?.complete) {
+          this.handleImage(img);
+        } else if (img) {
+          img.onload = () => this.handleImage(img);
+        }
       });
-  }
+    })
+      .catch(error => {
+        console.error('Error fetching profile data:', error);
+      });
+}
 };
 </script>
 

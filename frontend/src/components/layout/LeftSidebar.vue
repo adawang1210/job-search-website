@@ -13,14 +13,14 @@
           <div v-if="item.image" class="job-image-sidebar" :style="{ backgroundImage: 'url(' + item.image + ')' }">
           </div>
           <div class="content-container-sidebar" v-show="!collapsed">
-            <!-- 暫時用id判斷是job-rec-1 or company-null-11 -->
-            <div v-if="item.id.split('-')[0] === 'job'"><!-- 如果是job -->
+            <!-- 判斷 job或是 company -->
+            <div v-if="'salary_type' in item"><!-- job會包含salary_type -->
               <p class="title-sidebar">{{ item.title }}</p>
-              <p v-if="item.company" class="company-sidebar">{{ item.company }}</p>
+              <p v-if="item.company" class="company-sidebar">{{ item.company.name }}</p>
             </div>
-            <div v-else-if="item.id.split('-')[0] === 'company'"><!-- 如果是company -->
-              <p class="title-sidebar">{{ item.title }}</p>
-              <!-- <p v-if="item.company" class="company-sidebar">{{ item.company }}</p> -->
+            <div v-else-if="'main_product' in item"><!-- company會包含main_product -->
+              <p class="title-sidebar">{{ item.name }}</p>
+               <p v-if="item.industry" class="company-sidebar">{{ item.industry }}</p>
             </div>
           </div>
           <button type="button" class="like-btn active" @click="handleUnlikeFromSidebar(item)" v-show="!collapsed">

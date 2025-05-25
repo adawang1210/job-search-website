@@ -516,15 +516,17 @@ export default {
 
 
 .middle-content .great-company .recommend-content .content-wrapper:hover {
-  background-color: #4a4444;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  background-color: #594f4f;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 8px rgba(0, 0, 0, 0.3);
+  width: 250px;
 }
 
 /* 優質企業圖示樣式 (great-company section) */
 .middle-content .great-company .company-icon {
   width: 200px;
   height: 200px;
-  border-radius: 10px;
+  border-radius: 5px;
   background-color: #ffffff;
   background-size: cover;
   background-position: center;
@@ -544,12 +546,6 @@ export default {
   white-space: nowrap;
   text-overflow: ellipsis;
   width: 200px;
-}
-
-.middle-content .great-company .recommend-content {
-  gap: 50px;
-  margin-left: 25px;
-  margin-top: 10px;
 }
 
 .favorite-job-section {
@@ -678,8 +674,20 @@ export default {
   user-select: none;
 }
 
-.job-card-wrapper,
-.middle-content .great-company .recommend-content .content-wrapper,
+.middle-content .great-company .recommend-content .content-wrapper{
+  display: flex;
+  flex-direction: column;
+  background-color: #594f4f00;
+  border-radius: 5px;
+  padding: 10px 25px;
+  width: 250px;
+  box-sizing: border-box;
+  color: white;
+  transition: transform 0.5s ease-out,
+    box-shadow 0.5s ease-out,
+    background-color 0.5s ease-out,
+    width 0.5s ease-out;
+}
 .middle-content .favorite-job .content-container {
   cursor: pointer;
 }

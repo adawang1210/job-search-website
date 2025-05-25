@@ -1,9 +1,10 @@
-import { createRouter, createWebHistory } from 'vue-router';
-import HomeView from '../views/HomeView.vue';
-import ProfileView from '../views/ProfileView.vue';
-import CompanyView from '../views/CompanyView.vue';
-import NotificationView from '../views/NotificationView.vue';
-import SearchResultView from '../views/SearchResultView.vue'; 
+import { createRouter, createWebHistory } from 'vue-router'
+import HomeView from '../views/HomeView.vue'
+import ProfileView from '../views/ProfileView.vue'
+import CompanyView from '../views/CompanyView.vue'
+import NotificationView from '../views/NotificationView.vue'
+import SearchResultView from '../views/SearchResultView.vue'
+import FavoriteJobsView from '../views/FavoriteJobsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -34,6 +35,11 @@ const router = createRouter({
       path: '/searchresult',
       name: 'searchresult',
       component: SearchResultView,
+    },
+    {
+      path: '/favoritejobs',
+      name: 'favoritejobs',
+      component: FavoriteJobsView,
     },
   ],
 })

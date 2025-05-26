@@ -12,14 +12,10 @@
       </div>
 
       <template v-if="!section.isLoading && !section.error">
-        <div v-if="section.jobs.length > 0"
-             class="recommend-content"
-             @mousedown="startDrag"
-             @mousemove="onDrag"
-             @mouseup="stopDrag"
-             @mouseleave="stopDrag"
-             :class="{ active: isDragging }">
-          <div class="job-card-wrapper" v-for="(job, jobIndex) in section.jobs" :key="job.id || jobIndex" @click="handleCardClick(job)">
+        <div v-if="section.jobs.length > 0" class="recommend-content" @mousedown="startDrag" @mousemove="onDrag"
+          @mouseup="stopDrag" @mouseleave="stopDrag" :class="{ active: isDragging }">
+          <div class="job-card-wrapper" v-for="(job, jobIndex) in section.jobs" :key="job.id || jobIndex"
+            @click="handleCardClick(job)">
             <p class="job-card-title" @click.stop="handleTitleClick(job)">{{ job.title }}</p>
             <div class="job-card-image" :style="{ backgroundImage: 'url(' + job.image + ')' }"></div>
             <div class="job-card-details">
@@ -28,16 +24,27 @@
                 <p class="job-card-salary">{{ job.salary }}</p>
               </div>
               <button type="button" class="like-btn job-card-like-btn" :class="{ active: job.isLiked }"
-                      @click.stop="toggleLike(section.title, jobIndex)">
+                @click.stop="toggleLike(section.title, jobIndex)">
                 <font-awesome-icon :icon="[job.isLiked ? 'fas' : 'far', 'heart']" class="heart-icon" />
               </button>
             </div>
           </div>
-          </div>
+        </div>
         <div v-else class="no-data-message">
           目前沒有 {{ section.title }} 的職缺。
         </div>
       </template>
+    </section>
+
+    <section class="love-job-section">
+      <h1>最愛行業</h1>
+      <div class="love-job-content" @mousedown="startDrag" @mousemove="onDrag"
+        @mouseup="stopDrag" @mouseleave="stopDrag" :class="{ active: isDragging }">
+        <div class="love-job-card" v-for="(item, index) in loveJobItems" :key="'love-job-' + index" :style="{ backgroundImage: 'url(\'/love-job-frame.png\')' }">
+          <img :src="item.image" :alt="item.name" class="love-job-photo">
+          <p class="love-job-name">{{ item.name }}</p>
+        </div>
+      </div>
     </section>
 
     <section class="great-company">
@@ -49,15 +56,10 @@
         {{ errorCompanies }}
       </div>
       <template v-if="!isLoadingCompanies && !errorCompanies">
-        <div v-if="companies.length > 0"
-             class="recommend-content"
-             @mousedown="startDrag"
-             @mousemove="onDrag"
-             @mouseup="stopDrag"
-             @mouseleave="stopDrag"
-             :class="{ active: isDragging }">
+        <div v-if="companies.length > 0" class="recommend-content" @mousedown="startDrag" @mousemove="onDrag"
+          @mouseup="stopDrag" @mouseleave="stopDrag" :class="{ active: isDragging }">
           <div class="content-wrapper" v-for="(company, cIndex) in companies" :key="'company-' + cIndex"
-               @click="handleCompanyCardClick(company)">
+            @click="handleCompanyCardClick(company)">
             <div class="company-icon" :style="{ backgroundImage: 'url(' + company.image + ')' }" @click.stop></div>
             <p class="company-name" @click.stop>{{ company.name }}</p>
           </div>
@@ -67,40 +69,39 @@
         </div>
       </template>
     </section>
-
-    <section class="favorite-job">
-      <div v-if="isLoadingFavoriteJobs" class="loading-message">
-        正在載入最愛職缺...
-      </div>
-      <div v-if="errorFavoriteJobs" class="error-message">
-        {{ errorFavoriteJobs }}
-      </div>
-      <template v-if="!isLoadingFavoriteJobs && !errorFavoriteJobs">
-        <template v-if="favoriteJobs.length > 0">
-          <div class="content-container"
-               v-for="(favJob, fIndex) in favoriteJobs"
-               :key="'favjob-' + fIndex"
-               :style="{ backgroundImage: 'url(' + favJob.image + ')' }"
-               @click="handleFavoriteJobCardClick(favJob)">
-            <div class="favorite-icon" :style="{ backgroundImage: 'url(' + favJob.icon + ')' }" @click.stop></div>
-            <p class="favorite-name" @click.stop>{{ favJob.name }}</p>
+    
+    <section class="favorite-job-section">
+      <h1>最愛職缺</h1>
+      <template v-if="favoriteJobs.length > 0">
+        <div class="favorite-job-grid">
+          <div class="favorite-job-card" v-for="(favJob, fIndex) in favoriteJobs" :key="favJob.id || 'favjob-' + fIndex"
+            :style="{ backgroundImage: 'url(' + favJob.image + ')' }" @click="handleFavoriteJobCardClick(favJob)">
+            <div class="card-overlay-content">
+              <div class="card-top-info">
+                <div class="favorite-job-icon" :style="{ backgroundImage: 'url(' + favJob.icon + ')' }" @click.stop>
+                </div>
+                <p class="favorite-job-name" @click.stop>{{ favJob.name }}</p>
+              </div>
+              <p class="favorite-job-description" @click.stop>{{ favJob.description }}</p>
+            </div>
           </div>
-        </template>
-        <div v-else class="no-data-message">
-          目前沒有最愛職缺資料。
         </div>
       </template>
+      <div v-else class="no-data-message">
+        目前沒有最愛職缺資料。
+      </div>
     </section>
   </div>
 </template>
 
 
+
 <script>
 import eventBus from '/src/eventBus.js';
-import axios from 'axios';
+import {  getJobs, getGreatCompanies, likeJob, unlikeJob, getJobDetail } from '@/api/home.js';
 
 export default {
-  name: 'MainPanel',
+  name: 'Home',
   inject: ['openRightSidebar', 'updateLikedItemInSidebar', 'addViewedItemToSidebar'],
   data() {
     return {
@@ -108,220 +109,280 @@ export default {
       startX: 0,
       scrollLeft: 0,
       sections: [
-        { title: '為你推薦', jobs: [], isLoading: false, error: null },
-        { title: '熱門職缺', jobs: [], isLoading: false, error: null },
-        { title: '最新職缺', jobs: [], isLoading: false, error: null },
+        {
+          title: '為你推薦',
+          jobs: [],
+          isLoading: false,
+          error: null,
+        },
+        {
+          title: '熱門職缺',
+          jobs: [],
+          isLoading: false,
+          error: null,
+        },
+        {
+          title: '最新職缺',
+          jobs: [],
+          isLoading: false,
+          error: null,
+        },
       ],
+      loveJobItems: [
+        { id: 'love_job_1', name: '金融業', image: '/love-job-1.jpg' },
+        { id: 'love_job_2', name: '傳產', image: '/love-job-2.jpg' },
+        { id: 'love_job_3', name: '科技業', image: '/love-job-3.jpg' },
+        { id: 'love_job_4', name: '電子產品製造業', image: '/love-job-4.jpg' },
+        { id: 'love_job_5', name: '服務業', image: '/love-job-5.jpg' },
+        { id: 'love_job_6', name: '維修業', image: '/love-job-6.jpg' }
+      ],
+      allApiJobs: [], // 用於存儲從 API 獲取並轉換格式後的所有職缺
       companies: [],
-      favoriteJobs: [
-        { name: '最愛牙醫師', image: '/favorite-bg-1.jpg', icon: '/favorite-icon-1.png' },
-        { name: '最愛室內設計師', image: '/favorite-bg-2.jpg', icon: '/favorite-icon-2.png' },
-        { name: '最愛咖啡師', image: '/favorite-bg-3.jpeg', icon: '/favorite-icon-3.png' },
-        { name: '最愛蛋糕師傅', image: '/favorite-bg-4.jpg', icon: '/favorite-icon-4.png' },
+      favoriteJobs: [ 
+        { id: 'fav_dentist', name: '最愛牙醫師', image: '/favorite-bg-1.jpg', icon: '/favorite-icon-1.png', description: '雅德斯牙醫診所、蒔美牙醫集團和更多', isLiked: false },
+        { id: 'fav_designer', name: '最愛室內設計師', image: '/favorite-bg-2.jpg', icon: '/favorite-icon-2.png', description: '雅和室內設計、拾間室內裝修設計有限公司和更多', isLiked: false },
+        { id: 'fav_barista', name: '最愛咖啡師', image: '/favorite-bg-3.jpeg', icon: '/favorite-icon-3.png', description: '咖碼股份有限公司、路易莎職人咖啡股份有限公司和更多', isLiked: false },
+        { id: 'fav_baker', name: '最愛烘焙技師', image: '/favorite-bg-4.jpg', icon: '/favorite-icon-4.png', description: '歐立食品股份有限公司、亞尼克菓子工房股份有限公司和更多', isLiked: false },
+        { id: 'fav_engineer', name: '最愛半導體工程師', image: '/favorite-bg-5.jpg', icon: '/favorite-icon-5.png', description: 'nvidia台灣分公司、台積電和更多', isLiked: false },
+        { id: 'fav_staff', name: '最愛門市人員', image: '/favorite-bg-6.jpg', icon: '/favorite-icon-6.png', description: '宜得利家居股份有限公司、無印良品和更多', isLiked: false }
       ],
-      // Moved these into the data object
       isLoadingCompanies: false,
       errorCompanies: null,
-      isLoadingFavoriteJobs: false,
-      errorFavoriteJobs: null,
     };
   },
-  mounted() {
-    // Keep existing eventBus listeners
+  async mounted() {
+    this.loadInitialData(); // 2. 組件掛載時獲取數據
+
     eventBus.on('unlike-item-in-home-via-sidebar', this.handleUnlikeFromSidebar);
     eventBus.on('like-item-in-home-via-sidebar', this.handleLikeFromSidebar);
-
-    // --- ADDED: Call methods to fetch data ---
-    this.fetchAllData();
   },
   beforeUnmount() {
     eventBus.off('unlike-item-in-home-via-sidebar', this.handleUnlikeFromSidebar);
     eventBus.off('like-item-in-home-via-sidebar', this.handleLikeFromSidebar);
   },
   methods: {
-    // --- ADDED: Method to orchestrate all data fetching ---
-    async fetchAllData() {
-      // You can show a global loading indicator here if you want
-      Promise.all([
-        this.fetchRecommendedJobs(),
-        this.fetchPopularJobs(),
-        this.fetchLatestJobs(),
-        this.fetchCompanies(),
-        // Ensure this API endpoint and data structure match your needs
-      ]).then(() => {
-        console.log('All initial data for Home.vue has been loaded (or attempted).');
-        // Hide global loading indicator here
-      }).catch(error => {
-        console.error('One or more initial data fetches failed for Home.vue:', error);
-        // Handle global error display if necessary
-        // Hide global loading indicator here
+    async loadInitialData() {
+      // 同時開始加載職缺和公司數據
+      this.sections.forEach(section => {
+        section.isLoading = true;
+        section.error = null;
       });
-    },
-
-    async fetchJobsForSection(sectionTitle, localJsonPath) { // 第二個參數現在是本地 JSON 路徑
-      const section = this.sections.find(s => s.title === sectionTitle);
-      if (!section) return;
-
-      section.isLoading = true;
-      section.error = null;
-      try {
-        // *** 修改點：直接使用 localJsonPath ***
-        const response = await axios.get(localJsonPath); // 例如: axios.get('/api/jobs-recommended.json')
-        section.jobs = response.data.jobs.map(job => ({ ...job, isLiked: job.isLiked || false }));
-      } catch (err) {
-        console.error(`Error fetching ${sectionTitle} from ${localJsonPath}:`, err);
-        section.error = '無法載入模擬資料，請檢查 JSON 檔案路徑及格式。';
-        section.jobs = [];
-      } finally {
-        section.isLoading = false;
-      }
-    },
-
-    async fetchRecommendedJobs() {
-      // *** 修改點：傳入 JSON 檔案路徑 ***
-      await this.fetchJobsForSection('為你推薦', '/jobs-recommended.json');
-    },
-
-    async fetchPopularJobs() {
-      // *** 修改點：傳入 JSON 檔案路徑 ***
-      await this.fetchJobsForSection('熱門職缺', '/jobs-popular.json');
-    },
-
-    async fetchLatestJobs() {
-      // *** 修改點：傳入 JSON 檔案路徑 ***
-      await this.fetchJobsForSection('最新職缺', '/jobs-latest.json');
-    },
-
-    async fetchCompanies() {
       this.isLoadingCompanies = true;
       this.errorCompanies = null;
+
       try {
-        // *** 修改點：直接使用 JSON 檔案路徑 ***
-        const response = await axios.get('/companies-great.json');
-        this.companies = response.data.companies;
-      } catch (err) {
-        console.error('Error fetching companies from /companies-great.json:', err);
-        this.errorCompanies = '無法載入模擬企業資料。';
-        this.companies = [];
+        // 使用 Promise.all 並行獲取數據
+        const [jobsData, companiesData] = await Promise.all([
+          getJobs(),
+          getGreatCompanies(),
+        ]);
+
+        // 3. 處理職缺數據
+        const rawJobs = jobsData.results || jobsData || [];
+        this.allApiJobs = rawJobs.map(job => ({
+          id: job.id,
+          title: job.title, 
+          image: job.company_logo || 'default_job_image.png',
+          company: job.company && job.company.name ? job.company.name : '未知公司',
+          salary: job.salary_max ? `$${job.salary_max}` : '面議', 
+          isLiked: job.is_liked_by_user || false, // 初始收藏狀態
+          originalData: job, // 保留原始API數據，方便後續使用
+        }));
+        this.distributeJobsRandomly(); // 將獲取的職缺隨機分配到各區塊
+
+        // 4. 處理企業數據
+        const rawCompanies = companiesData.results || companiesData || [];
+        this.companies = rawCompanies.map(company => ({
+          id: company.id,
+          name: company.name, 
+          image: company.media && company.media.logo ? company.media.logo : 'default_company_logo_path.png',
+          originalData: company,
+        }));
+
+      } catch (error) {
+        console.error('Error fetching initial data:', error);
+          let jobErrorOccurred = false;
+          let companyErrorOccurred = false;
+        if (error.message && error.message.toLowerCase().includes('network error')) {
+            // 網路錯誤可能影響所有請求
+            jobErrorOccurred = true;
+            companyErrorOccurred = true;
+        } else if (error.config && error.config.url) { // 如果錯誤對象包含請求配置
+            if (error.config.url.includes('/api/jobs')) jobErrorOccurred = true;
+            if (error.config.url.includes('/api/companies')) companyErrorOccurred = true;
+        } else if (error.isAxiosError && error.request && error.request.responseURL) {
+            // 另一種判斷方式
+            if (error.request.responseURL.includes('/api/jobs')) jobErrorOccurred = true;
+            if (error.request.responseURL.includes('/api/companies')) companyErrorOccurred = true;
+        }
+        else { // 如果無法判斷，假設兩個都可能出錯或是一個通用錯誤
+            jobErrorOccurred = true;
+            companyErrorOccurred = true;
+        }
+
+        if (jobErrorOccurred) {
+          this.sections.forEach(section => {
+            section.error = '無法載入職缺資訊，請稍後再試。';
+          });
+        }
+        if (companyErrorOccurred) {
+          this.errorCompanies = '無法載入企業資訊，請稍後再試。';
+        }
+        
+        // 如果沒有特定錯誤，但依然進入catch，顯示通用錯誤
+        if (!this.sections.some(s => s.error) && !this.errorCompanies && (jobErrorOccurred || companyErrorOccurred) ) {
+            const generalErrorMsg = '資料載入失敗，請檢查網路連線或稍後重試。';
+            this.sections.forEach(section => {
+                if(!section.error) section.error = generalErrorMsg;
+            });
+            if(!this.errorCompanies) this.errorCompanies = generalErrorMsg;
+        }
+
       } finally {
+        this.sections.forEach(section => section.isLoading = false);
         this.isLoadingCompanies = false;
       }
     },
 
-    // toggleLike 方法的處理：
-    // 因為沒有實際後端，POST/DELETE 操作無法真正執行。
-    // 您可以暫時註解掉 API 呼叫，只更新本地狀態，或者 console.log 模擬 API 呼叫。
+    distributeJobsRandomly() {
+      if (!this.allApiJobs.length) return;
+
+      let availableJobs = [...this.allApiJobs]; // 創建一個可修改的副本
+
+      // 打亂職缺順序
+      for (let i = availableJobs.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [availableJobs[i], availableJobs[j]] = [availableJobs[j], availableJobs[i]];
+      }
+      
+      // 為每個區塊分配職缺，盡量不重複，且數量可自訂
+      const jobsPerSection = 6; // 您希望每個區塊顯示的職缺數量
+
+      this.sections.forEach(section => {
+        section.jobs = []; // 清空現有職缺
+        // 從打亂後的職缺中取N個，如果職缺不夠，則取剩餘所有
+        const jobsForThisSection = availableJobs.splice(0, Math.min(jobsPerSection, availableJobs.length));
+        section.jobs = jobsForThisSection;
+      });
+    },
+
     async toggleLike(sectionTitle, jobIndex) {
       const section = this.sections.find(s => s.title === sectionTitle);
-      if (section && section.jobs && section.jobs[jobIndex]) {
-        const job = section.jobs[jobIndex];
-        const newLikedStatus = !job.isLiked;
+      if (!section) return;
 
-        console.log(`Simulating API call: Job ID ${job.id} new liked status: ${newLikedStatus}`);
-        // 暫時不實際呼叫後端 API
-        // try {
-        //   const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
-        //   if (newLikedStatus) {
-        //     await axios.post(`${baseUrl}/jobs/${job.id}/like`);
-        //   } else {
-        //     await axios.delete(`${baseUrl}/jobs/${job.id}/like`);
-        //   }
-        //   job.isLiked = newLikedStatus; // 更新本地狀態
-        // } catch (error) {
-        //   console.error('Error simulating toggle like status:', error);
-        //   alert('模擬更新收藏狀態失敗。');
-        //   // 可能需要恢復 job.isLiked 的原始狀態
-        //   return; // 提前返回，不更新 sidebar
-        // }
+      const job = section.jobs[jobIndex];
+      if (!job) return;
 
-        // 僅更新本地 UI 狀態以供測試
-        job.isLiked = newLikedStatus;
+      const originalLikedStatus = job.isLiked;
+      job.isLiked = !job.isLiked; // UI先行，樂觀更新
 
-        if (typeof this.updateLikedItemInSidebar === 'function') {
-          this.updateLikedItemInSidebar(job, job.isLiked);
+      this.updateLikedItemInSidebar(job.id, job.isLiked, job.originalData);
+      this.syncLikeStatusAcrossSections(job.id, job.isLiked); // 同步所有地方的收藏狀態
+
+      //5. (可選) 連接真實後端 API
+      try {
+        if (job.isLiked) {
+          await likeJob(job.id); // 假設 likeJob 是 API 請求函數
         } else {
-          console.error('updateLikedItemInSidebar is not available from BaseLayout');
+          await unlikeJob(job.id); // 假設 unlikeJob 是 API 請求函數
         }
-      } else {
-        console.error('Job or section not found for toggleLike');
+       } catch (error) {
+         console.error('Failed to update like status:', error);
+         job.isLiked = originalLikedStatus; // API 失敗，回滾UI狀態
+         this.updateLikedItemInSidebar(job.id, job.isLiked, job.originalData);
+         this.syncLikeStatusAcrossSections(job.id, job.isLiked);
+         alert('收藏操作失敗，請稍後再試。');
+       }
+    },
+
+    syncLikeStatusAcrossSections(jobId, newLikedStatus) {
+      // 同步 sections 中的職缺收藏狀態
+      this.sections.forEach(section => {
+        const jobInSection = section.jobs.find(j => j.id === jobId);
+        if (jobInSection && jobInSection.isLiked !== newLikedStatus) {
+          jobInSection.isLiked = newLikedStatus;
+        }
+      });
+      // 同步 favoriteJobs 中的職缺收藏狀態 (如果 id 匹配)
+      const favJob = this.favoriteJobs.find(j => j.id === jobId);
+      if (favJob && favJob.isLiked !== newLikedStatus) {
+        favJob.isLiked = newLikedStatus;
       }
     },
-    handleUnlikeFromSidebar(itemId) {
-      let jobFound = false;
-      for (const section of this.sections) {
-        const job = section.jobs.find(j => j.id === itemId);
-        if (job) {
-          job.isLiked = false;
-          jobFound = true;
-          // If this action implies backend update, it should happen in LeftSidebar or BaseLayout,
-          // or an event should trigger an API call here.
-          break;
-        }
-      }
-      if (!jobFound) {
-        console.warn(`Job with id ${itemId} not found in Home.vue sections to unlike.`);
-      }
+
+    handleUnlikeFromSidebar(item) { // 假設 item 是包含 id 的對象，或者直接是 id
+      const itemId = typeof item === 'object' ? item.originalData.id || item.id : item;
+      this.syncLikeStatusAcrossSections(itemId, false);
+      // 如果您在 toggleLike 中啟用了 API 調用，這裡也可以考慮調用 unlikeJob(itemId)
     },
-    handleLikeFromSidebar(itemId) {
-      let jobFound = false;
-      for (const section of this.sections) {
-        const job = section.jobs.find(j => j.id === itemId);
-        if (job) {
-          if (!job.isLiked) {
-            job.isLiked = true;
-            // This should reflect a backend change, confirmed via updateLikedItemInSidebar
-            if (typeof this.updateLikedItemInSidebar === 'function') {
-              this.updateLikedItemInSidebar(job, true);
-            } else {
-              console.error('updateLikedItemInSidebar is not available from BaseLayout');
-            }
-          }
-          jobFound = true;
-          break;
-        }
-      }
-      if (!jobFound) {
-        console.warn(`Job with id ${itemId} not found in Home.vue sections to like from sidebar.`);
-      }
+
+    handleLikeFromSidebar(item) { // 假設 item 是包含 id 的對象，或者直接是 id
+      const itemId = typeof item === 'object' ? item.originalData.id || item.id : item;
+      this.syncLikeStatusAcrossSections(itemId, true);
+      // 如果您在 toggleLike 中啟用了 API 調用，這裡也可以考慮調用 likeJob(itemId)
     },
+
     startDrag(e) {
+      const RContent = e.currentTarget;
       this.isDragging = true;
-      this.startX = e.pageX - e.currentTarget.offsetLeft;
-      this.scrollLeft = e.currentTarget.scrollLeft;
+      this.startX = e.pageX - RContent.offsetLeft;
+      this.scrollLeft = RContent.scrollLeft;
+      // RContent.classList.add('active'); // 如果模板中有 .active 樣式可以加上
     },
     onDrag(e) {
       if (!this.isDragging) return;
       e.preventDefault();
-      const x = e.pageX - e.currentTarget.offsetLeft;
-      const walk = (x - this.startX) * 2;
-      e.currentTarget.scrollLeft = this.scrollLeft - walk;
+      const RContent = e.currentTarget;
+      const x = e.pageX - RContent.offsetLeft;
+      const walk = (x - this.startX) * 2; // 可以調整滑動速度
+      RContent.scrollLeft = this.scrollLeft - walk;
     },
-    stopDrag() {
+    stopDrag(e) {
+      // const RContent = e.currentTarget;
       this.isDragging = false;
+      // RContent.classList.remove('active');
     },
+
     handleCardClick(jobData) {
+      const dataForSidebar = jobData.originalData || jobData;
       if (typeof this.addViewedItemToSidebar === 'function') {
-        this.addViewedItemToSidebar(jobData);
-      } else {
-        console.error('addViewedItemToSidebar is not available from BaseLayout');
+        this.addViewedItemToSidebar(dataForSidebar);
       }
       if (typeof this.openRightSidebar === 'function') {
-        this.openRightSidebar(jobData);
-      } else {
-        console.error('openRightSidebar is not available from BaseLayout');
+        this.openRightSidebar(dataForSidebar);
       }
     },
     handleTitleClick(job) {
       console.log('Title clicked for job:', job.title, 'Company:', job.company);
-      alert(`Navigating to company page for: ${job.company}. Implement Vue Router push here.`);
+      // 通常點擊職位標題或公司名稱會導航到公司或職缺詳情頁
+      // 假設您有一個路由到公司頁面，並且需要公司ID
+      // job.originalData.company.id
+      alert(`預計導航至公司頁面: ${job.company}. (此功能需 Vue Router 支持)`);
     },
     handleCompanyCardClick(company) {
       console.log('Company card clicked:', company);
-      // Example: this.openRightSidebar({ ...company, type: 'company' });
+      // company.originalData.id
+      alert(`點擊了公司: ${company.name}. (此功能需 Vue Router 支持)`);
     },
+    // 如果 favorite-job-card 有點擊事件，也需要實現
     handleFavoriteJobCardClick(favJob) {
-      console.log('Favorite job card clicked:', favJob);
-      // Example: this.openRightSidebar({ ...favJob, type: 'favoriteJob' });
+        console.log('Favorite job card clicked:', favJob);
+        // 創建一個與普通職缺結構相似的對象傳給 sidebar
+        const dataForSidebar = {
+            id: favJob.id,
+            title: favJob.name,
+            image: favJob.icon, // 或者 favJob.image
+            company: favJob.description.split('、')[0] || '相關企業', // 嘗試從描述中獲取
+            salary: 'N/A',
+            isLiked: favJob.isLiked !== undefined ? favJob.isLiked : true, // 收藏列表預設為已收藏
+            originalData: favJob
+        };
+        if (typeof this.addViewedItemToSidebar === 'function') {
+            this.addViewedItemToSidebar(dataForSidebar);
+        }
+        if (typeof this.openRightSidebar === 'function') {
+            this.openRightSidebar(dataForSidebar);
+        }
     }
   }
 }
@@ -334,8 +395,11 @@ export default {
   flex-direction: column;
   overflow-x: hidden;
   box-sizing: border-box;
-  background-color: #383333; /* 整體背景色 */
-  border-radius: 10px;
+  background-color: #383333;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 0; /* 下方圓角設為 0 */
+  border-bottom-left-radius: 0;  /* 下方圓角設為 0 */
   color: white;
   gap: 10px;
   width: 100%;
@@ -344,12 +408,14 @@ export default {
 
 /* 區塊標題與橫向區塊通用樣式 */
 .middle-content .recommend,
-.middle-content .great-company { /* great-company 保持原有樣式 */
+.middle-content .great-company,
+.middle-content .love-job-section,
+.middle-content .favorite-job-section {
   display: flex;
   flex-direction: column;
   white-space: nowrap;
   gap: 8px;
-  padding: 4px 25px; /* 左右padding */
+  padding: 4px 25px;
 }
 
 .middle-content section h1 {
@@ -362,19 +428,39 @@ export default {
 .middle-content .recommend-content {
   display: flex;
   flex-direction: row;
-  gap: 10px; /* 卡片之間的間距 */
+  gap: 10px;
   overflow-x: auto;
   flex-wrap: nowrap;
   box-sizing: border-box;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   cursor: grab;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-  padding-bottom: 10px; /* 給滾動條一些空間，如果有的話，或避免內容截斷 */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 10px;
 }
-.middle-content .recommend-content::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+
+.middle-content .love-job-content {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  cursor: grab;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 0px 10px 10px 0px;
+  transition: transform 0.5s ease-out,
+    box-shadow 0.5s ease-out,
+    background-color 0.5s ease-out;
+}
+
+.middle-content .recommend-content::-webkit-scrollbar,
+.middle-content .love-job-content::-webkit-scrollbar {
+  display: none;
 }
 
 
@@ -383,109 +469,158 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: #594f4f00; /* 正常狀態背景色 (目前是透明) */
+  background-color: #594f4f00;
   border-radius: 5px;
   padding: 10px 25px 10px 25px;
-  width: 280px; /* 卡片原始寬度 */
+  width: 280px;
   box-sizing: border-box;
   color: white;
   text-align: center;
-  /* MODIFIED: 在 transition 中加入 width 和 background-color */
   transition: transform 0.5s ease-out,
-              box-shadow 0.5s ease-out,
-              background-color 0.5s ease-out, /* 新增背景色過渡 */
-              width 0.5s ease-out;            /* 新增寬度過渡 */
+    box-shadow 0.5s ease-out,
+    background-color 0.5s ease-out,
+    width 0.5s ease-out;
   cursor: pointer;
 }
 
 .job-card-wrapper:hover {
-  background-color: #594f4f; 
+  background-color: #594f4f;
   transform: translateY(-1px);
   box-shadow: 0 8px 8px rgba(0, 0, 0, 0.3);
-  width: 350px; 
+  width: 350px;
 }
 
 .job-card-title {
-font-size: 15px;
-font-weight: bold;
-margin-bottom: 4px;
-margin-top: -6px;
-white-space: nowrap;
-overflow: hidden;
-text-overflow: ellipsis;
-width: 100%;
+  font-size: 15px;
+  font-weight: bold;
+  margin-bottom: 4px;
+  margin-top: -6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 150px;
 }
 
 .job-card-title:hover {
-text-decoration: underline;
+  text-decoration: underline;
 }
 
 .job-card-image {
-width: 150px;  
-height: 150px;
-background-color: white;
-background-size: contain; 
-background-position: center;
-background-repeat: no-repeat;
-border-radius: 5px;
-margin-bottom: 5px; 
+  width: 150px;
+  height: 150px;
+  background-color: white;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 5px;
+  margin-bottom: 5px;
 }
 
 .job-card-details {
-display: flex;
-justify-content: space-between;
-align-items: flex-end;
-width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
 }
 
 .job-card-info-left {
-display: flex;
-flex-direction: column;
-align-items: flex-start;
-text-align: left;
-margin-bottom: -8px;
-margin-left: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding-right: 8px;
 }
 
 .job-card-company {
-font-size: 13px;
-font-weight: bold;
-margin: 0;
-white-space: nowrap;
-overflow: hidden;
-text-overflow: ellipsis;
-max-width: 110px;
+  font-size: 13px;
+  font-weight: bold;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%; 
 }
 
 .job-card-salary {
-font-size: 12px;
-color: #E0E0E0;
-margin-top: -2px;
-white-space: nowrap;
-overflow: hidden;
-text-overflow: ellipsis;
-max-width: 110px;
+  font-size: 12px;
+  color: #E0E0E0;
+  margin-top: -2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .job-card-like-btn.like-btn {
   display: flex;
   font-size: 18px;
   align-self: flex-end;
-  margin-bottom: 3px; /* 往上移動按鈕 */
   margin-right: 6px;
 }
 
+/* --- LOVE JOB SECTION STYLES START --- */
+.love-job-section .love-job-content .love-job-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+  justify-content: flex-start; 
+  position: relative; 
+  width: 250px;
+  height: 210px;
+  background-color: #594f4f00; 
+  background-size: cover; 
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 15px; 
+  box-sizing: border-box;
+  color: white;
+  cursor: pointer;
+  transition: transform 0.5s ease-out, 
+              box-shadow 0.5s ease-out, 
+              background-color 0.5s ease-out; 
+  flex-shrink: 0; 
+}
 
-.middle-content .great-company .recommend-content .content-wrapper:hover { /* From hover effect */
-  background-color: #4a4444;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+.love-job-section .love-job-content .love-job-card:hover {
+  background-color: #594f4f; /* 與 great-company 一致 */
+  border-radius: 4px;
+  transform: translateY(-1px); /* 與 great-company 一致 */
+  box-shadow: 0 8px 8px rgba(0, 0, 0, 0.3); /* 與 great-company 一致 */
+}
+
+.love-job-section .love-job-photo {
+  width: 160px; /* Occupy padded space */
+  height: 130px; /* Adjust based on your frame image, leaves space for name */
+  margin-top: 24px; /* Adjust as needed */
+}
+
+.love-job-section .love-job-name {
+  position: absolute;
+  left: 15px; /* Align with padding */
+  right: 15px; /* Align with padding */
+  top: 175px;
+  font-size: 16px;
+  font-weight: bold;
+  color: white;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 1; /* Ensure it's above the photo if photo positioning is tricky */
+}
+/* --- LOVE JOB SECTION STYLES END --- */
+
+.middle-content .great-company .recommend-content .content-wrapper:hover {
+  background-color: #594f4f;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 8px rgba(0, 0, 0, 0.3);
+  width: 250px;
 }
 
 /* 優質企業圖示樣式 (great-company section) */
 .middle-content .great-company .company-icon {
   width: 200px;
   height: 200px;
-  border-radius: 10px;
+  border-radius: 5px;
   background-color: #ffffff;
   background-size: cover;
   background-position: center;
@@ -504,87 +639,106 @@ max-width: 110px;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  width: 200px; /* 配合 company-icon 寬度 */
+  width: 200px;
 }
 
-/* 只調整「優質企業」區塊中卡片的間距 */
-.middle-content .great-company .recommend-content {
-  gap: 50px;
-  margin-left:25px; /* 設定您希望的「優質企業」卡片間距，例如 25px */
-  margin-top:10px;
-}
-
-
-/* 最愛職缺樣式 (favorite-job section) */
-.middle-content .favorite-job {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 50px;
-  padding: 40px 40px 0px 70px;
+.favorite-job-section {
   margin-bottom: 20px;
 }
-.middle-content .favorite-job .content-container { /* This is the card for favorite jobs */
-  display: flex;
-  gap: 10px;
-  width: 400px;
-  height: 450px;
-  border-radius: 5px;
-  background-color: #ffffff;
+
+.favorite-job-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 25px;
+  width: 100%;
+}
+
+.favorite-job-card {
+  aspect-ratio: 16 / 10;
+  border-radius: 4px;
+  max-width: 320px; /* 例如 */
+  min-height: 320px;
+  width: 100%; /* 確保它能縮小 */
   background-size: cover;
   background-position: center;
-  border: none;
-  padding: 25px;
-  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
   cursor: pointer;
-  position: relative; /* For hover effect */
-  overflow: hidden; /* For hover effect */
-  transition: transform 0.25s ease-out, box-shadow 0.25s ease-out; /* From hover effect */
+  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 18px;
+  box-sizing: border-box;
 }
-.middle-content .favorite-job .content-container::before { /* From hover effect */
+
+.favorite-job-card::before {
   content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.15);
-  opacity: 0;
-  transition: opacity 0.25s ease-out;
-  border-radius: 5px;
-  pointer-events: none;
-}
-.middle-content .favorite-job .content-container:hover { /* From hover effect */
-  transform: scale(1.02) translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
-}
-.middle-content .favorite-job .content-container:hover::before { /* From hover effect */
-  opacity: 1;
-}
-.middle-content .favorite-job .content-container p {
-  margin-top: 20px;
-}
-.middle-content .favorite-job .content-container .favorite-icon {
-  width: 80px;
-  height: 80px;
-  border-radius: 5px;
-  background-color: #ffffff00;
-  background-size: cover;
-  background-position: center;
-  border: none;
-  padding: 0;
-  flex-shrink: 0;
-  position: relative; /* From hover effect */
-  z-index: 1; /* From hover effect */
-  transition: transform 0.25s ease-out; /* From hover effect */
-}
-.middle-content .favorite-job .content-container:hover .favorite-icon { /* From hover effect */
-  transform: scale(1.08);
-}
-.middle-content .favorite-job .content-container .favorite-name { /* From hover effect */
- position: relative;
- z-index: 1;
+  background-color: rgba(0, 0, 0, 0.35);
+  border-radius: inherit;
+  z-index: 1;
+  transition: background-color 0.3s ease;
 }
 
+.favorite-job-card:hover {
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: 0 10px 10px rgba(0, 0, 0, 0.25);
+}
+
+.favorite-job-card:hover::before {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.card-overlay-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  color: white;
+}
+
+.card-top-info {
+  display: flex;
+  align-items: flex-start;
+  margin-left:-20px;
+}
+
+.favorite-job-icon {
+  width: 100px;
+  height: 100px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.favorite-job-name {
+  font-size: 15px;
+  font-weight: bold;
+  margin: 0;
+  padding-top: 15px;
+  margin-left: -10px;
+}
+
+.favorite-job-description {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #e0e0e0;
+  margin: 0;
+  align-self: flex-start;
+  margin-top: auto;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* 收藏按鈕通用樣式 */
 .like-btn {
@@ -594,28 +748,41 @@ max-width: 110px;
   color: white;
   font-size: 18px;
   padding: 0px;
-  transition: transform 0.5s ease, color 0.3s ease; /* Added color transition */
+  transition: transform 0.5s ease, color 0.3s ease;
 }
+
 .like-btn:hover {
   transform: scale(1.1);
 }
+
 .like-btn.active {
-  color: rgb(235, 178, 189); /* 粉色實心 */
-}
-.heart-icon {
-  transition: color 0.3s ease; /* Already here, good */
+  color: rgb(235, 178, 189);
 }
 
-/* 滑動中游標變成抓取狀態 */
-.middle-content .recommend-content.active { /* Applies to both job and company recommend-content */
+.heart-icon {
+  transition: color 0.3s ease;
+}
+
+.middle-content .recommend-content.active {
   cursor: grabbing;
   user-select: none;
 }
 
-/* 通用：為可交互卡片添加鼠標指針 */
-.job-card-wrapper, /* New job card */
-.middle-content .great-company .recommend-content .content-wrapper, /* Company card */
-.middle-content .favorite-job .content-container { /* Favorite job card */
+.middle-content .great-company .recommend-content .content-wrapper{
+  display: flex;
+  flex-direction: column;
+  background-color: #594f4f00;
+  border-radius: 5px;
+  padding: 10px 25px;
+  width: 250px;
+  box-sizing: border-box;
+  color: white;
+  transition: transform 0.5s ease-out,
+    box-shadow 0.5s ease-out,
+    background-color 0.5s ease-out;
+  cursor: pointer;
+}
+.middle-content .favorite-job .content-container {
   cursor: pointer;
 }
 
@@ -627,6 +794,7 @@ max-width: 110px;
   color: #ccc;
   width: 100%;
 }
+
 .error-message {
   color: #ffffff;
   background-color: rgba(128, 128, 128, 0.1);
@@ -634,6 +802,7 @@ max-width: 110px;
   border-radius: 5px;
   margin: 10px 0;
 }
+
 .loading-message {
   font-style: italic;
 }

@@ -1,7 +1,7 @@
 """
 URL configuration for job_project project.
 
-The `urlpatterns` list routes URLs to views. For more information please see:
+The urlpatterns list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.2/topics/http/urls/
 Examples:
 Function views
@@ -39,8 +39,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # API URLs
-    path('api/companies/', include('apps.companies.urls')),
-    path('api/jobs/', include('apps.jobs.urls')),
+    # path('api/companies/', include('apps.companies.urls')),
+    path('api/', include('apps.companies.urls')), 
+    # path('api/jobs/', include('apps.jobs.urls')),
+    path('api/', include('apps.jobs.urls')), 
     path('api/users/', include('apps.users.urls')),
 
     # API 文档
@@ -50,3 +52,7 @@ urlpatterns = [
     # Redoc UI:
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# urlpatterns = [
+#     path('api/', include('apps.jobs.urls')),
+# ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

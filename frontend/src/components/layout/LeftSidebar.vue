@@ -154,6 +154,11 @@ export default {
         document.body.style.cursor = '';
       }
     }
+  },
+  watch: {
+    likedItems(newVal) {
+      console.log('LeftSidebar.vue: likedItems prop updated:', JSON.parse(JSON.stringify(newVal)));
+    }
   }
 }
 </script>

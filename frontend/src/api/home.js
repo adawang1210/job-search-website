@@ -1,44 +1,18 @@
 import request from './axios'
 
 // 獲取推薦職缺
-export function getRecommendedJobs(params) {
+export function getJobs(params) {
   return request({
-    url: '/api/jobs/recommended',
-    method: 'get',
-    params
-  })
-}
-
-// 獲取熱門職缺
-export function getHotJobs(params) {
-  return request({
-    url: '/api/jobs/hot',
-    method: 'get',
-    params
-  })
-}
-
-// 獲取最新職缺
-export function getLatestJobs(params) {
-  return request({
-    url: '/api/jobs/latest',
+    url: '/api/jobs',
     method: 'get',
     params
   })
 }
 
 // 獲取優質企業列表
-export function getTopCompanies() {
+export function getGreatCompanies() {
   return request({
-    url: '/api/companies/top',
-    method: 'get'
-  })
-}
-
-// 獲取最愛職缺
-export function getFavoriteJobs() {
-  return request({
-    url: '/api/jobs/favorite',
+    url: '/api/companies',
     method: 'get'
   })
 }
@@ -65,4 +39,4 @@ export function getJobDetail(jobId) {
     url: `/api/jobs/${jobId}`,
     method: 'get'
   })
-} 
+}

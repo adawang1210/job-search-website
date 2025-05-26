@@ -36,7 +36,11 @@ const router = createRouter({
       path: '/searchresult',
       name: 'searchresult',
       component: SearchResultView,
-      // props: route => ({ query: route.query.q }) // 如果想透過 props 傳遞查詢參數
+    },
+    {
+      path: '/favoritejobs',
+      name: 'favoritejobs',
+      component: FavoriteJobsView,
     },
     {
     path: '/all-company',

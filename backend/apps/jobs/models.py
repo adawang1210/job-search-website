@@ -27,5 +27,5 @@ class JobOpeningBenefit(models.Model):
 
     def __str__(self):
         return f"{self.job_opening.title} 個別福利"
- 
+    
     

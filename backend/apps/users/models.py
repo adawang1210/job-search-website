@@ -30,6 +30,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     
     name = models.CharField(max_length=150, verbose_name='姓名')
+    picture = models.ImageField(upload_to='profile_pictures/', blank=True, verbose_name='頭像')
     age = models.IntegerField(verbose_name='年齡', null=True, blank=True)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, verbose_name='性別', null=True, blank=True)
     highest_education = models.CharField(max_length=100, verbose_name='最高學歷', null=True, blank=True)
@@ -85,6 +86,7 @@ class UserSkill(models.Model):
     skill_package = models.ForeignKey(UserSkillPackage, on_delete=models.CASCADE, related_name='skills', verbose_name='所屬技能包', null=True, blank=True)
     skill = models.CharField(max_length=100, verbose_name='技能名稱')
     proficiency = models.IntegerField(default=0, verbose_name='熟練度')
+    icon_svg = models.TextField(verbose_name='技能圖標SVG', null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='skills', null=True, blank=True)  # 保留用户字段用于迁移
     
     class Meta:

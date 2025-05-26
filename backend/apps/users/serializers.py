@@ -16,7 +16,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class UserSkillSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserSkill
-        fields = ['id', 'skill', 'proficiency']
+        fields = ['id', 'skill', 'proficiency', 'icon_svg']
 
 class UserEducationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -46,7 +46,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id', 'name', 'age', 'gender', 'highest_education', 
+            'id', 'name', 'picture', 'age', 'gender', 'highest_education', 
             'phone', 'email', 'city', 'district', 'address',
             'full_address', 'languages', 'introduction',
             'skills', 'educations', 'work_experiences', 'projects'

@@ -46,12 +46,10 @@ class LogoutView(APIView):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserDetailSerializer
-    permission_classes = [IsAuthenticated] #暫時開放權限 permission_classes = [AllowAny]
+    permission_classes = [AllowAny]
 
     def get_permissions(self):
-        if self.action in ['register', 'login']:
-            return [AllowAny()]
-        return super().get_permissions()
+        return [AllowAny()]
 
     @action(detail=False, methods=['post'])
     def register(self, request):

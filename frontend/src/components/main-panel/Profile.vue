@@ -1,52 +1,125 @@
 <template>
   <div class="middle-content" v-if="profile">
     <div class="container">
+      
+
       <!-- 個人資料區 -->
       <section class="profile">
         <img :src="profile.profile.img" ref="avatar" alt="大頭照" class="avatar" />
         <div class="info">
+          <h2>個人</h2>
           <h1>{{ profile.profile.user_name }}</h1>
           <p>{{ profile.profile.user_info }}</p>
+        
+        <br>
+          <!-- 導覽列 -->
+        <n-breadcrumb>
+          <n-breadcrumb-item>
+            <div class="breadcrumb-link" @click="scrollToSection('aboutSection')">
+              <n-icon>
+                <img :src="profileIcon" alt="profile icon" style="width: 16px; height: 16px;" />
+              </n-icon>
+              關於
+            </div>
+          </n-breadcrumb-item>
+          <n-breadcrumb-item>
+            <div class="breadcrumb-link" @click="scrollToSection('skillsSection')">
+              <n-icon>
+                <img :src="skillIcon" alt="skill icon" style="width: 16px; height: 16px;" />
+              </n-icon>
+              技能
+            </div>
+          </n-breadcrumb-item>
+          <n-breadcrumb-item>
+            <div class="breadcrumb-link" @click="scrollToSection('resumeSection')">
+              <n-icon>
+                <img :src="resumeIcon" alt="resume icon" style="width: 16px; height: 16px;" />
+              </n-icon>
+              履歷表
+            </div>
+          </n-breadcrumb-item>
+        </n-breadcrumb>
         </div>
-      </section>
 
-      <!-- 編輯 icon -->
-      <n-icon :size="30" class="edit-icon">
-        <create-outline />
-      </n-icon>
+        <!-- 編輯 icon -->
+        <n-icon :size="30" class="edit-icon">
+          <create-outline />
+        </n-icon>
+
+    </section>
 
 
 
 
       <!-- 關於 -->
       <h2>關於</h2>
-      <section class="about">
-        <ul>
-          <li><strong>姓名：</strong>{{ profile.about.user_name }}</li>
-          <li><strong>年齡：</strong>{{ profile.about.age }}</li>
-          <li><strong>性別：</strong>{{ profile.about.sex }}</li>
-          <li><strong>學歷：</strong>{{ profile.about.education }}</li>
-          <li><strong>手機：</strong>{{ profile.about.phone_number }}</li>
-          <li><strong>信箱：</strong>{{ profile.about.mail }}</li>
-          <li><strong>地址：</strong>{{ profile.about.address }}</li>
-          <li><strong>語言：</strong>{{ profile.about.language }}</li>
-        </ul>
+      <section class="about" ref="aboutSection">
+        <n-descriptions 
+          label-placement="left"
+          :theme-overrides="descriptionThemeOverrides"
+        >
+          <n-descriptions-item class="white-text" label="姓名">
+            <span style="color: white;">{{ profile.about.user_name }}</span>
+          </n-descriptions-item>
+          <n-descriptions-item class="white-text" label="年齡">
+            <span style="color: white;">{{ profile.about.age }}</span>
+          </n-descriptions-item>
+          <n-descriptions-item class="white-text" label="性別">
+            <span style="color: white;">{{ profile.about.sex }}</span>
+          </n-descriptions-item>
+          <n-descriptions-item class="white-text" label="學歷">
+            <span style="color: white;">{{ profile.about.education }}</span>
+          </n-descriptions-item>
+          <n-descriptions-item class="white-text" label="手機">
+            <span style="color: white;">{{ profile.about.phone_number }}</span>
+          </n-descriptions-item>
+          <n-descriptions-item class="white-text" label="信箱">
+            <span style="color: white;">{{ profile.about.mail }}</span>
+          </n-descriptions-item>
+          <n-descriptions-item class="white-text" label="地址">
+            <span style="color: white;">{{ profile.about.address }}</span>
+          </n-descriptions-item>
+          <n-descriptions-item class="white-text" label="語言">
+            <span style="color: white;">{{ profile.about.language }}</span>
+          </n-descriptions-item>
+        </n-descriptions>
       </section>
 
       <!-- 技能 -->
       <h2>技能</h2>
-      <section class="skills">
-        <ul>
-          <li v-for="(skill, index) in profile.skills" :key="index">
-            {{ skill.skill }}（熟練度：{{ skill.proficiency }}%）
-          </li>
-        </ul>
+      <section class="skills" ref="skillsSection">
+        <div class="skill-grid">
+          <div v-for="(skill, index) in profile.skills" :key="index" class="skill-item">
+            <div class="skill-icon">
+              <n-icon size="32" color="#fff">
+                <div v-if="skill.icon_svg" v-html="skill.icon_svg"></div>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 32 32">
+                  <!-- 默认图标 -->
+                  <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 32 32"><path d="M30 30h-8V4h8zm-6-2h4V6h-4z" fill="currentColor"></path><path d="M20 30h-8V12h8zm-6-2h4V14h-4z" fill="currentColor"></path><path d="M10 30H2V18h8zm-6-2h4v-8H4z" fill="currentColor"></path></svg>  
+                </svg>
+              </n-icon>
+            </div>
+            <div class="skill-content">
+              <div class="skill-name">{{ skill.skill }}</div>
+              <div class="skill-proficiency">
+                <n-number-animation
+                  ref="numberAnimationRefs"
+                  :from="0"
+                  :to="skill.proficiency"
+                  :active="isSkillsVisible"
+                  :precision="0"
+                  :duration="2000"
+                />
+                <span class="percent-sign">%</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
-
 
       <!-- 簡介 -->
       <h2>履歷表</h2>
-      <section class="intro">
+      <section class="intro" ref="resumeSection">
         <h3><n-icon :size="25"><person-outline class="person-outline"/></n-icon> 簡介</h3>
         <p>{{ profile.resume.introduction }}</p>
       </section>
@@ -98,12 +171,34 @@
       <!-- 我的專案 -->
       <h2>我的專案</h2>
       <section class="projects">
-        <div class="logo-scroll-container">
-          <div v-for="(proj, index) in profile.projects" :key="index">
-            <img :src="proj.img" :alt="proj.project_name" draggable="false">
-            <p>{{ proj.project_name }}</p>
+        <n-marquee :play-reversed="true" :auto-play="true" :interval="3000">
+          <div class="project-group" v-for="(proj, index) in profile.projects" :key="index">
+            <div class="project-item">
+              <div class="project-cover">
+                <n-image
+                  width="160"
+                  height="100"
+                  :src="proj.cover_photo"
+                  :alt="proj.title"
+                  object-fit="contain"
+                  class="project-image"
+                />
+              </div>
+              <div class="project-title">{{ proj.title }}</div>
+              <div class="tech-stack">
+                <div class="tech-item" v-for="(tech, techIndex) in proj.technologies" :key="techIndex">
+                  <n-image
+                    width="40"
+                    height="40"
+                    :src="tech.icon"
+                    :alt="tech.name"
+                  />
+                  <p>{{ tech.name }}</p>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        </n-marquee>
       </section>
 
       <!-- 已按讚 -->
@@ -134,13 +229,17 @@
 
 <script>
 import axios from 'axios';
-import { NIcon } from 'naive-ui';
+import { NIcon, NDescriptions, NDescriptionsItem, useThemeVars, NStatistic, NNumberAnimation, NButton, NMarquee, NImage, NBreadcrumb, NBreadcrumbItem } from 'naive-ui';
+import { ref, onMounted, nextTick } from 'vue';
 import {
   CreateOutline,
   PersonOutline,
   SchoolOutline,
   BriefcaseOutline
 } from '@vicons/ionicons5';
+import profileIcon from '@/assets/icons/profile-icon.svg';
+import skillIcon from '@/assets/icons/skill-icon.svg';
+import resumeIcon from '@/assets/icons/resume-icon.svg';
 import {
   getUserProfile,
   getUserSkills,
@@ -149,7 +248,7 @@ import {
   getUserProjects,
   getLikedCompanies,
   getFollowedUsers
-} from '@/api/profile'; // 這裡的路徑依你的實際目錄結構調整
+} from '@/api/profile';
 
 
 export default {
@@ -159,49 +258,118 @@ export default {
     CreateOutline,
     PersonOutline,
     SchoolOutline,
-    BriefcaseOutline
+    BriefcaseOutline,
+    NDescriptions,
+    NDescriptionsItem,
+    NStatistic,
+    NNumberAnimation,
+    NButton,
+    NMarquee,
+    NImage,
+    NBreadcrumb,
+    NBreadcrumbItem
   },
+  setup() {
+    const themeVars = useThemeVars();
+    const numberAnimationRefs = ref([]);
+    const skillsSection = ref(null);
+    const isSkillsVisible = ref(false);
+    let observer = null;
+    const aboutSection = ref(null);
+    const resumeSection = ref(null);
 
+    const initializeObserver = () => {
+      if (!observer) {
+        observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              console.log('Intersection ratio:', entry.intersectionRatio);
+              console.log('Is intersecting:', entry.isIntersecting);
+              if (entry.isIntersecting) {
+                console.log('Animation triggered');
+                isSkillsVisible.value = true;
+              }
+            });
+          },
+          {
+            root: null,
+            threshold: 0.1,
+            rootMargin: '0px'
+          }
+        );
+      }
+
+      if (skillsSection.value) {
+        console.log('Skills section mounted:', skillsSection.value);
+        observer.observe(skillsSection.value);
+        console.log('Observer started');
+      }
+    };
+
+    onMounted(() => {
+      console.log('Component mounted');
+      initializeObserver();
+    });
+
+    // 监听 profile 数据变化
+    const startObservation = () => {
+      nextTick(() => {
+        console.log('Profile data loaded, initializing observer');
+        initializeObserver();
+      });
+    };
+
+    const scrollToSection = (refName) => {
+      const section = {
+        aboutSection,
+        skillsSection,
+        resumeSection
+      }[refName];
+
+      if (section.value) {
+        section.value.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    };
+
+    return {
+      themeVars,
+      numberAnimationRefs,
+      skillsSection,
+      isSkillsVisible,
+      startObservation,
+      profileIcon,
+      skillIcon,
+      resumeIcon,
+      aboutSection,
+      resumeSection,
+      scrollToSection
+    };
+  },
   data() {
     return {
-      profile: null
+      profile: null,
+      descriptionThemeOverrides: {
+        itemTextColor: '#ffffff',
+        labelTextColor: '#ffffff'
+      }
     };
   },
 
   methods: {
-    handleImage(img) {
-      if (!img) return;
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      ctx.drawImage(img, 0, 0);
-
-      const imageData = ctx.getImageData(0, 0, img.naturalWidth, 50);
-      const pixels = imageData.data;
-
-      let r = 0, g = 0, b = 0, count = 0;
-      for (let i = 0; i < pixels.length; i += 4) {
-        r += pixels[i];
-        g += pixels[i + 1];
-        b += pixels[i + 2];
-        count++;
-      }
-
-      r = Math.floor(r / count);
-      g = Math.floor(g / count);
-      b = Math.floor(b / count);
-
-      const avgColor = `rgb(${r}, ${g}, ${b})`;
-
+    handleImage() {
+      // 使用固定的渐变背景
       const contentEl = document.querySelector('.middle-content');
-      contentEl.style.background = `linear-gradient(
-        to bottom,
-        ${avgColor} 0%,
-        #2b2b2b 20%,
-        #2b2b2b 100%
-      )`;
+      if (contentEl) {
+        contentEl.style.background = `linear-gradient(
+          to bottom,
+          rgba(187, 187, 187, 0.8) 0%,
+          #2b2b2b 20%,
+          #2b2b2b 100%
+        )`;
+      }
     }
   },
 
@@ -212,71 +380,146 @@ export default {
       getUserEducation(),
       getUserExperience(),
       getUserProjects(),
-      //getLikedCompanies(),
-      //getFollowedUsers()
     ])
       .then(([profileRes, skillsRes, educationRes, experienceRes, projectRes]) => {
-      // ✅ 找出你要顯示的使用者資料（假設目前只抓 id=2）
-      console.log('Profile Data:', profileRes);
-      const userData = profileRes.find(user => user.id === 2) || {};
+        console.log('Profile Data:', profileRes);
+        const userData = profileRes.find(user => user.id === 2) || {};
 
-      this.profile = {
-        profile: {
-          img: '/default.jpg',
-          user_name: userData.name,
-          user_info: userData.city && userData.age && userData.gender
-          ? `${userData.city} , ${userData.age} 歲 , ${userData.gender}`
-          : ''
-        },
-        about: {
-          user_name: userData.name,
-          age: userData.age,
-          sex: userData.gender,
-          education: userData.highest_education,
-          phone_number: userData.phone,
-          mail: userData.email,
-          address: userData.full_address,
-          language: userData.languages
-        },
-        skills: userData.skills || [],
-        resume: {
-          introduction: userData.introduction || '',
-          education: (userData.educations || []).map(item => ({
-            year_start: item.start_date?.slice(0, 4),
-            year_end: item.end_date?.slice(0, 4),
-            degree: `${item.school}（${item.degree}）`,
-            content: `${item.major} - ${item.description}`
-          })),
-          work_experience: (userData.work_experiences || []).map(item => ({
-            year_start: item.start_date?.slice(0, 4),
-            year_end: item.end_date?.slice(0, 4),
-            job_title: item.job_title,
-            content: item.description
-          }))
-        },
-        projects: userData.projects || [],
-        liked: [],
-        following: []
-      };
+        // 處理項目數據，確保技術棧信息存在
+        const processedProjects = (userData.projects || []).map(project => ({
+          ...project,
+          technologies: project.technologies || []  // 確保技術棧是一個數組
+        }));
 
-      this.$nextTick(() => {
-        const img = this.$refs.avatar;
-        if (img?.complete) {
-          this.handleImage(img);
-        } else if (img) {
-          img.onload = () => this.handleImage(img);
-        }
-      });
-    })
+        this.profile = {
+          profile: {
+            img: userData.picture || '/default.jpg',
+            user_name: userData.name,
+            user_info: userData.city && userData.age && userData.gender
+              ? `${userData.city} , ${userData.age} 歲 , ${userData.gender}`
+              : ''
+          },
+          about: {
+            user_name: userData.name,
+            age: userData.age,
+            sex: userData.gender,
+            education: userData.highest_education,
+            phone_number: userData.phone,
+            mail: userData.email,
+            address: userData.full_address,
+            language: userData.languages
+          },
+          skills: userData.skills || [],
+          resume: {
+            introduction: userData.introduction || '',
+            education: (userData.educations || []).map(item => ({
+              year_start: item.start_date?.slice(0, 4),
+              year_end: item.end_date?.slice(0, 4),
+              degree: `${item.school}（${item.degree}）`,
+              content: `${item.major} - ${item.description}`
+            })),
+            work_experience: (userData.work_experiences || []).map(item => ({
+              year_start: item.start_date?.slice(0, 4),
+              year_end: item.end_date?.slice(0, 4),
+              job_title: `${item.company} - ${item.title}`,
+              content: item.description
+            }))
+          },
+          projects: processedProjects,
+          liked: [],
+          following: []
+        };
+
+        // 数据加载完成后初始化观察器
+        this.startObservation();
+
+        this.$nextTick(() => {
+          const img = this.$refs.avatar;
+          if (img?.complete) {
+            this.handleImage();
+          } else if (img) {
+            img.onload = () => this.handleImage();
+          }
+        });
+      })
       .catch(error => {
         console.error('Error fetching profile data:', error);
       });
-}
+  }
 };
 </script>
 
 
 <style scoped>
+/* 覆蓋 naive-ui 描述列表樣式 */
+.about :deep(.n-descriptions-item-label),
+.about :deep(.n-descriptions-item-content),
+.about :deep(.n-descriptions-item-content span),
+.about :deep(.n-descriptions-item-content div),
+.about :deep(.n-descriptions-item) {
+  color: #ffffff !important;
+}
+
+.about :deep(.n-descriptions) {
+  --n-label-text-color: #ffffff !important;
+  --n-text-color: #ffffff !important;
+  --n-font-color: #ffffff !important;
+}
+
+.about :deep(.n-descriptions-item-content),
+.about :deep(.n-descriptions-item-label) {
+  color: #ffffff !important;
+}
+
+.about :deep(.n-descriptions-item-content *) {
+  color: #ffffff !important;
+}
+
+/* 面包屑导航样式 */
+:deep(.n-breadcrumb) {
+  margin-bottom: 24px;
+  color: #ffffff !important;
+}
+
+:deep(.n-breadcrumb-item) {
+  color: #ffffff !important;
+}
+
+:deep(.n-breadcrumb-item__link) {
+  color: #ffffff !important;
+}
+
+:deep(.n-breadcrumb-item__link span) {
+  color: #ffffff !important;
+}
+
+:deep(.n-breadcrumb-item a) {
+  color: #ffffff !important;
+}
+
+:deep(.n-breadcrumb-item:last-child) {
+  color: #ffffff !important;
+}
+
+:deep(.n-breadcrumb-item:last-child span) {
+  color: #ffffff !important;
+}
+
+:deep(.n-breadcrumb .n-icon) {
+  color: #ffffff !important;
+  margin-right: 4px;
+}
+
+:deep(.n-breadcrumb-item__separator) {
+  color: #ffffff !important;
+}
+
+/* 确保文字在任何情况下都是白色 */
+:deep(.n-breadcrumb *) {
+  color: #ffffff !important;
+  text-shadow: none !important;
+}
+
 /* middle-content 區塊 */
 .middle-content {
     width: 1005px;
@@ -334,6 +577,15 @@ export default {
     color: #ffffff;
 }
 
+.profile .info h2 {
+    margin: 0;
+    margin-top: -10px;
+    margin-bottom: -10px;
+    font-size: 15px;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.5);
+}
+
 
 /* 個人簡介樣式 */
 .profile .info p {
@@ -346,7 +598,7 @@ export default {
 .edit-icon {
     display: block;
     cursor: pointer;
-    margin: 0 0 12px auto;
+    margin: 0 0 -150px auto;
     /* 自動靠右並與下方區塊有距離 */
     padding-right: 16px;
 }
@@ -393,6 +645,7 @@ section {
 
 /* 關於區塊 */
 .about ul {
+    color: #ffffff;
     list-style: none;
     padding: 0;
     margin: 0;
@@ -405,21 +658,78 @@ section {
 }
 
 /* 技能區塊 */
-.skills ul {
-    list-style: none;
-    padding-left: 0;
-    font-size: 16px;
-    line-height: 2;
+.skills {
+  padding: 30px;
 }
 
-.skills li {
-    color: #ffffff;
+.skill-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
 }
 
-.skills li::before {
-    content: '✔';
-    margin-right: 8px;
-    color: #00d26a;
+.skill-item {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 20px;
+  min-height: 140px;
+}
+
+.skill-item:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.skill-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80px;
+  width: 60px;
+}
+
+.skill-icon :deep(svg) {
+  width: 60px;
+  height: 60px;
+}
+
+.skill-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 5px 0;
+}
+
+.skill-name {
+  color: #ffffff !important;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.skill-proficiency {
+  color: #ffffff !important;
+  font-size: 40px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.percent-sign {
+  font-size: 28px;
+  margin-left: 4px;
+}
+
+/* 覆盖 naive-ui 数字动画组件样式 */
+:deep(.n-number-animation) {
+  color: #ffffff !important;
+  font-size: 36px !important;
 }
 
 /* 履歷區塊 */
@@ -584,14 +894,90 @@ section {
 
 /* 我的專案 */
 .projects {
-  background: transparent;  /* 透明背景 */
-  box-shadow: none;         /* 移除陰影（如果有） */
+  background: transparent;
+  box-shadow: none;
   border: none;
   border-radius: 0;
   margin-top: -25px;
   margin-left: -20px;
+  padding: 20px;
+  height: 200px;
+  overflow: hidden;
 }
 
+.project-group {
+  display: inline-flex;
+  margin-right: 30px;
+  height: 200px;
+}
+
+.project-item {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  width: 200px;
+  height: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.project-cover {
+  width: 170px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-radius: 4px;
+  margin: 0 auto;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.project-image {
+  width: 160px;
+  height: 90px;
+  object-fit: contain !important;
+}
+
+.project-cover :deep(img) {
+  width: 100%;
+  height: 100%;
+  object-fit: contain !important;
+  padding: 5px;
+  box-sizing: border-box;
+}
+
+.project-title {
+  font-size: 15px;
+  font-weight: bold;
+  color: white;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+}
+
+.tech-stack {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+}
+
+.tech-item {
+  text-align: center;
+}
+
+.tech-item p {
+  margin-top: 2px;
+  font-size: 11px;
+  color: white;
+}
 
 /* 已按讚 */
 .companies {
@@ -614,6 +1000,30 @@ section {
   overflow-x: auto;
 }
 
+:deep(.n-marquee) {
+  height: 200px !important;
+}
 
+:deep(.n-marquee-content) {
+  height: 200px !important;
+}
+
+:deep(.n-marquee__slides) {
+  height: 200px !important;
+}
+
+/* 添加麵包屑連結樣式 */
+.breadcrumb-link {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.breadcrumb-link:hover {
+  opacity: 0.8;
+}
 
 </style>
+
+

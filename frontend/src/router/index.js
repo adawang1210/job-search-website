@@ -22,10 +22,10 @@ const router = createRouter({
       component: ProfileView,
     },
     {
-      path: '/company',
+      path: '/company/:id', 
       name: 'company',
-      alias: '/company',
       component: CompanyView,
+      props: true,
     },
     {
       path: '/notification',

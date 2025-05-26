@@ -10,8 +10,8 @@
       <div v-if="companies.length > 0" class="company-grid">
         <div class="content-wrapper" v-for="(company, cIndex) in companies" :key="'company-' + cIndex"
           @click="handleCompanyCardClick(company)">
-          <div class="company-icon" :style="{ backgroundImage: 'url(' + company.image + ')' }" @click.stop></div>
-          <p class="company-name" @click.stop>{{ company.name }}</p>
+          <div class="company-icon" :style="{ backgroundImage: 'url(' + company.image + ')' }"></div>
+          <p class="company-name">{{ company.name }}</p>
         </div>
       </div>
       <div v-else class="no-data-message">
@@ -26,8 +26,7 @@ import { getGreatCompanies } from '@/api/home.js'; // 假設您的 API 函數在
 
 export default {
   name: 'AllCompany',
-  // 如果 AllCompany 頁面也需要右側邊欄，可以考慮注入，否則可以移除
-  // inject: ['openRightSidebar', 'addViewedItemToSidebar'],
+  inject: ['updateLikedItemInSidebar', 'openRightSidebar', 'addViewedItemToSidebar'],
   data() {
     return {
       companies: [],
@@ -64,18 +63,17 @@ export default {
     },
     handleCompanyCardClick(company) {
       console.log('Company card clicked:', company);
-      // 如果需要將公司資料傳遞給側邊欄或導航到公司詳情頁
-      // const dataForSidebar = company.originalData || company;
-      // if (typeof this.addViewedItemToSidebar === 'function') {
-      //   this.addViewedItemToSidebar(dataForSidebar);
-      // }
-      // if (typeof this.openRightSidebar === 'function') {
-      //   this.openRightSidebar(dataForSidebar);
-      // }
+      
+      const dataForSidebar = company.originalData || company;
+      if (typeof this.addViewedItemToSidebar === 'function') {
+        this.addViewedItemToSidebar(dataForSidebar);
+      }
+      if (typeof this.openRightSidebar === 'function') {
+        this.openRightSidebar(dataForSidebar);
+      }
 
       // 假設您有一個路由到公司頁面，並且需要公司ID
-      alert(`點擊了公司: ${company.name}. (此功能需 Vue Router 支持)`);
-      // 範例： this.$router.push({ name: 'CompanyDetail', params: { id: company.id } });
+      this.$router.push({ name: 'company', params: { id: company.id } });
     },
   },
 };

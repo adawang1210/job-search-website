@@ -39,7 +39,7 @@
               </button>
               <ul v-show="dropdownOpenProfile" class="dropdown-menu bottom-left">
                 <li v-for="(item, index) in profileOptions" :key="index" @click="selectAction(item)">
-                {{ item }}
+                  {{ item }}
                 </li>
               </ul>
             </div>
@@ -318,6 +318,14 @@ export default defineComponent({
   components: {
     NIcon, Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular,
   },
+
+  props: {
+    id: { // 這個 'id' 會接收從路由傳過來的公司 ID
+      type: [String, Number],
+      required: true
+    }
+  },
+
   data() {
     return {
       pageSize: 10,
@@ -335,6 +343,17 @@ export default defineComponent({
       jjobs: [],
       ccompany: null
     };
+  },
+  watch: {
+    // 監聽 id prop 的變化，當 id 改變時重新載入公司資料
+    id: {
+      immediate: true, // 組件載入時立即執行一次
+      handler(newId) {
+        if (newId) {
+          this.fetchCompanyDetails(newId);
+        }
+      }
+    }
   },
   computed: {
     paginatedJobs() {
@@ -388,6 +407,23 @@ export default defineComponent({
       });
   },
   methods: {
+    async fetchCompanyDetails(companyId) {
+      this.isLoading = true;
+      this.error = null;
+      try {
+        // 替換成你的實際 API 呼叫，用 companyId 去請求公司資料
+        // 假設你有一個 API 函數叫 getCompanyDetails
+        const response = await getCompanyDetails(companyId);
+        this.companyDetails = response.data; // 根據你的 API 響應調整
+      } catch (err) {
+        console.error('Failed to fetch company details:', err);
+        this.error = '無法載入公司詳情。';
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+
     // data format
     formatDate(isoString) {    // process job.created_at
       const date = new Date(isoString);
@@ -582,7 +618,7 @@ export default defineComponent({
   max-width: 100%;
 }
 
-.profile-button{
+.profile-button {
   margin-top: 16px;
 }
 
@@ -1055,78 +1091,124 @@ div h3 {
 
 /* Modal 樣式 */
 .modal-overlay {
-  position: fixed; /* 固定定位，覆蓋整個視窗 */
-  top: 0; /* 從畫面最上方開始 */
-  left: 0; /* 從畫面最左側開始 */
-  width: 100%; /* 寬度為整個視窗寬 */
-  height: 100%; /* 高度為整個視窗高 */
-  background-color: rgba(0, 0, 0, 0.8); /* 背景為半透明黑色 */
-  display: flex; /* 使用 Flex 排版，置中內容 */
-  justify-content: center; /* 水平置中 */
-  align-items: center; /* 垂直置中 */
-  z-index: 1000; /* 疊層順序，確保在最上層 */
-  backdrop-filter: blur(10px); /* 模糊背景效果 */
+  position: fixed;
+  /* 固定定位，覆蓋整個視窗 */
+  top: 0;
+  /* 從畫面最上方開始 */
+  left: 0;
+  /* 從畫面最左側開始 */
+  width: 100%;
+  /* 寬度為整個視窗寬 */
+  height: 100%;
+  /* 高度為整個視窗高 */
+  background-color: rgba(0, 0, 0, 0.8);
+  /* 背景為半透明黑色 */
+  display: flex;
+  /* 使用 Flex 排版，置中內容 */
+  justify-content: center;
+  /* 水平置中 */
+  align-items: center;
+  /* 垂直置中 */
+  z-index: 1000;
+  /* 疊層順序，確保在最上層 */
+  backdrop-filter: blur(10px);
+  /* 模糊背景效果 */
 }
 
 .modal {
-  background: linear-gradient(135deg, #191414, #2a2a2a); /* 漸層背景 */
-  border-radius: 5px; /* 圓角邊框 */
-  width: 90%; /* 寬度為螢幕的 90% */
-  max-width: 500px; /* 最大寬度限制為 500px */
-  padding: 30px; /* 內距為 30px */
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); /* 投影效果 */
-  position: relative; /* 相對定位，可用於內部絕對定位元素 */
+  background: linear-gradient(135deg, #191414, #2a2a2a);
+  /* 漸層背景 */
+  border-radius: 5px;
+  /* 圓角邊框 */
+  width: 90%;
+  /* 寬度為螢幕的 90% */
+  max-width: 500px;
+  /* 最大寬度限制為 500px */
+  padding: 30px;
+  /* 內距為 30px */
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  /* 投影效果 */
+  position: relative;
+  /* 相對定位，可用於內部絕對定位元素 */
 }
 
 .modal-header {
-  margin-bottom: 30px; /* 底部間距 */
-  text-align: center; /* 文字置中對齊 */
+  margin-bottom: 30px;
+  /* 底部間距 */
+  text-align: center;
+  /* 文字置中對齊 */
 }
 
 .modal-title {
-  font-size: 18px;           /* 文字大小 */
-  font-weight: bold;         /* 字體粗體 */
-  color: #D2691E; /* 橘色標題 */
-  margin-bottom: 10px; /* 標題與下方元素的間距 */
+  font-size: 18px;
+  /* 文字大小 */
+  font-weight: bold;
+  /* 字體粗體 */
+  color: #D2691E;
+  /* 橘色標題 */
+  margin-bottom: 10px;
+  /* 標題與下方元素的間距 */
 }
 
 
 /* 表單區塊 */
 .form-group {
-  margin-bottom: 20px; /* 元素間的底部間距 */
+  margin-bottom: 20px;
+  /* 元素間的底部間距 */
 }
 
 .form-label {
-  display: block; /* 佔滿整行 */
-  margin-bottom: 8px; /* 與輸入欄的間距 */
-  font-weight: bold; /* 字體粗體 */
-  color: #ffffff; /* 白色文字 */
-  font-size: 16px; /* 標籤字體大小 */
-  text-transform: uppercase; /* 字母大寫 */
-  letter-spacing: 1px; /* 字元間距 */
+  display: block;
+  /* 佔滿整行 */
+  margin-bottom: 8px;
+  /* 與輸入欄的間距 */
+  font-weight: bold;
+  /* 字體粗體 */
+  color: #ffffff;
+  /* 白色文字 */
+  font-size: 16px;
+  /* 標籤字體大小 */
+  text-transform: uppercase;
+  /* 字母大寫 */
+  letter-spacing: 1px;
+  /* 字元間距 */
 }
 
 .form-input {
-  width: 100%; /* 寬度佔滿父容器 */
-  padding: 15px; /* 內距 */
-  border: 2px solid rgba(255, 255, 255, 0.1); /* 淡白色邊框 */
-  border-radius: 5px; /* 圓角 */
-  background-color: rgba(255, 255, 255, 0.05); /* 半透明白背景 */
-  color: white; /* 輸入文字為白色 */
-  font-size: 1rem; /* 標準字體大小 */
-  transition: all 0.3s ease; /* 動畫過渡效果 */
+  width: 100%;
+  /* 寬度佔滿父容器 */
+  padding: 15px;
+  /* 內距 */
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  /* 淡白色邊框 */
+  border-radius: 5px;
+  /* 圓角 */
+  background-color: rgba(255, 255, 255, 0.05);
+  /* 半透明白背景 */
+  color: white;
+  /* 輸入文字為白色 */
+  font-size: 1rem;
+  /* 標準字體大小 */
+  transition: all 0.3s ease;
+  /* 動畫過渡效果 */
 }
 
 .form-input:focus {
-  outline: none; /* 移除瀏覽器預設外框 */
-  border-color: #D2691E; /* 聚焦時變成橘色邊框 */
-  background-color: rgba(255, 255, 255, 0.1); /* 背景稍微變亮 */
+  outline: none;
+  /* 移除瀏覽器預設外框 */
+  border-color: #D2691E;
+  /* 聚焦時變成橘色邊框 */
+  background-color: rgba(255, 255, 255, 0.1);
+  /* 背景稍微變亮 */
 }
 
 .form-textarea {
-  resize: vertical; /* 垂直方向可調整大小 */
-  min-height: 80px; /* 最小高度為 80px */
-  font-family: inherit; /* 使用繼承字體 */
+  resize: vertical;
+  /* 垂直方向可調整大小 */
+  min-height: 80px;
+  /* 最小高度為 80px */
+  font-family: inherit;
+  /* 使用繼承字體 */
 }
 
 .file-upload-container {
@@ -1166,6 +1248,7 @@ div h3 {
   justify-content: flex-end;
   margin-top: 30px;
 }
+
 /* btns for modal */
 .btn {
   padding: 4px 20px;

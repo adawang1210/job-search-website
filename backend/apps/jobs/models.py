@@ -17,6 +17,7 @@ class JobOpening(models.Model):
     description = models.TextField()  # 職位描述
     created_at = models.DateTimeField(auto_now_add=True)  # 創建時間
     # posting_date = models.DateField()  # 職位發布日期
+    characteristics = models.CharField(max_length=20, null=True, blank=True)  # 職位特性
 
     def __str__(self):
         return self.title

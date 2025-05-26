@@ -11,6 +11,8 @@ class Company(models.Model):
     employees = models.IntegerField()
     address = models.CharField(max_length=255)
     introduction = models.TextField()
+    characteristics = models.CharField(max_length=20)
+    isLiked = models.BooleanField(default=False)  # 是否被喜歡
     
     class Meta:
         verbose_name = "company"

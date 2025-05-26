@@ -5,6 +5,7 @@ import CompanyView from '../views/CompanyView.vue'
 import NotificationView from '../views/NotificationView.vue'
 import SearchResultView from '../views/SearchResultView.vue'
 import FavoriteJobsView from '../views/FavoriteJobsView.vue'
+import AllCompanyView from '@/views/AllCompanyView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -36,6 +37,11 @@ const router = createRouter({
       name: 'searchresult',
       component: SearchResultView,
       // props: route => ({ query: route.query.q }) // 如果想透過 props 傳遞查詢參數
+    },
+    {
+    path: '/all-company',
+    name: 'AllCompany',
+    component: AllCompanyView
     },
   ],
 })

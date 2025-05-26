@@ -15,9 +15,6 @@
         <create-outline />
       </n-icon>
 
-
-
-
       <!-- 關於 -->
       <h2>關於</h2>
       <section class="about">

@@ -3,9 +3,9 @@ from .models import User, UserSkill, UserEducation, UserWorkExperience, UserProj
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('name', 'age', 'gender', 'email', 'city', 'district')
+    list_display = ('name', 'age', 'gender', 'email', 'city', 'district', 'is_superuser')
     search_fields = ('name', 'email')
-    list_filter = ('gender', 'city')
+    list_filter = ('gender', 'city', 'is_superuser', 'is_staff')
 
 class UserSkillInline(admin.TabularInline):
     model = UserSkill

@@ -60,8 +60,8 @@
           @mouseup="stopDrag" @mouseleave="stopDrag" :class="{ active: isDragging }">
           <div class="content-wrapper" v-for="(company, cIndex) in companies" :key="'company-' + cIndex"
             @click="handleCompanyCardClick(company)">
-            <div class="company-icon" :style="{ backgroundImage: 'url(' + company.image + ')' }" @click.stop></div>
-            <p class="company-name" @click.stop>{{ company.name }}</p>
+            <div class="company-icon" :style="{ backgroundImage: 'url(' + company.image + ')' }"></div>
+            <p class="company-name">{{ company.name }}</p>
           </div>
         </div>
         <div v-else class="no-data-message">
@@ -360,9 +360,17 @@ export default {
       alert(`預計導航至公司頁面: ${job.company}. (此功能需 Vue Router 支持)`);
     },
     handleCompanyCardClick(company) {
-      console.log('Company card clicked:', company);
-      // company.originalData.id
-      alert(`點擊了公司: ${company.name}. (此功能需 Vue Router 支持)`);
+      this.$router.push({ name: 'company', params: { id: company.id } });
+    // 將公司資料添加到側邊欄（如果你有這個功能的話）
+    /*
+    const dataForSidebar = company.originalData || company;
+    if (typeof this.addViewedItemToSidebar === 'function') {
+      this.addViewedItemToSidebar(dataForSidebar);
+    }
+    if (typeof this.openRightSidebar === 'function') {
+      this.openRightSidebar(dataForSidebar);
+    }*/
+      
     },
     // 如果 favorite-job-card 有點擊事件，也需要實現
     handleFavoriteJobCardClick(favJob) {

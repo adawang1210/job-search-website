@@ -48,9 +48,6 @@
 
     </section>
 
-
-
-
       <!-- 關於 -->
       <h2>關於</h2>
       <section class="about" ref="aboutSection">

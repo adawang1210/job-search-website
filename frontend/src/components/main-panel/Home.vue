@@ -36,6 +36,17 @@
       </template>
     </section>
 
+    <section class="love-job-section">
+      <h1>最愛行業</h1>
+      <div class="love-job-content" @mousedown="startDrag" @mousemove="onDrag"
+        @mouseup="stopDrag" @mouseleave="stopDrag" :class="{ active: isDragging }">
+        <div class="love-job-card" v-for="(item, index) in loveJobItems" :key="'love-job-' + index" :style="{ backgroundImage: 'url(\'/love-job-frame.png\')' }">
+          <img :src="item.image" :alt="item.name" class="love-job-photo">
+          <p class="love-job-name">{{ item.name }}</p>
+        </div>
+      </div>
+    </section>
+
     <section class="great-company">
       <h1>優質企業</h1>
       <div v-if="isLoadingCompanies" class="loading-message">
@@ -49,8 +60,8 @@
           @mouseup="stopDrag" @mouseleave="stopDrag" :class="{ active: isDragging }">
           <div class="content-wrapper" v-for="(company, cIndex) in companies" :key="'company-' + cIndex"
             @click="handleCompanyCardClick(company)">
-            <div class="company-icon" :style="{ backgroundImage: 'url(' + company.image + ')' }" @click.stop></div>
-            <p class="company-name" @click.stop>{{ company.name }}</p>
+            <div class="company-icon" :style="{ backgroundImage: 'url(' + company.image + ')' }"></div>
+            <p class="company-name">{{ company.name }}</p>
           </div>
         </div>
         <div v-else class="no-data-message">
@@ -58,6 +69,7 @@
         </div>
       </template>
     </section>
+    
     <section class="favorite-job-section">
       <h1>最愛職缺</h1>
       <template v-if="favoriteJobs.length > 0">
@@ -115,6 +127,14 @@ export default {
           isLoading: false,
           error: null,
         },
+      ],
+      loveJobItems: [
+        { id: 'love_job_1', name: '金融業', image: '/love-job-1.jpg' },
+        { id: 'love_job_2', name: '傳產', image: '/love-job-2.jpg' },
+        { id: 'love_job_3', name: '科技業', image: '/love-job-3.jpg' },
+        { id: 'love_job_4', name: '電子產品製造業', image: '/love-job-4.jpg' },
+        { id: 'love_job_5', name: '服務業', image: '/love-job-5.jpg' },
+        { id: 'love_job_6', name: '維修業', image: '/love-job-6.jpg' }
       ],
       allApiJobs: [], // 用於存儲從 API 獲取並轉換格式後的所有職缺
       companies: [],
@@ -236,7 +256,7 @@ export default {
       }
       
       // 為每個區塊分配職缺，盡量不重複，且數量可自訂
-      const jobsPerSection = 10; // 您希望每個區塊顯示的職缺數量
+      const jobsPerSection = 6; // 您希望每個區塊顯示的職缺數量
 
       this.sections.forEach(section => {
         section.jobs = []; // 清空現有職缺
@@ -340,9 +360,17 @@ export default {
       alert(`預計導航至公司頁面: ${job.company}. (此功能需 Vue Router 支持)`);
     },
     handleCompanyCardClick(company) {
-      console.log('Company card clicked:', company);
-      // company.originalData.id
-      alert(`點擊了公司: ${company.name}. (此功能需 Vue Router 支持)`);
+      this.$router.push({ name: 'company', params: { id: company.id } });
+    // 將公司資料添加到側邊欄（如果你有這個功能的話）
+    /*
+    const dataForSidebar = company.originalData || company;
+    if (typeof this.addViewedItemToSidebar === 'function') {
+      this.addViewedItemToSidebar(dataForSidebar);
+    }
+    if (typeof this.openRightSidebar === 'function') {
+      this.openRightSidebar(dataForSidebar);
+    }*/
+      
     },
     // 如果 favorite-job-card 有點擊事件，也需要實現
     handleFavoriteJobCardClick(favJob) {
@@ -376,7 +404,10 @@ export default {
   overflow-x: hidden;
   box-sizing: border-box;
   background-color: #383333;
-  border-radius: 10px;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 0; /* 下方圓角設為 0 */
+  border-bottom-left-radius: 0;  /* 下方圓角設為 0 */
   color: white;
   gap: 10px;
   width: 100%;
@@ -386,6 +417,7 @@ export default {
 /* 區塊標題與橫向區塊通用樣式 */
 .middle-content .recommend,
 .middle-content .great-company,
+.middle-content .love-job-section,
 .middle-content .favorite-job-section {
   display: flex;
   flex-direction: column;
@@ -416,7 +448,26 @@ export default {
   padding-bottom: 10px;
 }
 
-.middle-content .recommend-content::-webkit-scrollbar {
+.middle-content .love-job-content {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  cursor: grab;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 0px 10px 10px 0px;
+  transition: transform 0.5s ease-out,
+    box-shadow 0.5s ease-out,
+    background-color 0.5s ease-out;
+}
+
+.middle-content .recommend-content::-webkit-scrollbar,
+.middle-content .love-job-content::-webkit-scrollbar {
   display: none;
 }
 
@@ -514,6 +565,57 @@ export default {
   margin-right: 6px;
 }
 
+/* --- LOVE JOB SECTION STYLES START --- */
+.love-job-section .love-job-content .love-job-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+  justify-content: flex-start; 
+  position: relative; 
+  width: 250px;
+  height: 210px;
+  background-color: #594f4f00; 
+  background-size: cover; 
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 15px; 
+  box-sizing: border-box;
+  color: white;
+  cursor: pointer;
+  transition: transform 0.5s ease-out, 
+              box-shadow 0.5s ease-out, 
+              background-color 0.5s ease-out; 
+  flex-shrink: 0; 
+}
+
+.love-job-section .love-job-content .love-job-card:hover {
+  background-color: #594f4f; /* 與 great-company 一致 */
+  border-radius: 4px;
+  transform: translateY(-1px); /* 與 great-company 一致 */
+  box-shadow: 0 8px 8px rgba(0, 0, 0, 0.3); /* 與 great-company 一致 */
+}
+
+.love-job-section .love-job-photo {
+  width: 160px; /* Occupy padded space */
+  height: 130px; /* Adjust based on your frame image, leaves space for name */
+  margin-top: 24px; /* Adjust as needed */
+}
+
+.love-job-section .love-job-name {
+  position: absolute;
+  left: 15px; /* Align with padding */
+  right: 15px; /* Align with padding */
+  top: 175px;
+  font-size: 16px;
+  font-weight: bold;
+  color: white;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 1; /* Ensure it's above the photo if photo positioning is tricky */
+}
+/* --- LOVE JOB SECTION STYLES END --- */
 
 .middle-content .great-company .recommend-content .content-wrapper:hover {
   background-color: #594f4f;
@@ -593,7 +695,7 @@ export default {
 
 .favorite-job-card:hover {
   transform: translateY(-3px) scale(1.01);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 10px 10px rgba(0, 0, 0, 0.25);
 }
 
 .favorite-job-card:hover::before {
@@ -685,8 +787,8 @@ export default {
   color: white;
   transition: transform 0.5s ease-out,
     box-shadow 0.5s ease-out,
-    background-color 0.5s ease-out,
-    width 0.5s ease-out;
+    background-color 0.5s ease-out;
+  cursor: pointer;
 }
 .middle-content .favorite-job .content-container {
   cursor: pointer;

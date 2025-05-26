@@ -89,7 +89,7 @@
     </div>
 
     <div class="quick-link">
-      <router-link to="/company">
+      <router-link to="/allcompany"> 
         <n-button quaternary>公司</n-button>
       </router-link>
       <router-link to="/profile">

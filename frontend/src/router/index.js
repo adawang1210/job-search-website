@@ -5,6 +5,7 @@ import CompanyView from '../views/CompanyView.vue'
 import NotificationView from '../views/NotificationView.vue'
 import SearchResultView from '../views/SearchResultView.vue'
 import FavoriteJobsView from '../views/FavoriteJobsView.vue'
+import AllCompanyView from '../views/AllCompanyView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,10 +22,10 @@ const router = createRouter({
       component: ProfileView,
     },
     {
-      path: '/company',
+      path: '/company/:id', 
       name: 'company',
-      alias: '/company',
       component: CompanyView,
+      props: true,
     },
     {
       path: '/notification',
@@ -40,6 +41,11 @@ const router = createRouter({
       path: '/favoritejobs',
       name: 'favoritejobs',
       component: FavoriteJobsView,
+    },
+    {
+    path: '/allcompany',
+    name: 'AllCompany',
+    component: AllCompanyView
     },
   ],
 })

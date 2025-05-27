@@ -1,6 +1,6 @@
 <template>
   <div class="middle-content">
-    <div v-if="!ccompany || !jjobs">
+    <div v-if="!company || !jjobs">
       載入中...
     </div>
     <!-- 資料載入後才顯示內容 -->
@@ -16,15 +16,15 @@
             <div class="info-column">
               <div class="company-info">
                 <span class="info-label">公司</span>
-                <h1 class="company-name">{{ ccompany.name }}</h1>
-                <p class="company-tags">{{ ccompany.bg_color_hex }}</p>
+                <h1 class="company-name">{{ company.name }}</h1>
+                <p class="company-tags">{{ company.bg_color_hex }}</p>
                 <p class="job-count">{{ jjobs.length }}個工作機會</p>
               </div>
             </div>
           </div>
         </div>
         <div class="profile-button actions-button">
-          <button type="button" class="like-btn" :class="{ active: ccompany.isLiked }"
+          <button type="button" class="like-btn" :class="{ active: company.isLiked }"
             @click.stop="handleLikeClick('company')">
             <n-icon class="heart-icon">
               <component :is="company.isLiked ? iconHeartSolid : iconHeartRegular" />
@@ -34,7 +34,7 @@
             <div class="dropdown">
               <button type="button" class="dropdown-toggle" @click="toggleDropdownProfile">
                 <n-icon class="ellipsis-icon">
-                  <component :is="iconEllipsisH" />
+                  <EllipsisH />
                 </n-icon>
               </button>
               <ul v-show="dropdownOpenProfile" class="dropdown-menu bottom-left">
@@ -55,7 +55,7 @@
             <div class="dropdown">
               <button type="button" class="dropdown-toggle" @click="toggleDropdownJob">
                 <n-icon class="caret-icon">
-                  <component :is="iconCaretDown" />
+                  <CaretDown />
                 </n-icon>
               </button>
               <ul v-show="dropdownOpenJob" class="dropdown-menu bottom-right">
@@ -80,13 +80,12 @@
                 <div class="details">
                   <div class="company-info-job">
                     <span class="company-name-job">{{ job.company.name }}</span>
-                    <span class="industry-job">{{ ccompany?.industry }}</span>
+                    <span class="industry-job">{{ company?.industry }}</span>
                   </div>
                   <div class="job-specs">
                     <span class="spec">{{ formatLocation(job.location) }}</span>
                     <span class="spec">{{ job.experience_required }}</span>
                     <span class="spec">{{ job.education_required }}</span>
-                    <!-- <span class="spec">{{ job.major_required }}</span> -->
                     <span class="spec">{{ formattedSalary(job.id) }}</span>
                   </div>
                   <div class="benefits">
@@ -104,10 +103,10 @@
                   <component :is="job.isLiked ? iconHeartSolid : iconHeartRegular" />
                 </n-icon>
               </button>
-              <button type="button" class="envelope-btn" :class="{ active: job.isLiked }"
+              <button type="button" class="envelope-btn"
                 @click.stop="openModal(job.id)">
                 <n-icon class="envelope-icon">
-                  <component :is="job.isLiked ? iconEnvelopeSolid : iconEnvelopeRegular" />
+                  <component :is="job.isApplied ? iconEnvelopeSolid : iconEnvelopeRegular" />
                 </n-icon>
               </button>
 
@@ -126,50 +125,50 @@
               <div>
                 <div class="detail-group">
                   <div class="detail-item">
-                    <div class="label">{{ ccompany?.industry }}</div>
+                    <div class="label">{{ company?.industry }}</div>
                     <div class="value">產業類別</div>
                   </div>
                   <div class="detail-item">
-                    <div class="label">{{ ccompany?.industry_description }}</div>
+                    <div class="label">{{ company?.industry_description }}</div>
                     <div class="value">產業描述</div>
                   </div>
                   <div class="detail-item">
-                    <div class="label">{{ ccompany?.employees }}</div>
+                    <div class="label">{{ company?.employees }}</div>
                     <div class="value">員工人數</div>
                   </div>
                   <div class="detail-item">
-                    <div class="label">{{ ccompany?.capital }}</div>
+                    <div class="label">{{ company?.capital }}</div>
                     <div class="value">資本額</div>
                   </div>
                 </div>
 
                 <div class="detail-group">
                   <div class="detail-item">
-                    <div class="label">{{ ccompany?.contacts[0].name }}</div>
+                    <div class="label">{{ company.contacts[0].name }}</div>
                     <div class="value">聯絡人</div>
                   </div>
                   <div class="detail-item">
-                    <div class="label">{{ ccompany?.contacts[0].phone }}</div>
+                    <div class="label">{{ company.contacts[0].phone }}</div>
                     <div class="value">電話</div>
                   </div>
                   <div class="detail-item">
-                    <div class="label">{{ ccompany?.contacts[0].fax }}</div>
+                    <div class="label">{{ company.contacts[0].fax }}</div>
                     <div class="value">傳真</div>
                   </div>
                   <div class="detail-item">
-                    <div class="label">{{ ccompany?.contacts[0].email }}</div>
+                    <div class="label">{{ company.contacts[0].email }}</div>
                     <div class="value">地址</div>
                   </div>
                 </div>
 
                 <div class="detail-group">
-                  <div class="detail-item" v-for="(link, index) in ccompany.websites" :key="index">
+                  <div class="detail-item" v-for="(link, index) in company.websites" :key="index">
                     <div class="label">{{ link.website }}</div>
                   </div>
                 </div>
               </div>
 
-              <div class="description" v-html="ccompany.introduction.replace(/\n/g, '<br><br>')"></div>
+              <div class="description" v-html="company.introduction.replace(/\n/g, '<br><br>')"></div>
             </div>
           </div>
 
@@ -177,8 +176,8 @@
           <div class="info-card">
             <h3>主要商品</h3>
             <div class="description">
-              對外：{{ ccompany?.main_product }}<br>
-              <!-- 對內：{{ ccompany?.main_product }}<br><br> -->
+              對外：{{ company?.main_product }}<br>
+              <!-- 對內：{{ company?.main_product }}<br><br> -->
             </div>
           </div>
 
@@ -188,21 +187,21 @@
             <div class="benefits-grid">
               <div class="benefit-tags">
                 <div class="benefit-group">
-                  <div class="benefit-tag" v-for="(tag, index) in ccompany.benefits[0].statutory" :key="'tag' + index">
+                  <div class="benefit-tag" v-for="(tag, index) in company.benefits[0].statutory" :key="'tag' + index">
                     {{ tag.benefit }}
                   </div>
                 </div>
                 <h4>法定項目</h4>
 
                 <div class="benefit-group">
-                  <div class="benefit-tag" v-for="(law, index) in ccompany.benefits[0].others" :key="'legal' + index">{{
+                  <div class="benefit-tag" v-for="(law, index) in company.benefits[0].others" :key="'legal' + index">{{
                     law.benefit }}</div>
                 </div>
                 <h4>其他福利</h4>
               </div>
 
               <div class="description">
-                <div class="content" v-html="ccompany.benefits[0].benefits_description.replace(/\n/g, '<br>')"></div>
+                <div class="content" v-html="company.benefits[0].benefits_description.replace(/\n/g, '<br>')"></div>
               </div>
             </div>
           </div>
@@ -258,7 +257,7 @@
                 <button type="button" class="btn btn-cancel" @click="closeModal">
                   取消
                 </button>
-                <button type="button" class="btn btn-submit" @click="handleSubmit">
+                <button type="button" class="btn btn-submit" @click="handleSubmit(applyJobId)">
                   送出
                 </button>
               </div>
@@ -269,17 +268,19 @@
       <!-- 分享彈窗 -->
       <transition name="modal">
         <div v-if="showShare" class="modal-overlay" @click="showShare = false">
-          <div class="modal">
+          <div class="modal" @click.stop>
             <div class="modal-header">
               <h2 class="modal-title">分享這個內容</h2>
             </div>
-            <div class="form-group">
-              <input type="text" :value="shareLink" readonly class="share-link"></input>
-            </div>
-            <div class="modal-actions">
-              <button type="button" class="btn btn-submit" @click="copyLink">複製連結</button>
-              <button type="button" class="btn btn-cancel" @click="showShare = false">關閉</button>
-            </div>
+            <form @submit.prevent>
+              <div class="form-group">
+                <input type="text" :value="shareLink" readonly class="form-input"></input>
+              </div>
+              <div class="modal-actions">
+                <button type="button" class="btn btn-cancel" @click="showShare = false">取消</button>
+                <button type="button" class="btn btn-submit" @click="copyLink">複製連結</button>
+              </div>
+            </form>
           </div>
         </div>
       </transition>
@@ -287,16 +288,16 @@
       <!-- 檢舉彈窗 -->
       <transition name="modal">
         <div v-if="showReport" class="modal-overlay" @click="showReport = false">
-          <div class="modal">
+          <div class="modal" @click.stop>
             <div class="modal-header">
               <h2 class="modal-title">檢舉內容</h2>
             </div>
             <div class="form-group">
-              <textarea v-model="reportReason" rows="3" class="w-full my-2"></textarea>
+              <textarea v-model="reportReason" rows="3" class="form-input"></textarea>
             </div>
             <div class="modal-actions">
+              <button type="button" class="btn btn-cancel" @click="showReport = false">取消</button>
               <button type="button" class="btn btn-submit" @click="submitReport">送出檢舉</button>
-              <button type="button" class="btn btn-cancel" @click="showReport = false">關閉</button>
             </div>
           </div>
         </div>
@@ -308,6 +309,7 @@
 <script>
 import { ref } from 'vue'
 import axios from 'axios';
+import { getCompanyInfo } from '@/api/company';
 import { defineComponent } from 'vue'
 import { NIcon } from 'naive-ui'
 import { Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular } from '@vicons/fa'
@@ -335,35 +337,58 @@ export default defineComponent({
       showApplyModal: false,
       showShare: false,
       showReport: false,
+      applyJobId: 0,
       shareLink: 'https://example.com/share',
       reportReason: '',
-      company: {
-        "isLiked": false
-      },
+      company: null,
       jjobs: [],
-      ccompany: null
     };
   },
   watch: {
     // 監聽 id prop 的變化，當 id 改變時重新載入公司資料
     id: {
       immediate: true, // 組件載入時立即執行一次
-      handler(newId) {
+      async handler(newId) {
         if (newId) {
-          this.fetchCompanyDetails(newId);
+          const companyData = await getCompanyInfo(newId);
+          //console.log(companyData);
+          this.company = companyData;
+
+          // 圖片抓色更改背景
+          this.$nextTick(() => {
+          const img = this.$refs.avatar;
+          if(img) {
+            if (img.complete) {
+            this.handleImage(img);
+            } else {
+              img.onload = () => {
+                this.handleImage(img);
+              };
+            }
+          }
+        });
         }
       }
     }
   },
+  mounted() {
+
+    Promise.all([
+      axios.get('http://127.0.0.1:8000/api/jobs/'),
+
+    ])
+      .then(([jjobsRes]) => {
+
+        this.jjobs = jjobsRes.data;
+        
+      })
+      .catch(error => {
+        console.error('讀取 JSON 發生錯誤：', error);
+      });
+  },
   computed: {
     paginatedJobs() {
       return Array.isArray(this.jjobs) ? this.jjobs.slice(0, this.pageSize) : [0, 0, 0, 0, 0];
-    },
-    iconCaretDown() {
-      return CaretDown
-    },
-    iconEllipsisH() {
-      return EllipsisH
     },
     iconHeartSolid() {
       return Heart
@@ -378,52 +403,7 @@ export default defineComponent({
       return EnvelopeRegular
     },
   },
-  mounted() {
-    Promise.all([
-      axios.get('http://127.0.0.1:8000/api/jobs/'),
-      axios.get('http://127.0.0.1:8000/api/companies/'),
-
-    ])
-      .then(([jjobsRes, ccompanyRes]) => {
-        this.ccompany = ccompanyRes.data[0];
-
-        this.jjobs = jjobsRes.data;
-        //console.log(this.ccompany);
-
-        // 圖片抓色
-        this.$nextTick(() => {
-          const img = this.$refs.avatar;
-          if (img.complete) {
-            this.handleImage(img);
-          } else {
-            img.onload = () => {
-              this.handleImage(img);
-            };
-          }
-        });
-      })
-      .catch(error => {
-        console.error('讀取 JSON 發生錯誤：', error);
-      });
-  },
   methods: {
-    async fetchCompanyDetails(companyId) {
-      this.isLoading = true;
-      this.error = null;
-      try {
-        // 替換成你的實際 API 呼叫，用 companyId 去請求公司資料
-        // 假設你有一個 API 函數叫 getCompanyDetails
-        const response = await getCompanyDetails(companyId);
-        this.companyDetails = response.data; // 根據你的 API 響應調整
-      } catch (err) {
-        console.error('Failed to fetch company details:', err);
-        this.error = '無法載入公司詳情。';
-      } finally {
-        this.isLoading = false;
-      }
-    },
-
-
     // data format
     formatDate(isoString) {    // process job.created_at
       const date = new Date(isoString);
@@ -465,9 +445,6 @@ export default defineComponent({
           console.log('執行檢舉功能');
           this.showReport = true;
           break;
-        case '忘了':
-          console.log('你真的忘了喔...');
-          break;
         default:
           console.warn('未知選項', option);
       }
@@ -476,7 +453,7 @@ export default defineComponent({
     // heart icon clicked
     handleLikeClick(Id) {
       if (Id == 'company') {
-        this.handleToggleLike(this.ccompany, this.ccompany.id);
+        this.handleToggleLike(this.company, this.company.id);
       }
       else {
         this.handleToggleLike(this.jjobs, Id);
@@ -518,6 +495,7 @@ export default defineComponent({
       }
     },
     openModal(id) {
+      this.applyJobId = id;
       this.currentItem = this.paginatedJobs.find(job => job.id === id);
       this.showApplyModal = true;
       // 重置表單
@@ -534,18 +512,19 @@ export default defineComponent({
       //file when apply
       this.selectedFiles = Array.from(event.target.files);
     },
-    handleSubmit() {
+    handleSubmit(jobId) {
+      const item = this.paginatedJobs.find(job => job.id === jobId);
+      console.log("item",item);
       // 這裡可以處理送出邏輯
       console.log('送出資料:', {
-        item: this.currentItem,
+        item: item,
         formData: this.formData,
         files: this.selectedFiles
       });
 
-      // 顯示成功訊息（可選）
       alert('資料已送出！');
+      item.isApplied = true;
 
-      // 關閉彈窗
       this.closeModal();
     },
     copyLink() {
@@ -602,7 +581,7 @@ export default defineComponent({
 
 <style scoped>
 .middle-content {
-  background-color: #121212;
+  background-color: linear-gradient(to bottom,#b3b3b3 0%,#121212 20%,#121212 100%);
   border-radius: 10px;
   color: white;
   box-sizing: border-box;
@@ -824,7 +803,7 @@ export default defineComponent({
   letter-spacing: -0.18px;
 }
 
-/* 合并的 JobCard 样式 */
+/* JobCard 样式 */
 .job-card {
   border-radius: 10px;
   background-color: rgba(255, 255, 255, 0.1);
@@ -1000,13 +979,6 @@ div h3 {
   color: #b3b3b3;
 }
 
-.benefits-section {
-  background: rgba(255, 255, 255, 0.1);
-  margin: 30px 40px;
-  padding: 24px;
-  border-radius: 10px;
-}
-
 .benefits-grid {
   display: grid;
   grid-template-columns: 227px 1fr;
@@ -1035,20 +1007,10 @@ div h3 {
   width: fit-content;
 }
 
-.benefits-description {
-  grid-column: span 2;
-  margin-top: 30px;
-}
-
 .benefits-description h4 {
   font-size: 14px;
   color: #b3b3b3;
   margin-bottom: 10px;
-}
-
-.benefits-description .content {
-  color: #b3b3b3;
-  line-height: 1.6;
 }
 
 /* Gallery */
@@ -1082,142 +1044,93 @@ div h3 {
 }
 
 .gallery-item img {
+  display: block;
+  width: auto;
   height: 100%;
   max-height: 200px;
-  width: auto;
   object-fit: contain;
-  display: block;
 }
 
 /* Modal 樣式 */
 .modal-overlay {
   position: fixed;
-  /* 固定定位，覆蓋整個視窗 */
   top: 0;
-  /* 從畫面最上方開始 */
   left: 0;
-  /* 從畫面最左側開始 */
   width: 100%;
-  /* 寬度為整個視窗寬 */
   height: 100%;
-  /* 高度為整個視窗高 */
   background-color: rgba(0, 0, 0, 0.8);
-  /* 背景為半透明黑色 */
   display: flex;
-  /* 使用 Flex 排版，置中內容 */
   justify-content: center;
-  /* 水平置中 */
   align-items: center;
-  /* 垂直置中 */
   z-index: 1000;
-  /* 疊層順序，確保在最上層 */
-  backdrop-filter: blur(10px);
-  /* 模糊背景效果 */
+  backdrop-filter: blur(10px);/* 模糊背景效果 */
 }
 
 .modal {
   background: linear-gradient(135deg, #191414, #2a2a2a);
-  /* 漸層背景 */
   border-radius: 5px;
-  /* 圓角邊框 */
   width: 90%;
-  /* 寬度為螢幕的 90% */
   max-width: 500px;
-  /* 最大寬度限制為 500px */
   padding: 30px;
-  /* 內距為 30px */
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  /* 投影效果 */
-  position: relative;
-  /* 相對定位，可用於內部絕對定位元素 */
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);/* 投影效果 */
+  position: relative;/* 相對定位，可用於內部絕對定位元素 */
 }
 
 .modal-header {
-  margin-bottom: 30px;
-  /* 底部間距 */
-  text-align: center;
-  /* 文字置中對齊 */
+  margin-bottom: 30px;/* 底部間距 */
+  text-align: center;/* 文字置中對齊 */
 }
 
 .modal-title {
-  font-size: 18px;
-  /* 文字大小 */
-  font-weight: bold;
-  /* 字體粗體 */
-  color: #D2691E;
-  /* 橘色標題 */
-  margin-bottom: 10px;
-  /* 標題與下方元素的間距 */
+  font-size: 18px;/* 文字大小 */
+  font-weight: bold;/* 字體粗體 */
+  color: #D2691E;/* 橘色標題 */
+  margin-bottom: 10px;/* 標題與下方元素的間距 */
 }
 
 
 /* 表單區塊 */
 .form-group {
-  margin-bottom: 20px;
-  /* 元素間的底部間距 */
+  margin-bottom: 20px;/* 元素間的底部間距 */
 }
 
 .form-label {
-  display: block;
-  /* 佔滿整行 */
-  margin-bottom: 8px;
-  /* 與輸入欄的間距 */
-  font-weight: bold;
-  /* 字體粗體 */
-  color: #ffffff;
-  /* 白色文字 */
-  font-size: 16px;
-  /* 標籤字體大小 */
-  text-transform: uppercase;
-  /* 字母大寫 */
-  letter-spacing: 1px;
-  /* 字元間距 */
+  display: block;/* 佔滿整行 */
+  margin-bottom: 8px;/* 與輸入欄的間距 */
+  font-weight: bold;/* 字體粗體 */
+  color: #ffffff;/* 白色文字 */
+  font-size: 16px;/* 標籤字體大小 */
+  text-transform: uppercase;/* 字母大寫 */
+  letter-spacing: 1px;/* 字元間距 */
 }
 
 .form-input {
-  width: 100%;
-  /* 寬度佔滿父容器 */
-  padding: 15px;
-  /* 內距 */
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  /* 淡白色邊框 */
-  border-radius: 5px;
-  /* 圓角 */
-  background-color: rgba(255, 255, 255, 0.05);
-  /* 半透明白背景 */
-  color: white;
-  /* 輸入文字為白色 */
-  font-size: 1rem;
-  /* 標準字體大小 */
-  transition: all 0.3s ease;
-  /* 動畫過渡效果 */
+  width: 100%;/* 寬度佔滿父容器 */
+  padding: 15px;/* 內距 */
+  border: 2px solid rgba(255, 255, 255, 0.1);/* 淡白色邊框 */
+  border-radius: 5px;/* 圓角 */
+  background-color: rgba(255, 255, 255, 0.05);/* 半透明白背景 */
+  color: white;/* 輸入文字為白色 */
+  font-size: 1rem;/* 標準字體大小 */
+  transition: all 0.3s ease;/* 動畫過渡效果 */
 }
 
 .form-input:focus {
-  outline: none;
-  /* 移除瀏覽器預設外框 */
-  border-color: #D2691E;
-  /* 聚焦時變成橘色邊框 */
-  background-color: rgba(255, 255, 255, 0.1);
-  /* 背景稍微變亮 */
+  outline: none;/* 移除瀏覽器預設外框 */
+  border-color: #D2691E;/* 聚焦時變成橘色邊框 */
+  background-color: rgba(255, 255, 255, 0.1);/* 背景稍微變亮 */
 }
 
 .form-textarea {
-  resize: vertical;
-  /* 垂直方向可調整大小 */
-  min-height: 80px;
-  /* 最小高度為 80px */
-  font-family: inherit;
-  /* 使用繼承字體 */
-}
-
-.file-upload-container {
-  position: relative;
-  margin-bottom: 30px;
+  resize: vertical;/* 垂直方向可調整大小 */
+  min-height: 80px;/* 最小高度為 80px */
+  font-family: inherit;/* 使用繼承字體 */
 }
 
 .file-upload-btn {
+  box-sizing: border-box;
   width: 100%;
+  height: 80px;
   padding: 15px;
   border: 2px dashed #D2691E;
   border-radius: 10px;
@@ -1226,7 +1139,9 @@ div h3 {
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
+  line-height: 47px;/* 水平置中 */
   font-weight: 600;
+  position: relative;
 }
 
 .file-upload-btn:hover {
@@ -1236,11 +1151,15 @@ div h3 {
 
 .file-input {
   position: absolute;
+  top: 0;
+  left: 0;
   opacity: 0;
   width: 100%;
-  height: 100%;
+  height: 80px;
   cursor: pointer;
 }
+
+
 
 .modal-actions {
   display: flex;

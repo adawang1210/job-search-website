@@ -106,6 +106,7 @@ class UserEducation(models.Model):
     start_date = models.DateField(verbose_name='開始日期')
     end_date = models.DateField(verbose_name='結束日期')
     description = models.TextField(verbose_name='描述')
+    school_image = models.ImageField(upload_to='school_images/', blank=True, null=True, verbose_name='學校照片')
 
     class Meta:
         verbose_name = "教育經歷"
@@ -119,18 +120,19 @@ class UserEducation(models.Model):
 class UserWorkExperience(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='work_experiences')
     company = models.CharField(max_length=100, verbose_name='公司名稱')
-    title = models.CharField(max_length=100, verbose_name='職稱')
+    title = models.CharField(max_length=100, verbose_name='職位名稱')
     start_date = models.DateField(verbose_name='開始日期')
-    end_date = models.DateField(null=True, blank=True, verbose_name='結束日期')
+    end_date = models.DateField(verbose_name='結束日期', null=True, blank=True)
     description = models.TextField(verbose_name='工作描述')
-    
+    company_image = models.ImageField(upload_to='company_images/', blank=True, null=True, verbose_name='公司照片')
+
     class Meta:
         verbose_name = "工作經歷"
         verbose_name_plural = "工作經歷"
-        ordering = ['-start_date']
+        ordering = ['-end_date']
 
     def __str__(self):
-        return f"{self.user.name} - {self.title} at {self.company}"
+        return f"{self.user.name} - {self.company} {self.title}"
 
 #我的專案
 class UserProject(models.Model):

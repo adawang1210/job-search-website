@@ -126,18 +126,34 @@
         <h3><n-icon :size="25"><school-outline class="school-outline"/></n-icon> 學歷</h3>
         <div class="timeline">
           <div class="timeline-segment" v-for="(edu, index) in profile.resume.education" :key="index">
-            <div class="timeline-point">
-              <span class="year-label">{{ edu.year_start }}</span>
-              <div class="dot"></div>
-            </div>
-            <div class="timeline-line"></div>
-            <div class="timeline-point">
-              <span class="year-label">{{ edu.year_end }}</span>
-              <div class="dot"></div>
-            </div>
-            <div class="timeline-entry">
-              <h4>{{ edu.degree }}</h4>
-              <p>{{ edu.content }}</p>
+            <div class="timeline-content">
+              <div class="school-image" v-if="edu.school_image">
+                <n-image
+                  :src="edu.school_image"
+                  object-fit="cover"
+                  preview-disabled
+                  class="square-image"
+                />
+              </div>
+              <div class="timeline-right">
+                <div class="timeline-point">
+                  <span class="year-label">{{ edu.year_start }}</span>
+                  <div class="dot"></div>
+                </div>
+                <div class="timeline-line"></div>
+                <div class="timeline-point">
+                  <span class="year-label">{{ edu.year_end }}</span>
+                  <div class="dot"></div>
+                </div>
+                <div class="timeline-entry">
+                  <div class="education-content">
+                    <div class="education-info">
+                      <h4>{{ edu.school }} {{ edu.major }} {{ edu.degree }}</h4>
+                      <p class="description">{{ edu.description }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -148,18 +164,34 @@
         <h3><nIcon :size="25"><BriefcaseOutline class="BriefcaseOutline"/></nIcon> 工作經歷</h3>
         <div class="timeline">
           <div class="timeline-segment" v-for="(work, index) in profile.resume.work_experience" :key="index">
-            <div class="timeline-point">
-              <span class="year-label">{{ work.year_start }}</span>
-              <div class="dot"></div>
-            </div>
-            <div class="timeline-line"></div>
-            <div class="timeline-point">
-              <span class="year-label">{{ work.year_end }}</span>
-              <div class="dot"></div>
-            </div>
-            <div class="timeline-entry">
-              <h4>{{ work.job_title }}</h4>
-              <p>{{ work.content }}</p>
+            <div class="timeline-content">
+              <div class="company-image" v-if="work.company_image">
+                <n-image
+                  :src="work.company_image"
+                  object-fit="cover"
+                  preview-disabled
+                  class="square-image"
+                />
+              </div>
+              <div class="timeline-right">
+                <div class="timeline-point">
+                  <span class="year-label">{{ work.year_start }}</span>
+                  <div class="dot"></div>
+                </div>
+                <div class="timeline-line"></div>
+                <div class="timeline-point">
+                  <span class="year-label">{{ work.year_end }}</span>
+                  <div class="dot"></div>
+                </div>
+                <div class="timeline-entry">
+                  <div class="work-content">
+                    <div class="work-info">
+                      <h4>{{ work.company }} {{ work.title }}</h4>
+                      <p class="description" style="white-space: pre-line">{{ work.description }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -412,14 +444,19 @@ export default {
             education: (userData.educations || []).map(item => ({
               year_start: item.start_date?.slice(0, 4),
               year_end: item.end_date?.slice(0, 4),
-              degree: `${item.school}（${item.degree}）`,
-              content: `${item.major} - ${item.description}`
+              degree: item.degree,
+              school: item.school,
+              major: item.major,
+              description: item.description,
+              school_image: item.school_image
             })),
             work_experience: (userData.work_experiences || []).map(item => ({
               year_start: item.start_date?.slice(0, 4),
               year_end: item.end_date?.slice(0, 4),
-              job_title: `${item.company} - ${item.title}`,
-              content: item.description
+              company: item.company,
+              title: item.title,
+              description: item.description,
+              company_image: item.company_image
             }))
           },
           projects: processedProjects,
@@ -519,8 +556,9 @@ export default {
 
 /* middle-content 區塊 */
 .middle-content {
-    width: 1005px;
-    margin-left: auto;   
+    width: 100%;
+    max-width: 1005px;
+    margin: 0 auto;   
     background: linear-gradient(to bottom, #bbbbbb 0%, #bbbbbb 160px, #2b2b2b 100%);
     padding: 48px 32px;
     color: #fff;
@@ -540,6 +578,7 @@ export default {
 
 /* container 區塊 */
 .container {
+    width: 100%;
     max-width: 900px;
     margin: 0 auto;
     display: flex;
@@ -1019,6 +1058,91 @@ section {
 
 .breadcrumb-link:hover {
   opacity: 0.8;
+}
+
+.education-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  width: 100%;
+}
+
+.education-info {
+  flex: 1;
+}
+
+.school-image-container {
+  width: 200px;
+  height: 150px;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.school-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.school-image:hover {
+  transform: scale(1.05);
+}
+
+.timeline-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.school-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.square-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.timeline-right {
+  flex: 1;
+  position: relative;
+}
+
+.company-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.work-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  width: 100%;
+}
+
+.work-info {
+  flex: 1;
+}
+
+.work-info h4 {
+  margin-bottom: 12px;
+}
+
+.work-info .description {
+  color: #ffffff;
+  line-height: 1.6;
 }
 
 </style>

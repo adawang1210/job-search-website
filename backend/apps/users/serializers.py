@@ -21,12 +21,12 @@ class UserSkillSerializer(serializers.ModelSerializer):
 class UserEducationSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserEducation
-        fields = ['id', 'school', 'major', 'degree', 'start_date', 'end_date', 'description']
+        fields = ['id', 'school', 'major', 'degree', 'start_date', 'end_date', 'description', 'school_image']
 
 class UserWorkExperienceSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserWorkExperience
-        fields = ['id', 'user', 'company', 'title', 'start_date', 'end_date', 'description']
+        fields = ['id', 'company', 'title', 'start_date', 'end_date', 'description', 'company_image']
         extra_kwargs = {
             'user': {'write_only': True}  # user 字段只用于写入，不在响应中显示
         }

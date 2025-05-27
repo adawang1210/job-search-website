@@ -184,9 +184,9 @@ export default {
 
 .content {
   display: flex;
-  flex-grow: 1;
-  padding: 0 8px 8px 8px;
-  gap: 8px;
+  flex: 1;
+  padding: 0 4px 4px 4px;
+  gap: 4px;
   box-sizing: border-box;
   overflow: hidden;
   min-height: 0;
@@ -194,27 +194,29 @@ export default {
 }
 
 .main-panel {
-  flex-grow: 1;
-  /* main-panel 佔據 content 中除了 sidebar 的剩餘空間 */
+  flex: 1;
   min-width: 0;
-  /* 防止內容過多時撐開佈局 */
-
   display: flex;
-  /* 使 main-panel 成為 flex 容器 */
   flex-direction: column;
-  /* 使 slot-wrapper 和 footer 垂直排列 */
-
   overflow-y: auto;
-  /* 關鍵：main-panel 自身垂直滾動 */
   border-radius: 10px;
   transition: background-color 0.3s ease;
+  padding: 0 4px;
+  box-sizing: border-box;
+}
 
+.main-panel-slot-wrapper {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
 }
 
 .main-panel::-webkit-scrollbar {
   display: none;
 }
-
 
 .right-sidebar-wrapper {
   flex-shrink: 0;

@@ -1,8 +1,6 @@
 <template>
   <BaseLayout>
-    <Company>
-      
-    </Company>
+    <Company :id="id" />
   </BaseLayout>
 </template>
 
@@ -12,6 +10,7 @@ import Company from '@/components/main-panel/Company.vue'
 
 export default {
   name: 'CompanyView',
+  props: ['id'],
   components: {
     BaseLayout,
     Company,

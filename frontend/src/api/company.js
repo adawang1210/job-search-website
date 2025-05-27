@@ -3,6 +3,7 @@ import request from './axios'
 
 
 // 獲取公司基本信息
+//有用
 export function getCompanyInfo(companyId) {
   return request({
     url: `/api/companies/${companyId}`,

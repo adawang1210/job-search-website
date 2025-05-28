@@ -38,9 +38,10 @@
 
     <section class="love-job-section">
       <h1>最愛行業</h1>
-      <div class="love-job-content" @mousedown="startDrag" @mousemove="onDrag"
-        @mouseup="stopDrag" @mouseleave="stopDrag" :class="{ active: isDragging }">
-        <div class="love-job-card" v-for="(item, index) in loveJobItems" :key="'love-job-' + index" :style="{ backgroundImage: 'url(\'/love-job-frame.png\')' }">
+      <div class="love-job-content" @mousedown="startDrag" @mousemove="onDrag" @mouseup="stopDrag"
+        @mouseleave="stopDrag" :class="{ active: isDragging }">
+        <div class="love-job-card" v-for="(item, index) in loveJobItems" :key="'love-job-' + index"
+          :style="{ backgroundImage: 'url(\'/love-job-frame.png\')' }">
           <img :src="item.image" :alt="item.name" class="love-job-photo">
           <p class="love-job-name">{{ item.name }}</p>
         </div>
@@ -69,7 +70,7 @@
         </div>
       </template>
     </section>
-    
+
     <section class="favorite-job-section">
       <h1>最愛職缺</h1>
       <template v-if="favoriteJobs.length > 0">
@@ -98,7 +99,7 @@
 
 <script>
 import eventBus from '/src/eventBus.js';
-import {  getJobs, getGreatCompanies, likeJob, unlikeJob, getJobDetail } from '@/api/home.js';
+import { getJobs, getGreatCompanies, likeJob, unlikeJob, getJobDetail } from '@/api/home.js';
 
 export default {
   name: 'Home',
@@ -138,7 +139,7 @@ export default {
       ],
       allApiJobs: [], // 用於存儲從 API 獲取並轉換格式後的所有職缺
       companies: [],
-      favoriteJobs: [ 
+      favoriteJobs: [
         { id: 'fav_dentist', name: '最愛牙醫師', image: '/favorite-bg-1.jpg', icon: '/favorite-icon-1.png', description: '雅德斯牙醫診所、蒔美牙醫集團和更多', isLiked: false },
         { id: 'fav_designer', name: '最愛室內設計師', image: '/favorite-bg-2.jpg', icon: '/favorite-icon-2.png', description: '雅和室內設計、拾間室內裝修設計有限公司和更多', isLiked: false },
         { id: 'fav_barista', name: '最愛咖啡師', image: '/favorite-bg-3.jpeg', icon: '/favorite-icon-3.png', description: '咖碼股份有限公司、路易莎職人咖啡股份有限公司和更多', isLiked: false },
@@ -152,7 +153,6 @@ export default {
   },
   async mounted() {
     this.loadInitialData(); // 2. 組件掛載時獲取數據
-
     eventBus.on('unlike-item-in-home-via-sidebar', this.handleUnlikeFromSidebar);
     eventBus.on('like-item-in-home-via-sidebar', this.handleLikeFromSidebar);
   },
@@ -181,10 +181,10 @@ export default {
         const rawJobs = jobsData.results || jobsData || [];
         this.allApiJobs = rawJobs.map(job => ({
           id: job.id,
-          title: job.title, 
+          title: job.title,
           image: job.company_logo || 'default_job_image.png',
           company: job.company && job.company.name ? job.company.name : '未知公司',
-          salary: job.salary_max ? `$${job.salary_max}` : '面議', 
+          salary: job.salary_max ? `$${job.salary_max}` : '面議',
           isLiked: job.is_liked_by_user || false, // 初始收藏狀態
           originalData: job, // 保留原始API數據，方便後續使用
         }));
@@ -194,30 +194,30 @@ export default {
         const rawCompanies = companiesData.results || companiesData || [];
         this.companies = rawCompanies.map(company => ({
           id: company.id,
-          name: company.name, 
+          name: company.name,
           image: company.media && company.media.logo ? company.media.logo : 'default_company_logo_path.png',
           originalData: company,
         }));
 
       } catch (error) {
         console.error('Error fetching initial data:', error);
-          let jobErrorOccurred = false;
-          let companyErrorOccurred = false;
+        let jobErrorOccurred = false;
+        let companyErrorOccurred = false;
         if (error.message && error.message.toLowerCase().includes('network error')) {
-            // 網路錯誤可能影響所有請求
-            jobErrorOccurred = true;
-            companyErrorOccurred = true;
+          // 網路錯誤可能影響所有請求
+          jobErrorOccurred = true;
+          companyErrorOccurred = true;
         } else if (error.config && error.config.url) { // 如果錯誤對象包含請求配置
-            if (error.config.url.includes('/api/jobs')) jobErrorOccurred = true;
-            if (error.config.url.includes('/api/companies')) companyErrorOccurred = true;
+          if (error.config.url.includes('/api/jobs')) jobErrorOccurred = true;
+          if (error.config.url.includes('/api/companies')) companyErrorOccurred = true;
         } else if (error.isAxiosError && error.request && error.request.responseURL) {
-            // 另一種判斷方式
-            if (error.request.responseURL.includes('/api/jobs')) jobErrorOccurred = true;
-            if (error.request.responseURL.includes('/api/companies')) companyErrorOccurred = true;
+          // 另一種判斷方式
+          if (error.request.responseURL.includes('/api/jobs')) jobErrorOccurred = true;
+          if (error.request.responseURL.includes('/api/companies')) companyErrorOccurred = true;
         }
         else { // 如果無法判斷，假設兩個都可能出錯或是一個通用錯誤
-            jobErrorOccurred = true;
-            companyErrorOccurred = true;
+          jobErrorOccurred = true;
+          companyErrorOccurred = true;
         }
 
         if (jobErrorOccurred) {
@@ -228,14 +228,14 @@ export default {
         if (companyErrorOccurred) {
           this.errorCompanies = '無法載入企業資訊，請稍後再試。';
         }
-        
+
         // 如果沒有特定錯誤，但依然進入catch，顯示通用錯誤
-        if (!this.sections.some(s => s.error) && !this.errorCompanies && (jobErrorOccurred || companyErrorOccurred) ) {
-            const generalErrorMsg = '資料載入失敗，請檢查網路連線或稍後重試。';
-            this.sections.forEach(section => {
-                if(!section.error) section.error = generalErrorMsg;
-            });
-            if(!this.errorCompanies) this.errorCompanies = generalErrorMsg;
+        if (!this.sections.some(s => s.error) && !this.errorCompanies && (jobErrorOccurred || companyErrorOccurred)) {
+          const generalErrorMsg = '資料載入失敗，請檢查網路連線或稍後重試。';
+          this.sections.forEach(section => {
+            if (!section.error) section.error = generalErrorMsg;
+          });
+          if (!this.errorCompanies) this.errorCompanies = generalErrorMsg;
         }
 
       } finally {
@@ -254,7 +254,7 @@ export default {
         const j = Math.floor(Math.random() * (i + 1));
         [availableJobs[i], availableJobs[j]] = [availableJobs[j], availableJobs[i]];
       }
-      
+
       // 為每個區塊分配職缺，盡量不重複，且數量可自訂
       const jobsPerSection = 6; // 您希望每個區塊顯示的職缺數量
 
@@ -297,30 +297,30 @@ export default {
     },
 
     syncLikeStatusAcrossSections(jobId, newLikedStatus) {
-      // 同步 sections 中的職缺收藏狀態
       this.sections.forEach(section => {
         const jobInSection = section.jobs.find(j => j.id === jobId);
-        if (jobInSection && jobInSection.isLiked !== newLikedStatus) {
+        if (jobInSection) {
           jobInSection.isLiked = newLikedStatus;
         }
       });
-      // 同步 favoriteJobs 中的職缺收藏狀態 (如果 id 匹配)
-      const favJob = this.favoriteJobs.find(j => j.id === jobId);
-      if (favJob && favJob.isLiked !== newLikedStatus) {
-        favJob.isLiked = newLikedStatus;
-      }
     },
 
-    handleUnlikeFromSidebar(item) { // 假設 item 是包含 id 的對象，或者直接是 id
-      const itemId = typeof item === 'object' ? item.originalData.id || item.id : item;
+    // 來自 LeftSidebar (已收藏列表取消收藏) 的事件
+    handleUnlikeFromSidebar(itemId) {
+      // Home.vue 只需要將對應職缺的 isLiked 狀態設為 false
       this.syncLikeStatusAcrossSections(itemId, false);
-      // 如果您在 toggleLike 中啟用了 API 調用，這裡也可以考慮調用 unlikeJob(itemId)
+      // 並觸發 API 調用 (如果 Home.vue 自己沒有愛心 API，則在 BaseLayout 處理)
+      // 這裡不直接調用 API，因為 toggleLike 已經處理了 API，
+      // BaseLayout 的 handleRemoveItemFromLikedList 會發送 unlike-item-in-home-via-sidebar 事件。
+      // 如果您在 BaseLayout 的 handleRemoveItemFromLikedList 中發送事件後不希望再自動調用 API，
+      // 那麼 Home.vue 這裡就不做 API 調用。
     },
 
-    handleLikeFromSidebar(item) { // 假設 item 是包含 id 的對象，或者直接是 id
-      const itemId = typeof item === 'object' ? item.originalData.id || item.id : item;
+    // 來自 LeftSidebar (已瀏覽列表點擊愛心) 的事件
+    handleLikeFromSidebar(itemId) {
+      // Home.vue 只需要將對應職缺的 isLiked 狀態設為 true
       this.syncLikeStatusAcrossSections(itemId, true);
-      // 如果您在 toggleLike 中啟用了 API 調用，這裡也可以考慮調用 likeJob(itemId)
+      // 同樣，這裡不直接調用 API。API 調用應該在 toggleLike 或 BaseLayout 中處理。
     },
 
     startDrag(e) {
@@ -366,6 +366,7 @@ export default {
       // 這個方法只處理公司卡片點擊和路由導向，不會開啟右側邊欄
       this.$router.push({ name: 'company', params: { id: company.id } });
     }
+
   }
 }
 </script>
@@ -380,8 +381,10 @@ export default {
   background-color: #383333;
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
-  border-bottom-right-radius: 0; /* 下方圓角設為 0 */
-  border-bottom-left-radius: 0;  /* 下方圓角設為 0 */
+  border-bottom-right-radius: 0;
+  /* 下方圓角設為 0 */
+  border-bottom-left-radius: 0;
+  /* 下方圓角設為 0 */
   color: white;
   gap: 10px;
   width: 100%;
@@ -520,7 +523,7 @@ export default {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  width: 100%; 
+  width: 100%;
 }
 
 .job-card-salary {
@@ -543,42 +546,50 @@ export default {
 .love-job-section .love-job-content .love-job-card {
   display: flex;
   flex-direction: column;
-  align-items: center; 
-  justify-content: flex-start; 
-  position: relative; 
+  align-items: center;
+  justify-content: flex-start;
+  position: relative;
   width: 250px;
   height: 210px;
-  background-color: #594f4f00; 
-  background-size: cover; 
+  background-color: #594f4f00;
+  background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  padding: 15px; 
+  padding: 15px;
   box-sizing: border-box;
   color: white;
   cursor: pointer;
-  transition: transform 0.5s ease-out, 
-              box-shadow 0.5s ease-out, 
-              background-color 0.5s ease-out; 
-  flex-shrink: 0; 
+  transition: transform 0.5s ease-out,
+    box-shadow 0.5s ease-out,
+    background-color 0.5s ease-out;
+  flex-shrink: 0;
 }
 
 .love-job-section .love-job-content .love-job-card:hover {
-  background-color: #594f4f; /* 與 great-company 一致 */
+  background-color: #594f4f;
+  /* 與 great-company 一致 */
   border-radius: 4px;
-  transform: translateY(-1px); /* 與 great-company 一致 */
-  box-shadow: 0 8px 8px rgba(0, 0, 0, 0.3); /* 與 great-company 一致 */
+  transform: translateY(-1px);
+  /* 與 great-company 一致 */
+  box-shadow: 0 8px 8px rgba(0, 0, 0, 0.3);
+  /* 與 great-company 一致 */
 }
 
 .love-job-section .love-job-photo {
-  width: 160px; /* Occupy padded space */
-  height: 130px; /* Adjust based on your frame image, leaves space for name */
-  margin-top: 24px; /* Adjust as needed */
+  width: 160px;
+  /* Occupy padded space */
+  height: 130px;
+  /* Adjust based on your frame image, leaves space for name */
+  margin-top: 24px;
+  /* Adjust as needed */
 }
 
 .love-job-section .love-job-name {
   position: absolute;
-  left: 15px; /* Align with padding */
-  right: 15px; /* Align with padding */
+  left: 15px;
+  /* Align with padding */
+  right: 15px;
+  /* Align with padding */
   top: 175px;
   font-size: 16px;
   font-weight: bold;
@@ -587,8 +598,10 @@ export default {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  z-index: 1; /* Ensure it's above the photo if photo positioning is tricky */
+  z-index: 1;
+  /* Ensure it's above the photo if photo positioning is tricky */
 }
+
 /* --- LOVE JOB SECTION STYLES END --- */
 
 .middle-content .great-company .recommend-content .content-wrapper:hover {
@@ -638,9 +651,11 @@ export default {
 .favorite-job-card {
   aspect-ratio: 16 / 10;
   border-radius: 4px;
-  max-width: 320px; /* 例如 */
+  max-width: 320px;
+  /* 例如 */
   min-height: 320px;
-  width: 100%; /* 確保它能縮小 */
+  width: 100%;
+  /* 確保它能縮小 */
   background-size: cover;
   background-position: center;
   position: relative;
@@ -689,7 +704,7 @@ export default {
 .card-top-info {
   display: flex;
   align-items: flex-start;
-  margin-left:-20px;
+  margin-left: -20px;
 }
 
 .favorite-job-icon {
@@ -750,7 +765,7 @@ export default {
   user-select: none;
 }
 
-.middle-content .great-company .recommend-content .content-wrapper{
+.middle-content .great-company .recommend-content .content-wrapper {
   display: flex;
   flex-direction: column;
   background-color: #594f4f00;
@@ -764,6 +779,7 @@ export default {
     background-color 0.5s ease-out;
   cursor: pointer;
 }
+
 .middle-content .favorite-job .content-container {
   cursor: pointer;
 }

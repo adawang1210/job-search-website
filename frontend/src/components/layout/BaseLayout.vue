@@ -187,6 +187,8 @@ export default {
         this.viewedItemsForLeftSidebar[existingViewedItemIndex].isItemLiked = false;
       }
     }
+     // 在數據更新完成後，發出一個通用的事件，通知所有頁面職缺的愛心狀態已經改變
+    eventBus.emit('update-job-like-status', { id: formattedLikedItem.id, isLiked: isLiked }); 
   },
 
   handleRemoveItemFromLikedList(itemId) {
@@ -202,10 +204,8 @@ export default {
       if (viewedItemToUpdate) {
         viewedItemToUpdate.isItemLiked = false;
       }
-      // 因為是取消收藏，所以也需要通知 Home.vue
-      // 注意：這會觸發 Home.vue 的 handleUnlikeFromSidebar，進而觸發 syncLikeStatusAcrossSections
-      // 確保 syncLikeStatusAcrossSections 能正確處理 isItemLiked 狀態
-      eventBus.emit('unlike-item-in-home-via-sidebar', itemId); // 假設是職缺
+    // 現在改為發出通用的 'update-job-like-status' 事件，並明確傳遞 isLiked 狀態為 false
+    eventBus.emit('update-job-like-status', { id: itemId, isLiked: false }); 
     }
     // localStorage 的更新將由 watcher 自動處理
   },

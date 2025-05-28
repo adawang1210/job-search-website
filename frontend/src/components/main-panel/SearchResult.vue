@@ -40,7 +40,7 @@
 <script>
 
 import {  getJobs, likeJob, unlikeJob, getJobDetail } from '@/api/home.js';
-
+import eventBus from '/src/eventBus.js'; 
 export default {
   name: 'SearchResult',
   inject: ['openRightSidebar', 'updateLikedItemInSidebar', 'addViewedItemToSidebar'],
@@ -106,6 +106,15 @@ export default {
       deep: true // 監聽 query 物件內部變化
     }
   },
+  mounted() {
+    // 【新增】監聽來自 BaseLayout 或 LeftSidebar 的收藏狀態更新事件
+    // 這個事件會通知所有關心職缺愛心狀態的組件（包括 Home.vue 和 SearchResult.vue）
+    eventBus.on('update-job-like-status', this.updateJobLikeStatusFromBus);
+  },
+  beforeUnmount() {
+    // 【新增】在組件銷毀前移除事件監聽器，避免記憶體洩漏
+    eventBus.off('update-job-like-status', this.updateJobLikeStatusFromBus);
+  },
   methods: {
     async fetchSearchResults() {
       // 修改執行條件：只要任一條件存在就搜尋
@@ -147,10 +156,6 @@ export default {
             isLiked: job.is_liked_by_user || false, // Backend field for like status
             originalData: job, // Store the original API object
         }));
-          // this.paginationData = apiResponse.pagination; // 如果您需要處理分頁
-          if (this.searchResults.length === 0 && (this.searchQuery || this.activePositions.length > 0 || this.activeRegions.length > 0)) {
-              // 提示已在模板中處理
-          }
         } else {
           this.searchResults = [];
           // this.paginationData = null;
@@ -163,15 +168,34 @@ export default {
         this.isLoading = false;
       }
     },
-    handleCardClick(job) {
-      const dataForSidebar = job.originalData || job; // Home.vue 的習慣
-      if (typeof this.addViewedItemToSidebar === 'function') {
-        this.addViewedItemToSidebar(dataForSidebar);
-      }
-      if (typeof this.openRightSidebar === 'function') {
-        this.openRightSidebar(dataForSidebar);
+     // 【新增】處理來自 eventBus 的愛心狀態更新事件
+    // 這個方法會接收一個包含 { id: jobId, isLiked: newStatus } 的數據物件
+    updateJobLikeStatusFromBus(data) {
+      const jobId = data.id;
+      const newStatus = data.isLiked;
+      
+      // 找到搜尋結果中對應的職缺，並更新其 isLiked 狀態
+      const jobToUpdate = this.searchResults.find(job => job.id === jobId);
+      if (jobToUpdate) {
+        jobToUpdate.isLiked = newStatus;
       }
     },
+    // 【修改】點擊職缺卡片時，觸發瀏覽和開啟右側邊欄
+    handleCardClick(job) {
+      // job 已經是 SearchResult.vue 轉換過的格式：{ id, title, ..., isLiked, originalData }
+      // 確保傳遞給 BaseLayout 的是原始 API 數據
+      const dataForSidebar = job.originalData || job; 
+      
+      // 1. 新增到瀏覽紀錄
+      if (typeof this.addViewedItemToSidebar === 'function') {
+        this.addViewedItemToSidebar(dataForSidebar); // 傳遞原始職缺數據給 BaseLayout 的 addViewedItemToSidebar
+      }
+      // 2. 開啟右側邊欄
+      if (typeof this.openRightSidebar === 'function') {
+        this.openRightSidebar(dataForSidebar); // 傳遞原始職缺數據給 BaseLayout 的 openRightSidebar
+      }
+    },
+    // 【修改】點擊愛心按鈕時，處理收藏/取消收藏邏輯
     async toggleLike(job) {
       if (!this.isUserLoggedIn) {
         alert('您需要先登入才能收藏職缺！');
@@ -183,24 +207,39 @@ export default {
       const originalLikedStatus = job.isLiked;
       const newLikedStatus = !job.isLiked;
 
-      // 樂觀更新 UI
+      // 1. 樂觀更新 UI
       job.isLiked = newLikedStatus;
 
       try {
+        // 2. 呼叫後端 API 進行收藏/取消收藏
         if (newLikedStatus) { 
           await likeJob(job.id);
         } else {
           await unlikeJob(job.id);
         }
 
+        // 3. 通知 BaseLayout 更新側邊欄的收藏和瀏覽紀錄列表
+        // 傳遞職缺的原始數據 (job.originalData) 和新的 isLiked 狀態
         if (typeof this.updateLikedItemInSidebar === 'function') {
-          this.updateLikedItemInSidebar(job.id, newLikedStatus, job.originalData || job);
+          this.updateLikedItemInSidebar(job.originalData || job, newLikedStatus); 
         }
+        
+        // 4. 透過 eventBus 通知 Home.vue (或其他頁面) 同步愛心狀態
+        // 這裡發出的事件包含 isLiked 狀態，以便接收方精確更新
+        eventBus.emit('update-job-like-status', { id: job.id, isLiked: newLikedStatus });
+
       } catch (error) {
         // API 失敗，恢復 UI 狀態
         job.isLiked = originalLikedStatus;
         alert(`更新 "${job.title}" 的收藏狀態失敗，請稍後再試。`);
         console.error("Error toggling like in SearchResult:", error);
+        
+        // 如果 API 失敗，也要通知 BaseLayout 恢復其列表狀態
+        if (typeof this.updateLikedItemInSidebar === 'function') {
+          this.updateLikedItemInSidebar(job.originalData || job, originalLikedStatus);
+        }
+        // 同時通知其他組件，恢復愛心狀態
+        eventBus.emit('update-job-like-status', { id: job.id, isLiked: originalLikedStatus });
       }
     },
     handleTitleClick(job) {

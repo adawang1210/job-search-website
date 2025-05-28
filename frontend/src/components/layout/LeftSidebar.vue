@@ -20,7 +20,7 @@
             </div>
             <div v-else-if="'main_product' in item"><!-- company會包含main_product -->
               <p class="title-sidebar">{{ item.name }}</p>
-               <p v-if="item.industry" class="company-sidebar">{{ item.industry }}</p>
+              <p v-if="item.industry" class="company-sidebar">{{ item.industry }}</p>
             </div>
           </div>
           <button type="button" class="like-btn active" @click="handleUnlikeFromSidebar(item)" v-show="!collapsed">
@@ -41,14 +41,15 @@
 
     <div class="block2 scrollable-block">
       <template v-if="viewedItems && viewedItems.length > 0">
-        <div v-for="item in viewedItems" :key="item.id" class="job-card-in-sidebar viewed-job-card">
+        <div v-for="item in viewedItems" :key="item.id" class="job-card-in-sidebar viewed-job-card"
+          @click="handleItemClick(item)">
           <div v-if="item.image" class="job-image-sidebar" :style="{ backgroundImage: 'url(' + item.image + ')' }">
           </div>
           <div class="content-container-sidebar" v-show="!collapsed">
             <p class="title-sidebar">{{ item.title }}</p>
             <p v-if="item.company" class="company-sidebar">{{ item.company }}</p>
           </div>
-          <button type="button" class="like-btn" @click="handleLikeFromViewed(item)" v-show="!collapsed">
+          <button type="button" class="like-btn" @click.stop="handleLikeFromViewed(item)" v-show="!collapsed">
             <font-awesome-icon :icon="['far', 'heart']" class="heart-icon" />
           </button>
         </div>
@@ -87,6 +88,7 @@ export default {
       default: () => []
     }
   },
+  inject: ['openRightSidebar', 'updateLikedItemInSidebar'], // 確保注入 openRightSidebar
   data() {
     return {
       isResizing: false,
@@ -109,23 +111,28 @@ export default {
 
     handleUnlikeFromSidebar(itemToUnlike) {
       if (itemToUnlike) {
-        // 1. Notify Home.vue via eventBus to update its UI (e.g., heart icon)
+        // 通知 Home.vue 改變 UI 狀態
         eventBus.emit('unlike-item-in-home-via-sidebar', itemToUnlike.id);
-
-        // 2. Notify BaseLayout.vue to remove this item from the main liked list
+        // 通知 BaseLayout 移除此項目
         this.$emit('remove-item-from-liked-list', itemToUnlike.id);
       }
     },
 
     handleLikeFromViewed(itemToLike) {
       if (itemToLike) {
-        // 1. Notify Home.vue via eventBus to update its UI and trigger adding to liked list.
-        // This assumes Home.vue listens to 'like-item-in-home-via-sidebar',
-        // sets its local job.isLiked = true, and then calls the injected
-        // updateLikedItemInSidebar(job, true) which is a method in BaseLayout.
-        // BaseLayout's updateLikedItemInSidebar method should then also handle
-        // removing the item from its 'viewedItems' list.
+        // 呼叫 BaseLayout 的 updateLikedItemInSidebar 來添加收藏
+        // 這裡傳遞的是 LeftSidebar 中 item 的 _originalData，以及 isLiked 狀態為 true
+        this.updateLikedItemInSidebar(itemToLike._originalData, true);
+        
+        // 同時透過 eventBus 通知 Home.vue 更新愛心狀態
         eventBus.emit('like-item-in-home-via-sidebar', itemToLike.id);
+      }
+    },
+    handleItemClick(item) {
+      // 點擊瀏覽過的項目時，開啟右側邊欄
+      // 將儲存的 _originalData (原始職缺數據) 傳遞給 BaseLayout
+      if (typeof this.openRightSidebar === 'function') {
+        this.openRightSidebar(item._originalData);
       }
     },
 
@@ -141,8 +148,8 @@ export default {
       if (this.isResizing) {
         const deltaX = e.clientX - this.initialMouseX;
         let newWidth = this.initialWidth + deltaX;
-        const minWidth = 60; 
-        const maxWidth = 400; 
+        const minWidth = 60;
+        const maxWidth = 400;
         newWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
         this.$emit('update-width', newWidth);
       }
@@ -183,22 +190,27 @@ export default {
 }
 
 /* 間距控制 */
-.left-side-bar > .header1 {
+.left-side-bar>.header1 {
   margin-bottom: 8px;
 }
-.left-side-bar > .scrollable-block {
+
+.left-side-bar>.scrollable-block {
   margin-bottom: 16px;
 }
-.left-side-bar > hr {
+
+.left-side-bar>hr {
   margin-top: 0;
   margin-bottom: 16px;
 }
-.left-side-bar > .header2 {
+
+.left-side-bar>.header2 {
   margin-bottom: 8px;
 }
-.left-side-bar > .resizer {
+
+.left-side-bar>.resizer {
   margin-bottom: 0;
 }
+
 .left-side-bar .block2.scrollable-block:has(+ .resizer) {
   margin-bottom: 0;
 }
@@ -253,7 +265,8 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 176px; /* Approx 2 cards (80px each + 8px gap) + 4px padding */
+  max-height: 176px;
+  /* Approx 2 cards (80px each + 8px gap) + 4px padding */
   overflow-y: auto;
   overflow-x: hidden;
   padding: 4px;
@@ -379,7 +392,8 @@ hr {
   transform: scale(1.1);
 }
 
-.job-card-in-sidebar .like-btn.active { /* For liked items in block1 */
+.job-card-in-sidebar .like-btn.active {
+  /* For liked items in block1 */
   color: rgb(235, 178, 189);
 }
 

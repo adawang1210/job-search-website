@@ -2,34 +2,23 @@
   <div class="right-sidebar" :class="{ active: isVisible }">
     <div class="resizer" @mousedown="startResizing"></div>
     <div class="sidebar-header">
-      <h3>職缺詳細資訊</h3>
-      <button @click="closeSidebar" class="close-btn">
+      <h3>職缺詳細資訊</h3> <button @click="closeSidebar" class="close-btn">
         <font-awesome-icon :icon="['fas', 'times']" />
       </button>
     </div>
     <div v-if="jobData" class="sidebar-content-wrapper">
       <div class="sidebar-content">
-        <h4>{{ jobData.title || jobData.name }}</h4>
-        <img v-if="jobData.image" :src="jobData.image" :alt="jobData.title || jobData.name" class="sidebar-main-image" />
-        <p v-if="jobData.company"><strong>公司：</strong> {{ jobData.company }}</p>
+        <h4>{{ jobData.title }}</h4>
+        <img v-if="jobData.company_logo || jobData.image" :src="jobData.company_logo || jobData.image" :alt="jobData.title" class="sidebar-main-image" />
+        <p v-if="jobData.company && jobData.company.name"><strong>公司：</strong> {{ jobData.company.name }}</p>
         <p v-if="jobData.location"><strong>地點：</strong> {{ jobData.location }}</p>
-        <p v-if="jobData.salary"><strong>薪資：</strong> {{ jobData.salary }}</p>
-
-        <template v-if="jobData.type === 'company'">
-          <p>這是一家優質企業。</p>
-        </template>
-        <template v-else-if="jobData.type === 'favoriteJob'">
-          <p>這是您收藏的職缺。</p>
-          <img v-if="jobData.icon" :src="jobData.icon" alt="Company Icon" class="sidebar-company-icon" />
-        </template>
-
+        <p v-if="jobData.salary_max"><strong>薪資：</strong> ${{ jobData.salary_max }}</p>
         <p style="margin-top: 20px;"><em>更多詳細內容將顯示於此...</em></p>
       </div>
     </div>
     <div v-else class="sidebar-content-wrapper">
       <div class="sidebar-content">
-        <p>請選擇一個項目以查看詳細資訊。</p>
-      </div>
+        <p>請選擇一個職缺以查看詳細資訊。</p> </div>
     </div>
   </div>
 </template>

@@ -274,25 +274,26 @@ export default {
       if (!job) return;
 
       const originalLikedStatus = job.isLiked;
-      job.isLiked = !job.isLiked; // UI先行，樂觀更新
+      job.isLiked = !job.isLiked; // UI 先行，樂觀更新
 
-      this.updateLikedItemInSidebar(job.id, job.isLiked, job.originalData);
+      // 傳遞 job.originalData (包含所有原始屬性) 和 isLiked 狀態給 BaseLayout
+      // BaseLayout 的 updateLikedItemInSidebar 會處理收藏列表的格式
+      this.updateLikedItemInSidebar(job.originalData, job.isLiked);
       this.syncLikeStatusAcrossSections(job.id, job.isLiked); // 同步所有地方的收藏狀態
 
-      //5. (可選) 連接真實後端 API
       try {
         if (job.isLiked) {
-          await likeJob(job.id); // 假設 likeJob 是 API 請求函數
+          await likeJob(job.id);
         } else {
-          await unlikeJob(job.id); // 假設 unlikeJob 是 API 請求函數
+          await unlikeJob(job.id);
         }
-       } catch (error) {
-         console.error('Failed to update like status:', error);
-         job.isLiked = originalLikedStatus; // API 失敗，回滾UI狀態
-         this.updateLikedItemInSidebar(job.id, job.isLiked, job.originalData);
-         this.syncLikeStatusAcrossSections(job.id, job.isLiked);
-         alert('收藏操作失敗，請稍後再試。');
-       }
+      } catch (error) {
+        console.error('Failed to update like status:', error);
+        job.isLiked = originalLikedStatus; // API 失敗，回滾 UI 狀態
+        this.updateLikedItemInSidebar(job.originalData, job.isLiked); // 回滾時也傳遞原始數據
+        this.syncLikeStatusAcrossSections(job.id, job.isLiked);
+        alert('收藏操作失敗，請稍後再試。');
+      }
     },
 
     syncLikeStatusAcrossSections(jobId, newLikedStatus) {
@@ -344,12 +345,14 @@ export default {
     },
 
     handleCardClick(jobData) {
-      const dataForSidebar = jobData.originalData || jobData;
+      // jobData 已經是 Home.vue 內部處理過的格式，包含 originalData
+      // 這裡會將 job.originalData (原始職缺數據) 傳遞給 BaseLayout
+      const dataForSidebar = jobData.originalData || jobData; // 確保取得原始 API 數據
       if (typeof this.addViewedItemToSidebar === 'function') {
-        this.addViewedItemToSidebar(dataForSidebar);
+        this.addViewedItemToSidebar(dataForSidebar); // 傳遞原始職缺數據給瀏覽紀錄
       }
       if (typeof this.openRightSidebar === 'function') {
-        this.openRightSidebar(dataForSidebar);
+        this.openRightSidebar(dataForSidebar); // 傳遞原始職缺數據給右側邊欄
       }
     },
     handleTitleClick(job) {
@@ -360,37 +363,8 @@ export default {
       alert(`預計導航至公司頁面: ${job.company}. (此功能需 Vue Router 支持)`);
     },
     handleCompanyCardClick(company) {
+      // 這個方法只處理公司卡片點擊和路由導向，不會開啟右側邊欄
       this.$router.push({ name: 'company', params: { id: company.id } });
-    // 將公司資料添加到側邊欄（如果你有這個功能的話）
-    /*
-    const dataForSidebar = company.originalData || company;
-    if (typeof this.addViewedItemToSidebar === 'function') {
-      this.addViewedItemToSidebar(dataForSidebar);
-    }
-    if (typeof this.openRightSidebar === 'function') {
-      this.openRightSidebar(dataForSidebar);
-    }*/
-      
-    },
-    // 如果 favorite-job-card 有點擊事件，也需要實現
-    handleFavoriteJobCardClick(favJob) {
-        console.log('Favorite job card clicked:', favJob);
-        // 創建一個與普通職缺結構相似的對象傳給 sidebar
-        const dataForSidebar = {
-            id: favJob.id,
-            title: favJob.name,
-            image: favJob.icon, // 或者 favJob.image
-            company: favJob.description.split('、')[0] || '相關企業', // 嘗試從描述中獲取
-            salary: 'N/A',
-            isLiked: favJob.isLiked !== undefined ? favJob.isLiked : true, // 收藏列表預設為已收藏
-            originalData: favJob
-        };
-        if (typeof this.addViewedItemToSidebar === 'function') {
-            this.addViewedItemToSidebar(dataForSidebar);
-        }
-        if (typeof this.openRightSidebar === 'function') {
-            this.openRightSidebar(dataForSidebar);
-        }
     }
   }
 }

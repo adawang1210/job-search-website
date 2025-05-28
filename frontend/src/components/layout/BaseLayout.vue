@@ -60,12 +60,40 @@ export default {
     // 從 localStorage 加載收藏的項目
     const storedLikedItems = localStorage.getItem('likedJobItems');
     if (storedLikedItems) {
-      this.likedItemsForLeftSidebar = JSON.parse(storedLikedItems);
+      // 假設 localStorage 存的是簡化格式，直接解析
+      // 如果之前存的是原始格式，需要類似 handleUpdateLikedItemInSidebar 的轉換邏輯
+      try {
+        const parsedItems = JSON.parse(storedLikedItems);
+        this.likedItemsForLeftSidebar = parsedItems.map(item => ({
+          id: item.id,
+          title: item.title,
+          company: item.company,
+          image: item.image,
+          _originalData: item._originalData || item, // 如果沒有_originalData就用自身
+        }));
+      } catch (e) {
+        console.error("Error parsing likedJobItems from localStorage:", e);
+        this.likedItemsForLeftSidebar = [];
+      }
     }
+
     // 從 localStorage 加載瀏覽過的項目
     const storedViewedItems = localStorage.getItem('viewedJobItems');
     if (storedViewedItems) {
-      this.viewedItemsForLeftSidebar = JSON.parse(storedViewedItems);
+      try {
+        const parsedItems = JSON.parse(storedViewedItems);
+        // 將從 localStorage 讀取的項目轉換為簡化格式
+        this.viewedItemsForLeftSidebar = parsedItems.map(item => ({
+          id: item.id,
+          title: item.title,
+          company: item.company,
+          image: item.image,
+          _originalData: item._originalData || item, // 如果沒有_originalData就用自身
+        }));
+      } catch (e) {
+        console.error("Error parsing viewedJobItems from localStorage:", e);
+        this.viewedItemsForLeftSidebar = [];
+      }
     }
   },
   watch: {
@@ -101,8 +129,8 @@ export default {
       const maxRightWidth = 280;
       this.rightSidebarWidth = Math.max(minRightWidth, Math.min(newWidth, maxRightWidth));
     },
-    handleOpenRightSidebar(jobData) {
-      this.selectedJobForRightSidebar = jobData;
+    handleOpenRightSidebar(jobOriginalData) {
+      this.selectedJobForRightSidebar = jobOriginalData; // 直接將原始數據賦值給 RightSidebar
       this.isRightSidebarVisible = true;
       const minRightWidth = 200;
       if (this.rightSidebarWidth < minRightWidth) {
@@ -113,54 +141,93 @@ export default {
       this.isRightSidebarVisible = false;
       this.selectedJobForRightSidebar = null;
     },
-    handleUpdateLikedItemInSidebar(jobData, isLiked) {
-      console.log('[BaseLayout] handleUpdateLikedItemInSidebar called with jobData:', JSON.parse(JSON.stringify(jobData)), 'isLiked:', isLiked);
-      if (!jobData || typeof jobData.id === 'undefined') {
-        console.error('[BaseLayout] Received jobData with undefined id:', JSON.parse(JSON.stringify(jobData)));
+    handleUpdateLikedItemInSidebar(jobDataFromSource, isLiked) {
+      console.log('[BaseLayout] handleUpdateLikedItemInSidebar called with jobDataFromSource:', JSON.parse(JSON.stringify(jobDataFromSource)), 'isLiked:', isLiked);
+
+      if (!jobDataFromSource || typeof jobDataFromSource.id === 'undefined') {
+        console.error('[BaseLayout] Received jobDataFromSource with undefined id:', JSON.parse(JSON.stringify(jobDataFromSource)));
         return;
       }
 
+      // 將原始職缺數據轉換為 LeftSidebar 收藏列表所需的簡化格式
+      const formattedLikedItem = {
+        id: jobDataFromSource.id,
+        title: jobDataFromSource.title,
+        company: jobDataFromSource.company && jobDataFromSource.company.name ? jobDataFromSource.company.name : jobDataFromSource.company || '未知公司', // 確保是字串
+        image: jobDataFromSource.company_logo || jobDataFromSource.image || 'default_job_image.png',
+        originalData: jobDataFromSource, // 保留原始數據
+      };
+
       if (isLiked) {
-        const existingItem = this.likedItemsForLeftSidebar.find(item => item.id === jobData.id);
-        console.log('[BaseLayout] Is item already in liked list (by id ' + jobData.id + ')?', existingItem ? JSON.parse(JSON.stringify(existingItem)) : 'No');
+        const existingItem = this.likedItemsForLeftSidebar.find(item => item.id === formattedLikedItem.id);
         if (!existingItem) {
-          this.likedItemsForLeftSidebar.unshift({ ...jobData }); // 確保 jobData 包含所有必要欄位
-          console.log('[BaseLayout] Item added to likedItemsForLeftSidebar. New list:', JSON.parse(JSON.stringify(this.likedItemsForLeftSidebar)));
+          this.likedItemsForLeftSidebar.unshift({ ...formattedLikedItem });
         } else {
-          console.log('[BaseLayout] Item already in liked list. Not adding again.');
-          // 如果項目已存在，確保其 isLiked 狀態與 jobData 一致 (如果需要)
-          // existingItem.isLiked = true; // 或其他需要的屬性更新
+          // 如果已存在，確保其 isLiked 狀態與 jobDataFromSource 一致 (如果需要)
+          // existingItem.isLiked = true; // 收藏列表中的項目本身就代表已收藏
         }
-        this.viewedItemsForLeftSidebar = this.viewedItemsForLeftSidebar.filter(item => item.id !== jobData.id);
+        // 如果職缺被收藏，就從瀏覽紀錄中移除
+        this.viewedItemsForLeftSidebar = this.viewedItemsForLeftSidebar.filter(item => item.id !== formattedLikedItem.id);
       } else {
-        const initialLength = this.likedItemsForLeftSidebar.length;
-        this.likedItemsForLeftSidebar = this.likedItemsForLeftSidebar.filter(item => item.id !== jobData.id);
-        console.log(`[BaseLayout] Item with id ${jobData.id} removed (or attempted). Liked list count changed from ${initialLength} to ${this.likedItemsForLeftSidebar.length}. New list:`, JSON.parse(JSON.stringify(this.likedItemsForLeftSidebar)));
+        // 如果取消收藏，從收藏列表中移除
+        this.likedItemsForLeftSidebar = this.likedItemsForLeftSidebar.filter(item => item.id !== formattedLikedItem.id);
+        // 可以考慮將取消收藏的職缺重新加入瀏覽紀錄（如果它不在裡面）
+        // 確保加回去的也是簡化格式
+        const isAlreadyViewed = this.viewedItemsForLeftSidebar.some(item => item.id === formattedLikedItem.id);
+        if (!isAlreadyViewed) {
+          this.viewedItemsForLeftSidebar.unshift(formattedLikedItem);
+          if (this.viewedItemsForLeftSidebar.length > 10) { // 限制數量
+            this.viewedItemsForLeftSidebar.pop();
+          }
+        }
       }
     },
+
     handleRemoveItemFromLikedList(itemId) {
-      // 先找到要移除的項目，以便之後可能將其加入瀏覽列表
-      // const itemToRemove = this.likedItemsForLeftSidebar.find(item => item.id === itemId);
+      // 這是 LeftSidebar 點擊收藏按鈕時觸發的
+      // 找到要移除的項目，並確保其 isLiked 狀態為 false
+      const itemToRemove = this.likedItemsForLeftSidebar.find(item => item.id === itemId);
 
       this.likedItemsForLeftSidebar = this.likedItemsForLeftSidebar.filter(item => item.id !== itemId);
 
-      // 如果希望從側邊欄取消收藏後，該項目加入到「瀏覽過」的列表 (且不在裡面)
-      // if (itemToRemove) {
-      //   const isAlreadyViewed = this.viewedItemsForLeftSidebar.some(viewedItem => viewedItem.id === itemToRemove.id);
-      //   const isStillLiked = this.likedItemsForLeftSidebar.some(likedItem => likedItem.id === itemToRemove.id); // 應該為 false
-      //   if (!isAlreadyViewed && !isStillLiked) {
-      //     //  this.handleAddViewedItemToSidebar(itemToRemove); // 確保 itemToRemove 是完整物件
-      //   }
-      // }
-      // localStorage 的更新將由 watcher 自動處理
+      // 將取消收藏的項目加回瀏覽紀錄 (如果它還不在裡面)
+      if (itemToRemove) {
+        const isAlreadyViewed = this.viewedItemsForLeftSidebar.some(viewedItem => viewedItem.id === itemToRemove.id);
+        if (!isAlreadyViewed) {
+          this.viewedItemsForLeftSidebar.unshift(itemToRemove);
+          if (this.viewedItemsForLeftSidebar.length > 10) {
+            this.viewedItemsForLeftSidebar.pop();
+          }
+        }
+      }
     },
-    handleAddViewedItemToSidebar(jobData) {
-      const isAlreadyLiked = this.likedItemsForLeftSidebar.some(item => item.id === jobData.id);
-      if (isAlreadyLiked) {
+
+    handleAddViewedItemToSidebar(jobOriginalData) {
+      if (!jobOriginalData || typeof jobOriginalData.id === 'undefined') {
+        console.error('[BaseLayout] Received jobOriginalData with undefined id for viewed item:', jobOriginalData);
         return;
       }
-      this.viewedItemsForLeftSidebar = this.viewedItemsForLeftSidebar.filter(item => item.id !== jobData.id);
-      this.viewedItemsForLeftSidebar.unshift({ ...jobData });
+
+      // 檢查是否已經被收藏
+      const isAlreadyLiked = this.likedItemsForLeftSidebar.some(item => item.id === jobOriginalData.id);
+      if (isAlreadyLiked) {
+        return; // 如果已經被收藏，則不加入瀏覽紀錄
+      }
+
+      // 將原始職缺數據轉換為 LeftSidebar 瀏覽紀錄所需的簡化格式
+      const formattedViewedItem = {
+        id: jobOriginalData.id,
+        title: jobOriginalData.title,
+        company: jobOriginalData.company && jobOriginalData.company.name ? jobOriginalData.company.name : jobOriginalData.company || '未知公司', // 確保是字串
+        image: jobOriginalData.company_logo || jobOriginalData.image || 'default_job_image.png',
+        originalData: jobOriginalData, // 保留原始數據供 RightSidebar 使用
+      };
+
+      // 移除舊的相同項目，確保最新瀏覽的在最前面
+      this.viewedItemsForLeftSidebar = this.viewedItemsForLeftSidebar.filter(item => item.id !== formattedViewedItem.id);
+      this.viewedItemsForLeftSidebar.unshift(formattedViewedItem);
+
+      // 限制數量
       if (this.viewedItemsForLeftSidebar.length > 10) {
         this.viewedItemsForLeftSidebar.pop();
       }

@@ -9,7 +9,7 @@
 
     <div class="block1 scrollable-block">
       <template v-if="likedItems && likedItems.length > 0">
-        <div v-for="item in likedItems" :key="item.id" class="job-card-in-sidebar liked-job-card" @click="handleItemClick(item)">
+        <div v-for="item in likedItems" :key="item.id + '-' + item.type" class="job-card-in-sidebar liked-job-card" @click="handleItemClick(item)">
           <div v-if="item.image" class="job-image-sidebar" :style="{ backgroundImage: 'url(' + item.image + ')' }">
           </div>
           <div class="content-container-sidebar" v-show="!collapsed">
@@ -34,7 +34,7 @@
 
     <div class="block2 scrollable-block">
       <template v-if="viewedItems && viewedItems.length > 0">
-        <div v-for="item in viewedItems" :key="item.id" class="job-card-in-sidebar viewed-job-card"
+        <div v-for="item in viewedItems" :key="item.id + '-' + item.type" class="job-card-in-sidebar viewed-job-card"
           @click="handleItemClick(item)">
           <div v-if="item.image" class="job-image-sidebar" :style="{ backgroundImage: 'url(' + item.image + ')' }">
           </div>
@@ -61,6 +61,9 @@
 <script>
 import eventBus from '/src/eventBus.js';
 
+const ITEM_TYPE_JOB = 'job';
+const ITEM_TYPE_COMPANY = 'company';
+
 export default {
   name: 'LeftSidebar',
   props: {
@@ -81,7 +84,7 @@ export default {
       default: () => []
     }
   },
-  inject: ['openRightSidebar', 'updateLikedItemInSidebar'], // 確保注入 openRightSidebar
+  inject: ['openRightSidebar', 'updateLikedItemInSidebar'], 
   data() {
     return {
       isResizing: false,
@@ -102,46 +105,31 @@ export default {
       this.$emit('toggle-collapse');
     },
 
-    // 這個方法在「收藏列表」的實心愛心被點擊時觸發 (取消收藏)
-    handleUnlikeFromSidebar(itemToUnlike) {
-      if (itemToUnlike) {
-        // 通知 Home.vue 更新 UI 狀態，並讓 Home.vue 調用 API 取消收藏
-        // 注意：這裡傳遞 itemToUnlike.id 就夠了，Home.vue 會處理 isLiked=false
-        eventBus.emit('unlike-item-in-home-via-sidebar', itemToUnlike.id);
+    andleUnlikeFromSidebar(itemToUnlike) {
+      // 確保 itemToUnlike 有 id 和 type 屬性
+      if (itemToUnlike && itemToUnlike.id && itemToUnlike.type) {
         // 通知 BaseLayout 從收藏列表刪除該項目，並更新瀏覽列表中該項目的愛心狀態為空心
-        this.$emit('remove-item-from-liked-list', itemToUnlike.id);
+        // 這裡會觸發 BaseLayout 的 handleRemoveItemFromLikedList，然後 BaseLayout 會發送 'update-like-status' 事件
+        this.$emit('remove-item-from-liked-list', itemToUnlike.id, itemToUnlike.type);
       }
     },
 
-    toggleLikeFromViewed(itemToToggle) {
-      if (itemToToggle) {
-        // 計算新的愛心狀態：如果目前是收藏的，就變成取消收藏；如果目前是未收藏的，就變成收藏
+     toggleLikeFromViewed(itemToToggle) {
+      if (itemToToggle && itemToToggle.originalData) {
         const newLikedStatus = !itemToToggle.isItemLiked;
-
-        // 1. 通知 BaseLayout 更新數據：
-        //    - 如果是收藏：將該職缺加入或更新到 `likedItemsForLeftSidebar`，並更新 `viewedItemsForLeftSidebar` 中該職缺的 `isItemLiked` 狀態。
-        //    - 如果是取消收藏：將該職缺從 `likedItemsForLeftSidebar` 移除，並更新 `viewedItemsForLeftSidebar` 中該職缺的 `isItemLiked` 狀態。
-        //    我們需要傳遞原始數據 (`_originalData`) 和新的收藏狀態 (`newLikedStatus`) 給 BaseLayout。
+        // 通知 BaseLayout 更新收藏列表和瀏覽列表的愛心狀態
+        // itemToToggle.originalData 應該包含了 type 屬性
         this.updateLikedItemInSidebar(itemToToggle.originalData, newLikedStatus);
 
-        // 2. 透過 eventBus 通知 Home.vue 同步愛心狀態，並觸發 API 調用：
-        //    Home.vue 的 `syncLikeStatusAcrossSections` 會根據這個事件更新主頁面的愛心圖示。
-        //    同時 Home.vue 的 `toggleLike` 方法會執行 API 收藏/取消收藏。
-        if (newLikedStatus) {
-          eventBus.emit('like-item-in-home-via-sidebar', itemToToggle.id);
-        } else {
-          eventBus.emit('unlike-item-in-home-via-sidebar', itemToToggle.id);
-        }
+        // 透過 eventBus 通知所有頁面同步愛心狀態
+        eventBus.emit('update-like-status', { id: itemToToggle.id, type: itemToToggle.type, isLiked: newLikedStatus });
       }
     },
     handleItemClick(item) {
-      // 點擊瀏覽過的項目或收藏項目時，開啟右側邊欄
-      // 將儲存的 _originalData (原始職缺數據) 傳遞給 BaseLayout
       if (typeof this.openRightSidebar === 'function') {
         this.openRightSidebar(item.originalData);
       }
     },
-
     startResizing(event) {
       this.isResizing = true;
       this.initialMouseX = event.clientX;

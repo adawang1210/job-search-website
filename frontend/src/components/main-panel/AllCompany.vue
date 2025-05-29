@@ -14,7 +14,7 @@
           <div class="job-card-details">
             <p class="company-name">{{ company.name }}</p>
             <button type="button" class="like-btn job-card-like-btn" :class="{ active: company.isLiked }"
-              @click.stop="toggleLike('company')">
+              @click.stop="toggleLike(company)">
               <font-awesome-icon :icon="[company.isLiked ? 'fas' : 'far', 'heart']" class="heart-icon" />
             </button>
           </div>
@@ -28,11 +28,14 @@
 </template>
 
 <script>
-import { getGreatCompanies } from '@/api/home.js'; // 假設您的 API 函數在此
+import { getGreatCompanies, likeJob, unlikeJob } from '@/api/home.js'; // 假設您的 API 函數在此
+import eventBus from '/src/eventBus.js';
+
+const ITEM_TYPE_COMPANY = 'company';
 
 export default {
   name: 'AllCompany',
-  inject: ['updateLikedItemInSidebar', 'openRightSidebar', 'addViewedItemToSidebar'],
+  inject: ['updateLikedItemInSidebar'],
   data() {
     return {
       companies: [],
@@ -42,6 +45,12 @@ export default {
   },
   async mounted() {
     this.loadCompaniesData();
+    // 【新增】監聽來自 BaseLayout 或其他頁面的愛心狀態更新事件
+    eventBus.on('update-like-status', this.handleUpdateLikeStatus);
+  },
+  beforeUnmount() {
+    // 【新增】在組件銷毀前移除事件監聽器
+    eventBus.off('update-like-status', this.handleUpdateLikeStatus);
   },
   methods: {
     async loadCompaniesData() {
@@ -50,11 +59,15 @@ export default {
       try {
         const companiesData = await getGreatCompanies();
         const rawCompanies = companiesData.results || companiesData || [];
+        
+        // 【修改】映射數據，新增 isLiked 和 type 屬性
         this.companies = rawCompanies.map(company => ({
           id: company.id,
           name: company.name,
           image: company.media && company.media.logo ? company.media.logo : 'default_company_logo_path.png',
-          originalData: company, // 保留原始API數據
+          isLiked: company.is_liked_by_user || false, // 假設後端 API 返回 is_liked_by_user
+          originalData: { ...company, type: ITEM_TYPE_COMPANY }, // 【新增】在 originalData 中加入 type
+          type: ITEM_TYPE_COMPANY, // 【新增】在頂層也保留 type，方便直接使用 company 物件
         }));
       } catch (error) {
         console.error('Error fetching companies:', error);
@@ -67,17 +80,73 @@ export default {
         this.isLoadingCompanies = false;
       }
     },
+     // 【新增】通用 toggleLike 方法 (與 Home.vue 中的邏輯一致)
+    async toggleLike(company) { // 這裡的 company 就是 item
+      // 假設需要登入才能收藏
+      // if (!this.isUserLoggedIn) { 
+      //   alert('您需要先登入才能收藏！');
+      //   return;
+      // }
+
+      if (!company || !company.id || company.type !== ITEM_TYPE_COMPANY) { // 【新增】檢查 type
+        console.error('toggleLike: 無效的公司數據或類型不符', company);
+        return;
+      }
+
+      const originalLikedStatus = company.isLiked;
+      const newLikedStatus = !company.isLiked;
+
+      // 1. 樂觀更新 UI
+      company.isLiked = newLikedStatus;
+
+      try {
+        // 2. 呼叫後端 API (統一使用 likeJob/unlikeJob)
+        // 假設 likeJob/unlikeJob API 能處理公司 ID
+        if (newLikedStatus) {
+          await likeJob(company.id); 
+        } else {
+          await unlikeJob(company.id);
+        }
+
+        // 3. 通知 BaseLayout 更新側邊欄的收藏列表
+        // 傳遞公司原始數據 (company.originalData) 和新的 isLiked 狀態
+        if (typeof this.updateLikedItemInSidebar === 'function') {
+          this.updateLikedItemInSidebar(company.originalData || company, newLikedStatus); 
+        }
+        
+        // 4. 透過 eventBus 通知所有頁面同步愛心狀態
+        // 統一事件名稱 'update-like-status'，並傳遞 ID, 類型, 和新狀態
+        eventBus.emit('update-like-status', { id: company.id, type: company.type, isLiked: newLikedStatus });
+
+      } catch (error) {
+        console.error(`Failed to update company like status for ID ${company.id}:`, error);
+        // API 失敗，恢復 UI 狀態
+        company.isLiked = originalLikedStatus;
+        alert(`收藏公司操作失敗，請稍後再試。`);
+
+        // 恢復 BaseLayout 列表狀態
+        if (typeof this.updateLikedItemInSidebar === 'function') {
+          this.updateLikedItemInSidebar(company.originalData || company, originalLikedStatus);
+        }
+        // 通知所有頁面恢復愛心狀態
+        eventBus.emit('update-like-status', { id: company.id, type: company.type, isLiked: originalLikedStatus });
+      }
+    },
+    // 【新增】處理來自 eventBus 的愛心狀態更新事件
+    // 這個方法會接收一個包含 { id: itemId, type: itemType, isLiked: newStatus } 的數據物件
+    handleUpdateLikeStatus(data) {
+      const { id, type, isLiked } = data;
+      // AllCompany 頁面只顯示公司，所以只處理 ITEM_TYPE_COMPANY 類型
+      if (type === ITEM_TYPE_COMPANY) {
+        const companyToUpdate = this.companies.find(company => company.id === id);
+        if (companyToUpdate) {
+          companyToUpdate.isLiked = isLiked;
+        }
+      }
+    },
+
     handleCompanyCardClick(company) {
       console.log('Company card clicked:', company);
-
-      const dataForSidebar = company.originalData || company;
-      if (typeof this.addViewedItemToSidebar === 'function') {
-        this.addViewedItemToSidebar(dataForSidebar);
-      }
-      if (typeof this.openRightSidebar === 'function') {
-        this.openRightSidebar(dataForSidebar);
-      }
-
       // 假設您有一個路由到公司頁面，並且需要公司ID
       this.$router.push({ name: 'company', params: { id: company.id } });
     },

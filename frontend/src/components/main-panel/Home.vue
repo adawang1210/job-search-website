@@ -24,7 +24,7 @@
                 <p class="job-card-salary">{{ job.salary }}</p>
               </div>
               <button type="button" class="like-btn job-card-like-btn" :class="{ active: job.isLiked }"
-                @click.stop="toggleLike(job.id)">
+                @click.stop="toggleLike(job)">
                 <font-awesome-icon :icon="[job.isLiked ? 'fas' : 'far', 'heart']" class="heart-icon" />
               </button>
             </div>
@@ -65,8 +65,8 @@
             <div class="job-card-details">
               <p class="company-name">{{ company.name }}</p>
               <button type="button" class="like-btn job-card-like-btn" :class="{ active: company.isLiked }"
-                @click.stop="toggleLike('company.id')">
-                  <font-awesome-icon :icon="[company.isLiked ? 'fas' : 'far', 'heart']" class="heart-icon" />
+                @click.stop="toggleLike(company)">
+                <font-awesome-icon :icon="[company.isLiked ? 'fas' : 'far', 'heart']" class="heart-icon" />
               </button>
             </div>
           </div>
@@ -106,6 +106,9 @@
 <script>
 import eventBus from '/src/eventBus.js';
 import { getJobs, getGreatCompanies, likeJob, unlikeJob, getJobDetail } from '@/api/home.js';
+
+const ITEM_TYPE_JOB = 'job';
+const ITEM_TYPE_COMPANY = 'company';
 
 export default {
   name: 'Home',
@@ -159,31 +162,20 @@ export default {
   },
   async mounted() {
     this.loadInitialData(); // 2. 組件掛載時獲取數據
-    eventBus.on('unlike-item-in-home-via-sidebar', this.handleUnlikeFromSidebar);
-    eventBus.on('like-item-in-home-via-sidebar', this.handleLikeFromSidebar);
+    eventBus.on('update-like-status', this.handleUpdateLikeStatus);
   },
   beforeUnmount() {
-    eventBus.off('unlike-item-in-home-via-sidebar', this.handleUnlikeFromSidebar);
-    eventBus.off('like-item-in-home-via-sidebar', this.handleLikeFromSidebar);
+    eventBus.off('update-like-status', this.handleUpdateLikeStatus);
   },
   methods: {
     async loadInitialData() {
-      // 同時開始加載職缺和公司數據
-      this.sections.forEach(section => {
-        section.isLoading = true;
-        section.error = null;
-      });
-      this.isLoadingCompanies = true;
-      this.errorCompanies = null;
-
       try {
-        // 使用 Promise.all 並行獲取數據
         const [jobsData, companiesData] = await Promise.all([
           getJobs(),
           getGreatCompanies(),
         ]);
 
-        // 3. 處理職缺數據
+        // 處理職缺數據
         const rawJobs = jobsData.results || jobsData || [];
         this.allApiJobs = rawJobs.map(job => ({
           id: job.id,
@@ -191,18 +183,21 @@ export default {
           image: job.company_logo || 'default_job_image.png',
           company: job.company && job.company.name ? job.company.name : '未知公司',
           salary: job.salary_max ? `$${job.salary_max}` : '面議',
-          isLiked: job.is_liked_by_user || false, // 初始收藏狀態
-          originalData: job, // 保留原始API數據，方便後續使用
+          isLiked: job.is_liked_by_user || false, // 初始收藏狀態來自後端
+          originalData: { ...job, type: ITEM_TYPE_JOB }, // 【修改】在原始數據中加入 type 屬性
+          type: ITEM_TYPE_JOB, // 【新增】在頂層也保留 type，方便直接使用 job 物件
         }));
-        this.distributeJobsRandomly(); // 將獲取的職缺隨機分配到各區塊
+        this.distributeJobsRandomly();
 
-        // 4. 處理企業數據
+        // 處理企業數據
         const rawCompanies = companiesData.results || companiesData || [];
         this.companies = rawCompanies.map(company => ({
           id: company.id,
           name: company.name,
           image: company.media && company.media.logo ? company.media.logo : 'default_company_logo_path.png',
-          originalData: company,
+          isLiked: company.is_liked_by_user || false, // 【新增】初始化公司的收藏狀態
+          originalData: { ...company, type: ITEM_TYPE_COMPANY }, // 【修改】在原始數據中加入 type 屬性
+          type: ITEM_TYPE_COMPANY, // 【新增】在頂層也保留 type，方便直接使用 company 物件
         }));
 
       } catch (error) {
@@ -210,18 +205,15 @@ export default {
         let jobErrorOccurred = false;
         let companyErrorOccurred = false;
         if (error.message && error.message.toLowerCase().includes('network error')) {
-          // 網路錯誤可能影響所有請求
           jobErrorOccurred = true;
           companyErrorOccurred = true;
-        } else if (error.config && error.config.url) { // 如果錯誤對象包含請求配置
+        } else if (error.config && error.config.url) {
           if (error.config.url.includes('/api/jobs')) jobErrorOccurred = true;
           if (error.config.url.includes('/api/companies')) companyErrorOccurred = true;
         } else if (error.isAxiosError && error.request && error.request.responseURL) {
-          // 另一種判斷方式
           if (error.request.responseURL.includes('/api/jobs')) jobErrorOccurred = true;
           if (error.request.responseURL.includes('/api/companies')) companyErrorOccurred = true;
-        }
-        else { // 如果無法判斷，假設兩個都可能出錯或是一個通用錯誤
+        } else {
           jobErrorOccurred = true;
           companyErrorOccurred = true;
         }
@@ -235,7 +227,6 @@ export default {
           this.errorCompanies = '無法載入企業資訊，請稍後再試。';
         }
 
-        // 如果沒有特定錯誤，但依然進入catch，顯示通用錯誤
         if (!this.sections.some(s => s.error) && !this.errorCompanies && (jobErrorOccurred || companyErrorOccurred)) {
           const generalErrorMsg = '資料載入失敗，請檢查網路連線或稍後重試。';
           this.sections.forEach(section => {
@@ -272,61 +263,77 @@ export default {
       });
     },
 
-    async toggleLike(Id) {
-      const section = this.sections.find(s => s.title === sectionTitle);
-      if (!section) return;
+    // item 可能是 job 或 company 物件，它已經包含 isLiked 和 originalData (其中包含 type)
+    async toggleLike(item) {
+      // 假設需要登入才能收藏
+      // if (!this.isUserLoggedIn) { 
+      //   alert('您需要先登入才能收藏！');
+      //   return;
+      // }
 
-      const job = section.jobs[jobIndex];
-      if (!job) return;
+      if (!item || !item.id || !item.type) {
+        console.error('toggleLike: 無效的項目數據或缺少 ID/類型', item);
+        return;
+      }
 
-      const originalLikedStatus = job.isLiked;
-      job.isLiked = !job.isLiked; // UI 先行，樂觀更新
+      const originalLikedStatus = item.isLiked;
+      const newLikedStatus = !item.isLiked;
 
-      // 傳遞 job.originalData (包含所有原始屬性) 和 isLiked 狀態給 BaseLayout
-      // BaseLayout 的 updateLikedItemInSidebar 會處理收藏列表的格式
-      this.updateLikedItemInSidebar(job.originalData, job.isLiked);
-      this.syncLikeStatusAcrossSections(job.id, job.isLiked); // 同步所有地方的收藏狀態
+      // 1. 樂觀更新 UI (直接修改傳入的 item 物件)
+      item.isLiked = newLikedStatus;
 
       try {
-        if (job.isLiked) {
-          await likeJob(job.id);
+        // 2. 呼叫後端 API (統一使用 likeJob/unlikeJob)
+        if (newLikedStatus) {
+          await likeJob(item.id); // 假設 likeJob API 能處理職缺和公司 ID
         } else {
-          await unlikeJob(job.id);
+          await unlikeJob(item.id); // 假設 unlikeJob API 能處理職缺和公司 ID
         }
+
+        // 3. 通知 BaseLayout 更新側邊欄的收藏和瀏覽紀錄列表
+        // 傳遞 item.originalData 和新的 isLiked 狀態
+        if (typeof this.updateLikedItemInSidebar === 'function') {
+          this.updateLikedItemInSidebar(item.originalData || item, newLikedStatus); // originalData 已經包含 type
+        }
+
+        // 4. 透過 eventBus 通知所有頁面同步愛心狀態
+        // 統一事件名稱 'update-like-status'，並傳遞 ID, 類型, 和新狀態
+        eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: newLikedStatus });
+
       } catch (error) {
-        console.error('Failed to update like status:', error);
-        job.isLiked = originalLikedStatus; // API 失敗，回滾 UI 狀態
-        this.updateLikedItemInSidebar(job.originalData, job.isLiked); // 回滾時也傳遞原始數據
-        this.syncLikeStatusAcrossSections(job.id, job.isLiked);
-        alert('收藏操作失敗，請稍後再試。');
+        console.error(`Failed to update ${item.type} like status for ID ${item.id}:`, error);
+        // API 失敗，恢復 UI 狀態
+        item.isLiked = originalLikedStatus;
+        alert(`收藏操作失敗，請稍後再試。`);
+
+        // 恢復 BaseLayout 列表狀態
+        if (typeof this.updateLikedItemInSidebar === 'function') {
+          this.updateLikedItemInSidebar(item.originalData || item, originalLikedStatus);
+        }
+        // 通知所有頁面恢復愛心狀態
+        eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: originalLikedStatus });
       }
     },
 
-    syncLikeStatusAcrossSections(jobId, newLikedStatus) {
-      this.sections.forEach(section => {
-        const jobInSection = section.jobs.find(j => j.id === jobId);
-        if (jobInSection) {
-          jobInSection.isLiked = newLikedStatus;
+    // 【修改】處理來自 eventBus 的通用愛心狀態更新事件
+    handleUpdateLikeStatus(data) { // data 預期為 { id: itemId, type: itemType, isLiked: newStatus }
+      const { id, type, isLiked } = data;
+      // 1. 更新 sections 中的職缺愛心狀態
+      if (type === ITEM_TYPE_JOB) {
+        this.sections.forEach(section => {
+          const jobInSection = section.jobs.find(j => j.id === id);
+          if (jobInSection) {
+            jobInSection.isLiked = isLiked;
+          }
+        });
+      }
+      // 2. 更新 companies 中的公司愛心狀態
+      else if (type === ITEM_TYPE_COMPANY) {
+        const companyToUpdate = this.companies.find(c => c.id === id);
+        if (companyToUpdate) {
+          companyToUpdate.isLiked = isLiked;
         }
-      });
-    },
-
-    // 來自 LeftSidebar (已收藏列表取消收藏) 的事件
-    handleUnlikeFromSidebar(itemId) {
-      // Home.vue 只需要將對應職缺的 isLiked 狀態設為 false
-      this.syncLikeStatusAcrossSections(itemId, false);
-      // 並觸發 API 調用 (如果 Home.vue 自己沒有愛心 API，則在 BaseLayout 處理)
-      // 這裡不直接調用 API，因為 toggleLike 已經處理了 API，
-      // BaseLayout 的 handleRemoveItemFromLikedList 會發送 unlike-item-in-home-via-sidebar 事件。
-      // 如果您在 BaseLayout 的 handleRemoveItemFromLikedList 中發送事件後不希望再自動調用 API，
-      // 那麼 Home.vue 這裡就不做 API 調用。
-    },
-
-    // 來自 LeftSidebar (已瀏覽列表點擊愛心) 的事件
-    handleLikeFromSidebar(itemId) {
-      // Home.vue 只需要將對應職缺的 isLiked 狀態設為 true
-      this.syncLikeStatusAcrossSections(itemId, true);
-      // 同樣，這裡不直接調用 API。API 調用應該在 toggleLike 或 BaseLayout 中處理。
+      }
     },
 
     startDrag(e) {
@@ -351,8 +358,7 @@ export default {
     },
 
     handleCardClick(jobData) {
-      // jobData 已經是 Home.vue 內部處理過的格式，包含 originalData
-      // 這裡會將 job.originalData (原始職缺數據) 傳遞給 BaseLayout
+      // jobData 已經是 Home.vue 內部處理過的格式，包含 originalData 和 type
       const dataForSidebar = jobData.originalData || jobData; // 確保取得原始 API 數據
       if (typeof this.addViewedItemToSidebar === 'function') {
         this.addViewedItemToSidebar(dataForSidebar); // 傳遞原始職缺數據給瀏覽紀錄
@@ -369,10 +375,9 @@ export default {
       alert(`預計導航至公司頁面: ${job.company}. (此功能需 Vue Router 支持)`);
     },
     handleCompanyCardClick(company) {
-      // 這個方法只處理公司卡片點擊和路由導向，不會開啟右側邊欄
+      // 這個方法只處理公司卡片點擊和路由導向，不會開啟右側邊欄或新增到已瀏覽
       this.$router.push({ name: 'company', params: { id: company.id } });
     }
-
   }
 }
 </script>

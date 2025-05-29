@@ -24,7 +24,7 @@
                 <p class="job-card-salary">{{ job.salary }}</p>
               </div>
               <button type="button" class="like-btn job-card-like-btn" :class="{ active: job.isLiked }"
-                @click.stop="toggleLike(section.title, jobIndex)">
+                @click.stop="toggleLike(job.id)">
                 <font-awesome-icon :icon="[job.isLiked ? 'fas' : 'far', 'heart']" class="heart-icon" />
               </button>
             </div>
@@ -62,7 +62,13 @@
           <div class="content-wrapper" v-for="(company, cIndex) in companies" :key="'company-' + cIndex"
             @click="handleCompanyCardClick(company)">
             <div class="company-icon" :style="{ backgroundImage: 'url(' + company.image + ')' }"></div>
-            <p class="company-name">{{ company.name }}</p>
+            <div class="job-card-details">
+              <p class="company-name">{{ company.name }}</p>
+              <button type="button" class="like-btn job-card-like-btn" :class="{ active: company.isLiked }"
+                @click.stop="toggleLike('company.id')">
+                  <font-awesome-icon :icon="[company.isLiked ? 'fas' : 'far', 'heart']" class="heart-icon" />
+              </button>
+            </div>
           </div>
         </div>
         <div v-else class="no-data-message">
@@ -266,7 +272,7 @@ export default {
       });
     },
 
-    async toggleLike(sectionTitle, jobIndex) {
+    async toggleLike(Id) {
       const section = this.sections.find(s => s.title === sectionTitle);
       if (!section) return;
 
@@ -630,7 +636,6 @@ export default {
   font-weight: bold;
   color: white;
   margin-top: 6px;
-  text-align: center;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;

@@ -11,7 +11,13 @@
         <div class="content-wrapper" v-for="(company, cIndex) in companies" :key="'company-' + cIndex"
           @click="handleCompanyCardClick(company)">
           <div class="company-icon" :style="{ backgroundImage: 'url(' + company.image + ')' }"></div>
-          <p class="company-name">{{ company.name }}</p>
+          <div class="job-card-details">
+            <p class="company-name">{{ company.name }}</p>
+            <button type="button" class="like-btn job-card-like-btn" :class="{ active: company.isLiked }"
+              @click.stop="toggleLike('company')">
+              <font-awesome-icon :icon="[company.isLiked ? 'fas' : 'far', 'heart']" class="heart-icon" />
+            </button>
+          </div>
         </div>
       </div>
       <div v-else class="no-data-message">
@@ -63,7 +69,7 @@ export default {
     },
     handleCompanyCardClick(company) {
       console.log('Company card clicked:', company);
-      
+
       const dataForSidebar = company.originalData || company;
       if (typeof this.addViewedItemToSidebar === 'function') {
         this.addViewedItemToSidebar(dataForSidebar);
@@ -85,9 +91,11 @@ export default {
   display: flex;
   flex-direction: column;
   padding: 20px;
-  background-color: #383333; /* 深灰色背景 */
+  background-color: #383333;
+  /* 深灰色背景 */
   color: white;
-  min-height: 100vh; /* 確保內容撐開整個頁面 */
+  min-height: 100vh;
+  /* 確保內容撐開整個頁面 */
   box-sizing: border-box;
   /* ==== 新增這四行，讓它有圓角效果 ==== */
   border-top-left-radius: 10px;
@@ -99,11 +107,15 @@ export default {
 
 .company-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* 響應式網格佈局 */
-  gap: 25px; /* 增大間距 */
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  /* 響應式網格佈局 */
+  gap: 25px;
+  /* 增大間距 */
   width: 100%;
-  justify-items: center; /* 讓每個項目在網格單元格中居中 */
-  padding: 0 15px; /* 左右內邊距 */
+  justify-items: center;
+  /* 讓每個項目在網格單元格中居中 */
+  padding: 0 15px;
+  /* 左右內邊距 */
   box-sizing: border-box;
 }
 
@@ -111,23 +123,27 @@ export default {
 .content-wrapper {
   display: flex;
   flex-direction: column;
-  align-items: center; /* 內容居中 */
-  background-color: #594f4f00; /* 保持透明 */
+  background-color: #594f4f00;
+  /* 保持透明 */
   border-radius: 5px;
   padding: 10px 25px;
-  width: 250px; /* 固定寬度，或調整為響應式 */
+  width: 250px;
+  /* 固定寬度，或調整為響應式 */
   box-sizing: border-box;
   color: white;
-  transition: transform 0.3s ease-out, /* 加快過渡速度 */
-    box-shadow 0.3s ease-out,
-    background-color 0.3s ease-out;
+  transition: transform 0.5s ease-out,
+    /* 加快過渡速度 */
+    box-shadow 0.5s ease-out,
+    background-color 0.5s ease-out;
   cursor: pointer;
 }
 
 .content-wrapper:hover {
   background-color: #594f4f;
-  transform: translateY(-3px) scale(1.02); /* 輕微放大效果 */
-  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.4); /* 更明顯的陰影 */
+  transform: translateY(-3px) scale(1.02);
+  /* 輕微放大效果 */
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.4);
+  /* 更明顯的陰影 */
 }
 
 .company-icon {
@@ -140,19 +156,22 @@ export default {
   border: none;
   padding: 0;
   flex-shrink: 0;
-  margin-bottom: 8px; /* 增加與名稱的間距 */
+  margin-bottom: 8px;
+  /* 增加與名稱的間距 */
 }
 
 .company-name {
-  font-size: 16px; /* 稍大一點 */
+  font-size: 16px;
+  /* 稍大一點 */
   font-weight: bold;
   color: white;
   margin: 0;
-  text-align: center;
+  /*text-align: center;*/
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  width: 100%; /* 確保文本寬度與父容器對齊 */
+  width: 100%;
+  /* 確保文本寬度與父容器對齊 */
 }
 
 /* 消息提示樣式 */
@@ -172,11 +191,39 @@ export default {
   background-color: rgba(128, 128, 128, 0.1);
   border: 1px solid rgba(211, 211, 211, 0.3);
   border-radius: 5px;
-  margin: 20px auto; /* 居中顯示 */
-  max-width: 600px; /* 限制寬度 */
+  margin: 20px auto;
+  /* 居中顯示 */
+  max-width: 600px;
+  /* 限制寬度 */
 }
 
 .loading-message {
   font-style: italic;
+}
+
+.job-card-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
+}
+
+/* 收藏按鈕通用樣式 */
+.like-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: white;
+  font-size: 18px;
+  padding: 0px;
+  transition: transform 0.5s ease, color 0.3s ease;
+}
+
+.like-btn:hover {
+  transform: scale(1.1);
+}
+
+.like-btn.active {
+  color: rgb(235, 178, 189);
 }
 </style>

@@ -26,6 +26,10 @@
                 <span class="employee-count">{{ formatEmployeeCount(company.employees) }}人</span>
                 <span class="capital">資本額 {{ formatCapital(company.capital) }}</span>
               </div>
+              <button type="button" class="like-btn job-card-like-btn" :class="{ active: company.isLiked }"
+                @click.stop="toggleLike(company)">
+                <font-awesome-icon :icon="[company.isLiked ? 'fas' : 'far', 'heart']" class="heart-icon" />
+              </button>
             </div>
           </div>
         </div>
@@ -60,13 +64,21 @@
 </template>
 
 <script>
-import { getGreatCompanies } from '@/api/home';
-import { PlayCircleOutline } from '@vicons/ionicons5'
-import { NCarousel, NCarouselItem } from 'naive-ui'
+import { getGreatCompanies, likeJob, unlikeJob } from '@/api/home.js';
+import { PlayCircleOutline } from '@vicons/ionicons5';
+import { NCarousel, NCarouselItem } from 'naive-ui';
+import eventBus from '/src/eventBus.js';
+
+const ITEM_TYPE_COMPANY = 'company';
 
 export default {
   name: 'AllCompany',
-  inject: ['updateLikedItemInSidebar', 'openRightSidebar', 'addViewedItemToSidebar'],
+  inject: ['updateLikedItemInSidebar'],
+  components: {
+    PlayCircleOutline,
+    NCarousel,
+    NCarouselItem
+  },
   data() {
     return {
       companies: [],
@@ -81,16 +93,12 @@ export default {
       ]
     };
   },
-  components: {
-    PlayCircleOutline,
-    NCarousel,
-    NCarouselItem
-  },
   async mounted() {
-    await Promise.all([
-      this.loadCompaniesData(),
-      this.loadLikedCompanies()
-    ]);
+    await this.loadCompaniesData();
+    eventBus.on('update-like-status', this.handleUpdateLikeStatus);
+  },
+  beforeUnmount() {
+    eventBus.off('update-like-status', this.handleUpdateLikeStatus);
   },
   methods: {
     formatEmployeeCount(count) {
@@ -100,28 +108,13 @@ export default {
       if (!capital) return '未提供';
       return (capital / 10000000).toFixed(1) + '億';
     },
-    async loadLikedCompanies() {
-      try {
-        const response = await getGreatCompanies();
-        const companies = response.results || response || [];
-        this.likedCompanies = companies
-          .filter(company => company.isLiked === true)
-          .map(company => ({
-            id: company.id,
-            name: company.name,
-            logo: company.media?.logo || 'default_company_logo_path.png',
-            industry: company.industry || '未提供'
-          }));
-      } catch (error) {
-        console.error('Error fetching liked companies:', error);
-      }
-    },
     async loadCompaniesData() {
       this.isLoadingCompanies = true;
       this.errorCompanies = null;
       try {
         const companiesData = await getGreatCompanies();
         const rawCompanies = companiesData.results || companiesData || [];
+        
         this.companies = rawCompanies.map(company => ({
           id: company.id,
           name: company.name,
@@ -130,8 +123,9 @@ export default {
           industry_description: company.industry_description || '',
           employees: company.employees,
           capital: company.capital,
-          isLiked: company.isLiked || false,
-          originalData: company,
+          isLiked: company.is_liked_by_user || false,
+          originalData: { ...company, type: ITEM_TYPE_COMPANY },
+          type: ITEM_TYPE_COMPANY
         }));
       } catch (error) {
         console.error('Error fetching companies:', error);
@@ -144,21 +138,66 @@ export default {
         this.isLoadingCompanies = false;
       }
     },
-    handleCompanyCardClick(company) {
-      console.log('Company card clicked:', company);
-      
-      const dataForSidebar = company.originalData || company;
-      if (typeof this.addViewedItemToSidebar === 'function') {
-        this.addViewedItemToSidebar(dataForSidebar);
-      }
-      if (typeof this.openRightSidebar === 'function') {
-        this.openRightSidebar(dataForSidebar);
+    async toggleLike(company) {
+      if (!company || !company.id || company.type !== ITEM_TYPE_COMPANY) {
+        console.error('toggleLike: 無效的公司數據或類型不符', company);
+        return;
       }
 
-      // 假設您有一個路由到公司頁面，並且需要公司ID
-      this.$router.push({ name: 'company', params: { id: company.id } });
+      const originalLikedStatus = company.isLiked;
+      const newLikedStatus = !company.isLiked;
+
+      // 1. 樂觀更新 UI
+      company.isLiked = newLikedStatus;
+
+      try {
+        // 2. 呼叫後端 API
+        if (newLikedStatus) {
+          await likeJob(company.id);
+        } else {
+          await unlikeJob(company.id);
+        }
+
+        // 3. 通知 BaseLayout 更新側邊欄
+        if (typeof this.updateLikedItemInSidebar === 'function') {
+          this.updateLikedItemInSidebar(company.originalData || company, newLikedStatus);
+        }
+        
+        // 4. 通知其他組件更新 UI
+        eventBus.emit('update-like-status', {
+          id: company.id,
+          type: company.type,
+          isLiked: newLikedStatus
+        });
+
+      } catch (error) {
+        console.error(`Failed to update company like status for ID ${company.id}:`, error);
+        company.isLiked = originalLikedStatus;
+        alert(`收藏公司操作失敗，請稍後再試。`);
+
+        if (typeof this.updateLikedItemInSidebar === 'function') {
+          this.updateLikedItemInSidebar(company.originalData || company, originalLikedStatus);
+        }
+        eventBus.emit('update-like-status', {
+          id: company.id,
+          type: company.type,
+          isLiked: originalLikedStatus
+        });
+      }
     },
-  },
+    handleUpdateLikeStatus(data) {
+      const { id, type, isLiked } = data;
+      if (type === ITEM_TYPE_COMPANY) {
+        const companyToUpdate = this.companies.find(company => company.id === id);
+        if (companyToUpdate) {
+          companyToUpdate.isLiked = isLiked;
+        }
+      }
+    },
+    handleCompanyCardClick(company) {
+      this.$router.push(`/company/${company.id}`);
+    }
+  }
 };
 </script>
 
@@ -169,9 +208,11 @@ export default {
   display: flex;
   flex-direction: column;
   padding: 20px;
-  background-color: #383333; /* 深灰色背景 */
+  background-color: #383333;
+  /* 深灰色背景 */
   color: white;
-  min-height: 100vh; /* 確保內容撐開整個頁面 */
+  min-height: 100vh;
+  /* 確保內容撐開整個頁面 */
   box-sizing: border-box;
   /* ==== 新增這四行，讓它有圓角效果 ==== */
   border-top-left-radius: 10px;
@@ -313,8 +354,10 @@ export default {
   background-color: rgba(128, 128, 128, 0.1);
   border: 1px solid rgba(211, 211, 211, 0.3);
   border-radius: 5px;
-  margin: 20px auto; /* 居中顯示 */
-  max-width: 600px; /* 限制寬度 */
+  margin: 20px auto;
+  /* 居中顯示 */
+  max-width: 600px;
+  /* 限制寬度 */
 }
 
 .loading-message {

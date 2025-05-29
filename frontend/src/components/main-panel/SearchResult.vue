@@ -40,6 +40,9 @@
 <script>
 
 import {  getJobs, likeJob, unlikeJob, getJobDetail } from '@/api/home.js';
+import eventBus from '/src/eventBus.js'; 
+
+const ITEM_TYPE_JOB = 'job';
 
 export default {
   name: 'SearchResult',
@@ -106,6 +109,14 @@ export default {
       deep: true // 監聽 query 物件內部變化
     }
   },
+  mounted() {
+    // 【新增】監聽來自 BaseLayout 或 LeftSidebar 的收藏狀態更新事件
+    eventBus.on('update-like-status', this.handleUpdateLikeStatus);
+  },
+  beforeUnmount() {
+    // 【新增】在組件銷毀前移除事件監聽器
+    eventBus.off('update-like-status', this.handleUpdateLikeStatus);
+  },
   methods: {
     async fetchSearchResults() {
       // 修改執行條件：只要任一條件存在就搜尋
@@ -140,17 +151,14 @@ export default {
         if (Array.isArray(rawJobs)) {
           this.searchResults = rawJobs.map(job => ({
             id: job.id,
-            title: job.title, // Backend field name for title
-            image: job.company_logo || this.defaultImage, // Backend field for image
-            company: job.company && job.company.name ? job.company.name : '未知公司', // Backend field for company name
-            salary: job.salary_max ? `$${job.salary_max}` : '面議', // Backend field for salary
-            isLiked: job.is_liked_by_user || false, // Backend field for like status
-            originalData: job, // Store the original API object
-        }));
-          // this.paginationData = apiResponse.pagination; // 如果您需要處理分頁
-          if (this.searchResults.length === 0 && (this.searchQuery || this.activePositions.length > 0 || this.activeRegions.length > 0)) {
-              // 提示已在模板中處理
-          }
+            title: job.title,
+            image: job.company_logo || this.defaultImage,
+            company: job.company && job.company.name ? job.company.name : '未知公司',
+            salary: job.salary_max ? `$${job.salary_max}` : '面議',
+            isLiked: job.is_liked_by_user || false, // 初始收藏狀態來自後端
+            originalData: { ...job, type: ITEM_TYPE_JOB }, // 【修改】在原始數據中加入 type 屬性
+            type: ITEM_TYPE_JOB, // 【新增】在頂層也保留 type，方便直接使用 job 物件
+          }));
         } else {
           this.searchResults = [];
           // this.paginationData = null;
@@ -163,44 +171,75 @@ export default {
         this.isLoading = false;
       }
     },
-    handleCardClick(job) {
-      const dataForSidebar = job.originalData || job; // Home.vue 的習慣
-      if (typeof this.addViewedItemToSidebar === 'function') {
-        this.addViewedItemToSidebar(dataForSidebar);
-      }
-      if (typeof this.openRightSidebar === 'function') {
-        this.openRightSidebar(dataForSidebar);
+    handleUpdateLikeStatus(data) { // 預期 data 為 { id: itemId, type: itemType, isLiked: newStatus }
+      const { id, type, isLiked } = data;
+      // SearchResult 只顯示職缺，所以只處理 ITEM_TYPE_JOB 類型
+      if (type === ITEM_TYPE_JOB) {
+        const jobToUpdate = this.searchResults.find(job => job.id === id);
+        if (jobToUpdate) {
+          jobToUpdate.isLiked = isLiked;
+        }
       }
     },
-    async toggleLike(job) {
+    // 【修改】點擊職缺卡片時，觸發瀏覽和開啟右側邊欄
+    // job 已經是 SearchResult.vue 轉換過的格式：{ id, title, ..., isLiked, originalData, type }
+    handleCardClick(job) {
+      // 確保傳遞給 BaseLayout 的是原始 API 數據 (其中已包含 type)
+      const dataForSidebar = job.originalData || job; 
+      
+      // 1. 新增到瀏覽紀錄 (BaseLayout 的 addViewedItemToSidebar 只處理職缺)
+      if (typeof this.addViewedItemToSidebar === 'function') {
+        this.addViewedItemToSidebar(dataForSidebar); 
+      }
+      // 2. 開啟右側邊欄
+      if (typeof this.openRightSidebar === 'function') {
+        this.openRightSidebar(dataForSidebar); 
+      }
+    },
+    // 【修改】點擊愛心按鈕時，處理收藏/取消收藏邏輯 (與 Home.vue 保持一致)
+    // job 參數是 SearchResult.vue 內部轉換過的 job 物件
+    async toggleLike(job) { // 這裡的 job 其實就是 item
       if (!this.isUserLoggedIn) {
         alert('您需要先登入才能收藏職缺！');
-        // 導向登入頁面
-        // if (this.$router) { this.$router.push({ path: '/login' }); }
+        return;
+      }
+
+      // 檢查是否是有效的職缺數據，包含 ID 和類型
+      if (!job || !job.id || job.type !== ITEM_TYPE_JOB) {
+        console.error('toggleLike: 無效的職缺數據或類型不符', job);
         return;
       }
 
       const originalLikedStatus = job.isLiked;
       const newLikedStatus = !job.isLiked;
 
-      // 樂觀更新 UI
+      // 1. 樂觀更新 UI
       job.isLiked = newLikedStatus;
 
       try {
-        if (newLikedStatus) { 
-          await likeJob(job.id);
-        } else {
-          await unlikeJob(job.id);
-        }
+        // 2. 呼叫後端 API (統一使用 likeJob/unlikeJob)
+        await (newLikedStatus ? likeJob : unlikeJob)(job.id); // 根據 newLikedStatus 選擇呼叫 likeJob 或 unlikeJob
 
+        // 3. 通知 BaseLayout 更新側邊欄的收藏和瀏覽紀錄列表
         if (typeof this.updateLikedItemInSidebar === 'function') {
-          this.updateLikedItemInSidebar(job.id, newLikedStatus, job.originalData || job);
+          // 傳遞 job.originalData (原始 API 數據，包含 type) 和新的 isLiked 狀態
+          this.updateLikedItemInSidebar(job.originalData || job, newLikedStatus); 
         }
+        
+        // 4. 透過 eventBus 通知所有頁面同步愛心狀態
+        eventBus.emit('update-like-status', { id: job.id, type: job.type, isLiked: newLikedStatus });
+
       } catch (error) {
         // API 失敗，恢復 UI 狀態
         job.isLiked = originalLikedStatus;
         alert(`更新 "${job.title}" 的收藏狀態失敗，請稍後再試。`);
         console.error("Error toggling like in SearchResult:", error);
+        
+        // 如果 API 失敗，也要通知 BaseLayout 和其他組件恢復狀態
+        if (typeof this.updateLikedItemInSidebar === 'function') {
+          this.updateLikedItemInSidebar(job.originalData || job, originalLikedStatus);
+        }
+        eventBus.emit('update-like-status', { id: job.id, type: job.type, isLiked: originalLikedStatus });
       }
     },
     handleTitleClick(job) {

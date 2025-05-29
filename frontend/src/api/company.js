@@ -14,7 +14,8 @@ export function getCompanyInfo(companyId) {
 // 獲取公司職缺列表
 export function getCompanyJobs(companyId, params) {
   return request({
-    url: `/api/companies/${companyId}/jobs`,
+    //url: `/api/companies/${companyId}/jobs`,
+    url:'api/jobs',// 暫時載入所有jobs
     method: 'get',
     params
   })

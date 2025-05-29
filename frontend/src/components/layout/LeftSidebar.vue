@@ -9,21 +9,14 @@
 
     <div class="block1 scrollable-block">
       <template v-if="likedItems && likedItems.length > 0">
-        <div v-for="item in likedItems" :key="item.id" class="job-card-in-sidebar liked-job-card">
+        <div v-for="item in likedItems" :key="item.id + '-' + item.type" class="job-card-in-sidebar liked-job-card" @click="handleItemClick(item)">
           <div v-if="item.image" class="job-image-sidebar" :style="{ backgroundImage: 'url(' + item.image + ')' }">
           </div>
           <div class="content-container-sidebar" v-show="!collapsed">
-            <!-- 判斷 job或是 company -->
-            <div v-if="'salary_type' in item"><!-- job會包含salary_type -->
-              <p class="title-sidebar">{{ item.title }}</p>
-              <p v-if="item.company" class="company-sidebar">{{ item.company.name }}</p>
-            </div>
-            <div v-else-if="'main_product' in item"><!-- company會包含main_product -->
-              <p class="title-sidebar">{{ item.name }}</p>
-               <p v-if="item.industry" class="company-sidebar">{{ item.industry }}</p>
-            </div>
+            <p class="title-sidebar">{{ item.title }}</p>
+            <p v-if="item.company" class="company-sidebar">{{ item.company }}</p>
           </div>
-          <button type="button" class="like-btn active" @click="handleUnlikeFromSidebar(item)" v-show="!collapsed">
+          <button type="button" class="like-btn active" @click.stop="handleUnlikeFromSidebar(item)" v-show="!collapsed">
             <font-awesome-icon :icon="['fas', 'heart']" class="heart-icon" />
           </button>
         </div>
@@ -41,15 +34,16 @@
 
     <div class="block2 scrollable-block">
       <template v-if="viewedItems && viewedItems.length > 0">
-        <div v-for="item in viewedItems" :key="item.id" class="job-card-in-sidebar viewed-job-card">
+        <div v-for="item in viewedItems" :key="item.id + '-' + item.type" class="job-card-in-sidebar viewed-job-card"
+          @click="handleItemClick(item)">
           <div v-if="item.image" class="job-image-sidebar" :style="{ backgroundImage: 'url(' + item.image + ')' }">
           </div>
           <div class="content-container-sidebar" v-show="!collapsed">
             <p class="title-sidebar">{{ item.title }}</p>
             <p v-if="item.company" class="company-sidebar">{{ item.company }}</p>
           </div>
-          <button type="button" class="like-btn" @click="handleLikeFromViewed(item)" v-show="!collapsed">
-            <font-awesome-icon :icon="['far', 'heart']" class="heart-icon" />
+          <button type="button" class="like-btn" :class="{ active: item.isItemLiked }" @click.stop="toggleLikeFromViewed(item)" v-show="!collapsed">
+            <font-awesome-icon :icon="[item.isItemLiked ? 'fas' : 'far', 'heart']" class="heart-icon" />
           </button>
         </div>
       </template>
@@ -67,6 +61,10 @@
 <script>
 import eventBus from '/src/eventBus.js';
 import { updateLikedCompanies } from '@/api/company';
+import { likeJob, unlikeJob } from '@/api/home.js';
+
+const ITEM_TYPE_JOB = 'job';
+const ITEM_TYPE_COMPANY = 'company';
 
 export default {
   name: 'LeftSidebar',
@@ -88,6 +86,7 @@ export default {
       default: () => []
     }
   },
+  inject: ['openRightSidebar', 'updateLikedItemInSidebar'],
   data() {
     return {
       isResizing: false,
@@ -109,38 +108,81 @@ export default {
     },
 
     async handleUnlikeFromSidebar(itemToUnlike) {
-      if (itemToUnlike) {
+      if (itemToUnlike && itemToUnlike.id) {
         try {
-          // 1. 調用 API 更新後端狀態
-          await updateLikedCompanies(itemToUnlike.id, false);
+          // 1. 調用相應的 API 更新後端狀態
+          if (itemToUnlike.type === ITEM_TYPE_COMPANY) {
+            await updateLikedCompanies(itemToUnlike.id, false);
+          } else {
+            await unlikeJob(itemToUnlike.id);
+          }
 
-          // 2. Notify Home.vue via eventBus to update its UI (e.g., heart icon)
-          eventBus.emit('unlike-item-in-home-via-sidebar', itemToUnlike.id);
+          // 2. 通知 BaseLayout 從收藏列表刪除該項目
+          this.$emit('remove-item-from-liked-list', itemToUnlike.id, itemToUnlike.type);
 
-          // 3. Notify BaseLayout.vue to remove this item from the main liked list
-          this.$emit('remove-item-from-liked-list', itemToUnlike.id);
+          // 3. 通知其他組件更新 UI
+          eventBus.emit('update-like-status', {
+            id: itemToUnlike.id,
+            type: itemToUnlike.type,
+            isLiked: false
+          });
         } catch (error) {
           console.error('Failed to update like status:', error);
-          // 可以在這裡添加錯誤處理，比如顯示錯誤提示
+          alert('取消收藏失敗，請稍後再試');
         }
       }
     },
 
-    async handleLikeFromViewed(itemToLike) {
-      if (itemToLike) {
-        try {
-          // 1. 調用 API 更新後端狀態
-          await updateLikedCompanies(itemToLike.id, true);
+    async toggleLikeFromViewed(itemToToggle) {
+      if (itemToToggle && itemToToggle.originalData) {
+        const originalLikedStatus = itemToToggle.isItemLiked;
+        const newLikedStatus = !itemToToggle.isItemLiked;
 
-          // 2. Notify Home.vue via eventBus to update its UI and trigger adding to liked list
-          eventBus.emit('like-item-in-home-via-sidebar', itemToLike.id);
+        // 1. 樂觀更新 UI
+        itemToToggle.isItemLiked = newLikedStatus;
+
+        try {
+          // 2. 調用相應的 API
+          if (itemToToggle.type === ITEM_TYPE_COMPANY) {
+            await updateLikedCompanies(itemToToggle.id, newLikedStatus);
+          } else {
+            if (newLikedStatus) {
+              await likeJob(itemToToggle.id);
+            } else {
+              await unlikeJob(itemToToggle.id);
+            }
+          }
+
+          // 3. 通知 BaseLayout 更新數據
+          this.updateLikedItemInSidebar(itemToToggle.originalData, newLikedStatus);
+
+          // 4. 通知其他組件更新 UI
+          eventBus.emit('update-like-status', {
+            id: itemToToggle.id,
+            type: itemToToggle.type,
+            isLiked: newLikedStatus
+          });
         } catch (error) {
-          console.error('Failed to update like status:', error);
-          // 可以在這裡添加錯誤處理，比如顯示錯誤提示
+          console.error(`Failed to update like status:`, error);
+          alert(`收藏操作失敗，請稍後再試`);
+
+          // 恢復 UI 狀態
+          itemToToggle.isItemLiked = originalLikedStatus;
+          this.updateLikedItemInSidebar(itemToToggle.originalData, originalLikedStatus);
+          eventBus.emit('update-like-status', {
+            id: itemToToggle.id,
+            type: itemToToggle.type,
+            isLiked: originalLikedStatus
+          });
         }
       }
     },
 
+    handleItemClick(item) {
+      if (typeof this.openRightSidebar === 'function') {
+        this.openRightSidebar(item.originalData);
+      }
+    },
     startResizing(event) {
       this.isResizing = true;
       this.initialMouseX = event.clientX;
@@ -153,8 +195,8 @@ export default {
       if (this.isResizing) {
         const deltaX = e.clientX - this.initialMouseX;
         let newWidth = this.initialWidth + deltaX;
-        const minWidth = 60; 
-        const maxWidth = 400; 
+        const minWidth = 60;
+        const maxWidth = 400;
         newWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
         this.$emit('update-width', newWidth);
       }
@@ -205,22 +247,27 @@ export default {
 }
 
 /* 間距控制 */
-.left-side-bar > .header1 {
+.left-side-bar>.header1 {
   margin-bottom: 8px;
 }
-.left-side-bar > .scrollable-block {
+
+.left-side-bar>.scrollable-block {
   margin-bottom: 16px;
 }
-.left-side-bar > hr {
+
+.left-side-bar>hr {
   margin-top: 0;
   margin-bottom: 16px;
 }
-.left-side-bar > .header2 {
+
+.left-side-bar>.header2 {
   margin-bottom: 8px;
 }
-.left-side-bar > .resizer {
+
+.left-side-bar>.resizer {
   margin-bottom: 0;
 }
+
 .left-side-bar .block2.scrollable-block:has(+ .resizer) {
   margin-bottom: 0;
 }
@@ -275,7 +322,8 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 176px; /* Approx 2 cards (80px each + 8px gap) + 4px padding */
+  max-height: 176px;
+  /* Approx 2 cards (80px each + 8px gap) + 4px padding */
   overflow-y: auto;
   overflow-x: hidden;
   padding: 4px;
@@ -401,7 +449,8 @@ hr {
   transform: scale(1.1);
 }
 
-.job-card-in-sidebar .like-btn.active { /* For liked items in block1 */
+.job-card-in-sidebar .like-btn.active {
+  /* For liked items in block1 */
   color: rgb(235, 178, 189);
 }
 

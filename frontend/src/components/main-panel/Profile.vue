@@ -203,47 +203,21 @@
         </div>
       </section>
 
-      <!-- 我的專案 -->
-      <h2>Projects 我的專案</h2>
-      <section class="projects">
-        <n-marquee :play-reversed="true" :auto-play="true" :interval="3000">
-          <div class="project-group" v-for="(proj, index) in profile.projects" :key="index">
-            <div class="project-item">
-              <div class="project-cover">
-                <n-image
-                  width="160"
-                  height="100"
-                  :src="proj.cover_photo"
-                  :alt="proj.title"
-                  object-fit="contain"
-                  class="project-image"
-                />
-              </div>
-              <div class="project-title">{{ proj.title }}</div>
-              <div class="tech-stack">
-                <div class="tech-item" v-for="(tech, techIndex) in proj.technologies" :key="techIndex">
-                  <n-image
-                    width="40"
-                    height="40"
-                    :src="tech.icon"
-                    :alt="tech.name"
-                  />
-                  <p>{{ tech.name }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </n-marquee>
-      </section>
-
       <!--isLiked 已按讚 -->
       <h2>Liked 已按讚</h2>
       <section class="companies">
         <div class="logo-scroll-container">
-          <div v-for="(company, index) in filteredLikedCompanies" :key="company.id">
-            <img :src="company.media?.logo" :alt="company.name" draggable="false">
-            <p>{{ company.name }}</p>
-          </div>
+          <template v-if="filteredCompanies.length > 0">
+            <div v-for="company in filteredCompanies" :key="company.id">
+              <img :src="company.media?.logo" :alt="company.name" draggable="false">
+              <p>{{ company.name }}</p>
+            </div>
+          </template>
+          <template v-else>
+            <div class="empty-state">
+              <p>還沒有按讚的公司</p>
+            </div>
+          </template>
         </div>
       </section>
 
@@ -395,7 +369,8 @@ export default {
         itemTextColor: '#ffffff',
         labelTextColor: '#ffffff'
       },
-      company: null
+      company: null,
+      filteredCompanies: []
     };
   },
   computed: {
@@ -421,11 +396,13 @@ export default {
       try {
         const response = await getGreatCompanies();
         const companies = response.results || response || [];
-        // 確保每個公司對象都有 isLiked 屬性
+        // 更新 likedCompanies 數組
         this.likedCompanies = companies.map(company => ({
           ...company,
           isLiked: company.isLiked || false
         }));
+        // 更新過濾後的公司列表
+        this.filteredCompanies = this.likedCompanies.filter(company => company.isLiked);
       } catch (error) {
         console.error('Error fetching liked companies:', error);
       } finally {
@@ -512,7 +489,7 @@ export default {
       deep: true,
       handler(newCompanies) {
         // 當 likedCompanies 發生變化時，重新過濾已按讚的公司
-        this.filteredLikedCompanies = newCompanies.filter(company => company.isLiked);
+        this.filteredCompanies = newCompanies.filter(company => company.isLiked);
       }
     }
   },

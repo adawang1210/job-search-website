@@ -1,5 +1,8 @@
+<!-- 左側邊欄組件：用於顯示用戶收藏的職位和瀏覽歷史 -->
 <template>
+  <!-- 主容器：可折疊的側邊欄，寬度可調整 -->
   <div class="left-side-bar" :class="{ active: collapsed }" :style="{ width: width + 'px' }">
+    <!-- 頂部標題欄：包含標題和折疊按鈕 -->
     <div class="header1">
       <p v-if="!collapsed">你的職料庫</p>
       <button type="button" class="collapse-btn" @click="toggleCollapseInternal">
@@ -7,9 +10,14 @@
       </button>
     </div>
 
+    <!-- 收藏職位列表區域 -->
     <div class="block1 scrollable-block">
       <template v-if="likedItems && likedItems.length > 0">
-        <div v-for="item in likedItems" :key="item.id + '-' + item.type" class="job-card-in-sidebar liked-job-card" @click="handleItemClick(item)">
+        <!-- 遍歷顯示所有收藏的職位卡片 -->
+        <div v-for="item in likedItems.filter(item => item.isLiked || item.isItemLiked)" 
+             :key="item.id + '-' + item.type" 
+             class="job-card-in-sidebar liked-job-card" 
+             @click="handleItemClick(item)">
           <div v-if="item.image" class="job-image-sidebar" :style="{ backgroundImage: 'url(' + item.image + ')' }">
           </div>
           <div class="content-container-sidebar" v-show="!collapsed">
@@ -34,16 +42,15 @@
 
     <div class="block2 scrollable-block">
       <template v-if="viewedItems && viewedItems.length > 0">
-        <div v-for="item in viewedItems" :key="item.id + '-' + item.type" class="job-card-in-sidebar viewed-job-card"
-          @click="handleItemClick(item)">
+        <div v-for="item in viewedItems" :key="item.id" class="job-card-in-sidebar viewed-job-card">
           <div v-if="item.image" class="job-image-sidebar" :style="{ backgroundImage: 'url(' + item.image + ')' }">
           </div>
           <div class="content-container-sidebar" v-show="!collapsed">
             <p class="title-sidebar">{{ item.title }}</p>
             <p v-if="item.company" class="company-sidebar">{{ item.company }}</p>
           </div>
-          <button type="button" class="like-btn" :class="{ active: item.isItemLiked }" @click.stop="toggleLikeFromViewed(item)" v-show="!collapsed">
-            <font-awesome-icon :icon="[item.isItemLiked ? 'fas' : 'far', 'heart']" class="heart-icon" />
+          <button type="button" class="like-btn" @click="handleLikeFromViewed(item)" v-show="!collapsed">
+            <font-awesome-icon :icon="['far', 'heart']" class="heart-icon" />
           </button>
         </div>
       </template>
@@ -61,128 +68,96 @@
 <script>
 import eventBus from '/src/eventBus.js';
 import { updateLikedCompanies } from '@/api/company';
-import { likeJob, unlikeJob } from '@/api/home.js';
-
-const ITEM_TYPE_JOB = 'job';
-const ITEM_TYPE_COMPANY = 'company';
 
 export default {
   name: 'LeftSidebar',
   props: {
+    // 側邊欄寬度，默認240像素
     width: {
       type: Number,
       default: 240
     },
+    // 控制側邊欄是否折疊
     collapsed: {
       type: Boolean,
       default: false
     },
+    // 收藏的職位列表
     likedItems: {
       type: Array,
       default: () => []
     },
-    viewedItems: { // New prop for viewed items
+    // 瀏覽過的職位列表
+    viewedItems: {
       type: Array,
       default: () => []
     }
   },
-  inject: ['openRightSidebar', 'updateLikedItemInSidebar'],
   data() {
     return {
+      // 用於控制側邊欄寬度調整的狀態
       isResizing: false,
       initialMouseX: 0,
       initialWidth: 0,
     };
   },
   mounted() {
+    // 添加全局事件監聽器，用於處理側邊欄寬度調整
     document.addEventListener('mousemove', this.handleResizeMouseMove);
     document.addEventListener('mouseup', this.stopResizing);
   },
   beforeUnmount() {
+    // 組件銷毀前移除事件監聽器
     document.removeEventListener('mousemove', this.handleResizeMouseMove);
     document.removeEventListener('mouseup', this.stopResizing);
   },
   methods: {
+    // 觸發折疊/展開事件
     toggleCollapseInternal() {
       this.$emit('toggle-collapse');
     },
 
+    // 從收藏列表中移除職位
     async handleUnlikeFromSidebar(itemToUnlike) {
-      if (itemToUnlike && itemToUnlike.id) {
+      if (itemToUnlike) {
         try {
-          // 1. 調用相應的 API 更新後端狀態
-          if (itemToUnlike.type === ITEM_TYPE_COMPANY) {
-            await updateLikedCompanies(itemToUnlike.id, false);
-          } else {
-            await unlikeJob(itemToUnlike.id);
+          // 先調用 API 更新後端狀態
+          await updateLikedCompanies(itemToUnlike.id, false);
+          
+          // 通知父組件移除這個項目，同時傳遞 type
+          this.$emit('remove-item-from-liked-list', itemToUnlike.id, itemToUnlike.type || 'job');
+          
+          // 更新瀏覽列表中該項目的狀態
+          const viewedItemIndex = this.viewedItems.findIndex(item => item.id === itemToUnlike.id);
+          if (viewedItemIndex !== -1) {
+            this.viewedItems[viewedItemIndex].isLiked = false;
           }
 
-          // 2. 通知 BaseLayout 從收藏列表刪除該項目
-          this.$emit('remove-item-from-liked-list', itemToUnlike.id, itemToUnlike.type);
-
-          // 3. 通知其他組件更新 UI
+          // 發送事件通知其他組件更新狀態
           eventBus.emit('update-like-status', {
             id: itemToUnlike.id,
-            type: itemToUnlike.type,
+            type: itemToUnlike.type || 'job',
             isLiked: false
           });
         } catch (error) {
-          console.error('Failed to update like status:', error);
-          alert('取消收藏失敗，請稍後再試');
+          console.error('Failed to unlike item:', error);
         }
       }
     },
 
-    async toggleLikeFromViewed(itemToToggle) {
-      if (itemToToggle && itemToToggle.originalData) {
-        const originalLikedStatus = itemToToggle.isItemLiked;
-        const newLikedStatus = !itemToToggle.isItemLiked;
-
-        // 1. 樂觀更新 UI
-        itemToToggle.isItemLiked = newLikedStatus;
-
+    // 將瀏覽過的職位添加到收藏列表
+    async handleLikeFromViewed(itemToLike) {
+      if (itemToLike) {
         try {
-          // 2. 調用相應的 API
-          if (itemToToggle.type === ITEM_TYPE_COMPANY) {
-            await updateLikedCompanies(itemToToggle.id, newLikedStatus);
-          } else {
-            if (newLikedStatus) {
-              await likeJob(itemToToggle.id);
-            } else {
-              await unlikeJob(itemToToggle.id);
-            }
-          }
-
-          // 3. 通知 BaseLayout 更新數據
-          this.updateLikedItemInSidebar(itemToToggle.originalData, newLikedStatus);
-
-          // 4. 通知其他組件更新 UI
-          eventBus.emit('update-like-status', {
-            id: itemToToggle.id,
-            type: itemToToggle.type,
-            isLiked: newLikedStatus
-          });
+          await updateLikedCompanies(itemToLike.id, true);
+          this.$emit('add-item-to-liked-list', itemToLike);
         } catch (error) {
-          console.error(`Failed to update like status:`, error);
-          alert(`收藏操作失敗，請稍後再試`);
-
-          // 恢復 UI 狀態
-          itemToToggle.isItemLiked = originalLikedStatus;
-          this.updateLikedItemInSidebar(itemToToggle.originalData, originalLikedStatus);
-          eventBus.emit('update-like-status', {
-            id: itemToToggle.id,
-            type: itemToToggle.type,
-            isLiked: originalLikedStatus
-          });
+          console.error('Failed to like item:', error);
         }
       }
     },
 
-    handleItemClick(item) {
-      if (typeof this.openRightSidebar === 'function') {
-        this.openRightSidebar(item.originalData);
-      }
-    },
+    // 開始調整側邊欄寬度
     startResizing(event) {
       this.isResizing = true;
       this.initialMouseX = event.clientX;
@@ -191,16 +166,20 @@ export default {
       document.body.style.cursor = 'ew-resize';
       event.preventDefault();
     },
+
+    // 處理側邊欄寬度調整過程
     handleResizeMouseMove(e) {
       if (this.isResizing) {
         const deltaX = e.clientX - this.initialMouseX;
         let newWidth = this.initialWidth + deltaX;
-        const minWidth = 60;
-        const maxWidth = 400;
+        const minWidth = 60; 
+        const maxWidth = 400; 
         newWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
         this.$emit('update-width', newWidth);
       }
     },
+
+    // 結束側邊欄寬度調整
     stopResizing() {
       if (this.isResizing) {
         this.isResizing = false;
@@ -210,25 +189,24 @@ export default {
     }
   },
   watch: {
+    // 監聽收藏列表變化，處理取消收藏的情況
     likedItems: {
       handler(newVal) {
         console.log('LeftSidebar.vue: likedItems prop updated:', JSON.parse(JSON.stringify(newVal)));
-        // 檢查每個項目的 isLiked 狀態
         newVal.forEach(item => {
           if (!item.isLiked) {
-            // 如果發現某個項目的 isLiked 為 false，觸發移除操作
             this.handleUnlikeFromSidebar(item);
           }
         });
       },
-      deep: true // 啟用深度監聽，以監測 isLiked 的變化
+      deep: true
     }
   }
 }
 </script>
 
 <style scoped>
-/* 主側邊欄樣式 */
+/* 主側邊欄基礎樣式 */
 .left-side-bar {
   height: 100%;
   padding: 16px;
@@ -244,36 +222,31 @@ export default {
   box-sizing: border-box;
   position: relative;
   flex-shrink: 0;
+  gap: 8px;
 }
 
-/* 間距控制 */
-.left-side-bar>.header1 {
+/* 各區塊間距控制 */
+.left-side-bar > .header1 {
   margin-bottom: 8px;
 }
-
-.left-side-bar>.scrollable-block {
+.left-side-bar > .scrollable-block {
   margin-bottom: 16px;
 }
-
-.left-side-bar>hr {
+.left-side-bar > hr {
   margin-top: 0;
   margin-bottom: 16px;
 }
-
-.left-side-bar>.header2 {
+.left-side-bar > .header2 {
   margin-bottom: 8px;
 }
-
-.left-side-bar>.resizer {
+.left-side-bar > .resizer {
   margin-bottom: 0;
 }
-
 .left-side-bar .block2.scrollable-block:has(+ .resizer) {
   margin-bottom: 0;
 }
 
-
-/* Resizer */
+/* 寬度調整器樣式 */
 .resizer {
   position: absolute;
   top: 0;
@@ -285,7 +258,7 @@ export default {
   z-index: 10;
 }
 
-/* Header1 and collapse button */
+/* 頂部標題和折疊按鈕樣式 */
 .left-side-bar .header1 {
   display: flex;
   justify-content: space-between;
@@ -315,15 +288,16 @@ export default {
   transform: scale(1.1);
 }
 
-/* Common styles for scrollable blocks (block1 and block2) */
+/* 可滾動區塊的通用樣式 */
 .scrollable-block {
   border-radius: 5px;
-  flex-shrink: 0;
+  flex-shrink: 1;
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 176px;
-  /* Approx 2 cards (80px each + 8px gap) + 4px padding */
+  min-height: 88px;
+  max-height: 40%;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 4px;
@@ -349,7 +323,7 @@ export default {
   background-color: #888888;
 }
 
-/* Styling for the empty state message inside blocks */
+/* 空狀態顯示樣式 */
 .block-empty-state {
   display: flex;
   flex-direction: column;
@@ -366,6 +340,7 @@ export default {
   margin: 0;
 }
 
+/* 分隔線樣式 */
 hr {
   height: 1px;
   background-color: #746a6a;
@@ -380,7 +355,7 @@ hr {
   flex-shrink: 0;
 }
 
-/* --- CSS for cards in sidebar (liked-job-card and viewed-job-card) --- */
+/* 職位卡片在側邊欄中的樣式 */
 .job-card-in-sidebar {
   display: flex;
   flex-direction: row;
@@ -392,7 +367,7 @@ hr {
   color: white;
   position: relative;
   flex-shrink: 0;
-  min-height: 80px;
+  height: 80px;
   box-sizing: border-box;
 }
 
@@ -449,8 +424,7 @@ hr {
   transform: scale(1.1);
 }
 
-.job-card-in-sidebar .like-btn.active {
-  /* For liked items in block1 */
+.job-card-in-sidebar .like-btn.active { /* For liked items in block1 */
   color: rgb(235, 178, 189);
 }
 
@@ -458,8 +432,7 @@ hr {
   transition: color 0.3s ease;
 }
 
-
-/* Collapsed styles */
+/* 折疊狀態下的樣式調整 */
 .left-side-bar.active {
   padding: 16px 8px;
   align-items: center;

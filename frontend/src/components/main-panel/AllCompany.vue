@@ -26,10 +26,6 @@
                 <span class="employee-count">{{ formatEmployeeCount(company.employees) }}人</span>
                 <span class="capital">資本額 {{ formatCapital(company.capital) }}</span>
               </div>
-              <button type="button" class="like-btn job-card-like-btn" :class="{ active: company.isLiked }"
-                @click.stop="toggleLike(company)">
-                <font-awesome-icon :icon="[company.isLiked ? 'fas' : 'far', 'heart']" class="heart-icon" />
-              </button>
             </div>
           </div>
         </div>
@@ -93,11 +89,21 @@ export default {
       ]
     };
   },
+  components: {
+    PlayCircleOutline,
+    NCarousel,
+    NCarouselItem
+  },
   async mounted() {
-    await this.loadCompaniesData();
+    await Promise.all([
+      this.loadCompaniesData()
+    ]);
+    
+    // 監聽來自 BaseLayout 或其他頁面的愛心狀態更新事件
     eventBus.on('update-like-status', this.handleUpdateLikeStatus);
   },
   beforeUnmount() {
+    // 在組件銷毀前移除事件監聽器
     eventBus.off('update-like-status', this.handleUpdateLikeStatus);
   },
   methods: {
@@ -153,14 +159,14 @@ export default {
       try {
         // 2. 呼叫後端 API
         if (newLikedStatus) {
-          await likeJob(company.id);
+          await likeJob(company.id); 
         } else {
           await unlikeJob(company.id);
         }
 
         // 3. 通知 BaseLayout 更新側邊欄
         if (typeof this.updateLikedItemInSidebar === 'function') {
-          this.updateLikedItemInSidebar(company.originalData || company, newLikedStatus);
+          this.updateLikedItemInSidebar(company.originalData || company, newLikedStatus); 
         }
         
         // 4. 通知其他組件更新 UI
@@ -397,5 +403,31 @@ export default {
   height: 100%;
   object-fit: cover;
   border-radius: 8px;
+}
+
+.job-card-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
+}
+
+/* 收藏按鈕通用樣式 */
+.like-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: white;
+  font-size: 18px;
+  padding: 0px;
+  transition: transform 0.5s ease, color 0.3s ease;
+}
+
+.like-btn:hover {
+  transform: scale(1.1);
+}
+
+.like-btn.active {
+  color: rgb(235, 178, 189);
 }
 </style>

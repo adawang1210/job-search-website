@@ -1,6 +1,6 @@
 <template>
   <div class="middle-content">
-    <div v-if="!company || !filterJobs">
+    <div v-if="!company || !jjobs">
       載入中...
     </div>
     <!-- 資料載入後才顯示內容 -->
@@ -18,14 +18,14 @@
                 <span class="info-label">公司</span>
                 <h1 class="company-name">{{ company.name }}</h1>
                 <p class="company-tags">{{ company.bg_color_hex }}</p>
-                <p class="job-count">{{ filterJobs.length }}個工作機會</p>
+                <p class="job-count">{{ jjobs.length }}個工作機會</p>
               </div>
             </div>
           </div>
         </div>
         <div class="profile-button actions-button">
           <button type="button" class="like-btn" :class="{ active: company.isLiked }"
-            @click.stop="toggleLike(company)">
+            @click.stop="handleLikeClick('company')">
             <n-icon class="heart-icon">
               <component :is="company.isLiked ? iconHeartSolid : iconHeartRegular" />
             </n-icon>
@@ -98,7 +98,7 @@
             </div>
             <div class="actions-button">
               <button type="button" class="like-btn" :class="{ active: job.isLiked }"
-                @click.stop="toggleLike(job)">
+                @click.stop="handleLikeClick(job.id)">
                 <n-icon class="heart-icon">
                   <component :is="job.isLiked ? iconHeartSolid : iconHeartRegular" />
                 </n-icon>
@@ -110,7 +110,7 @@
                 </n-icon>
               </button>
 
-              <!-- <p class="applicants">{{ job.applicants }}</p> -->
+              <p class="applicants">{{ job.applicants }}</p>
             </div>
           </div>
         </article>
@@ -307,174 +307,310 @@
 </template>
 
 <script>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
-import { useRoute } from 'vue-router';
-import { getCompanyById } from '@/api/home';
-import { updateLikedCompanies } from '@/api/company';
-import { likeJob, unlikeJob } from '@/api/home.js';
-import { NIcon } from 'naive-ui';
-import { HeartRegular, HeartSolid, EnvelopeRegular, EnvelopeSolid } from '@vicons/fa';
-import { EllipsisH, CaretDown } from '@vicons/fa';
-import eventBus from '/src/eventBus.js';
+import { ref } from 'vue'
+import axios from 'axios';
+import { getCompanyInfo, updateLikedCompanies } from '@/api/company';
+import { defineComponent } from 'vue'
+import { NIcon } from 'naive-ui'
+import { Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular } from '@vicons/fa'
 
-const ITEM_TYPE_JOB = 'job';
-const ITEM_TYPE_COMPANY = 'company';
-
-export default {
+export default defineComponent({
   name: 'Company',
+  inject: ['updateLikedItemInSidebar', 'openRightSidebar', 'addViewedItemToSidebar'], // 注入來自 BaseLayout 的方法
+  emits: ['like-status-change'],
   components: {
-    NIcon,
-    HeartRegular,
-    HeartSolid,
-    EnvelopeRegular,
-    EnvelopeSolid,
-    EllipsisH,
-    CaretDown
+    NIcon, Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular,
   },
-  inject: ['updateLikedItemInSidebar'],
-  setup() {
-    const route = useRoute();
-    const company = ref(null);
-    const filterJobs = ref([]);
-    const dropdownOpenProfile = ref(false);
-    const dropdownOpenJob = ref(false);
-    const pageSize = ref(10);
-    const currentPage = ref(1);
-    const showApplyModal = ref(false);
-    const currentItem = ref(null);
-    const selectedFiles = ref([]);
-    const formData = ref({
-      title: '',
-      content: '',
-      files: []
-    });
 
-    const profileOptions = [
-      '分享',
-      '檢舉',
-      '封鎖'
-    ];
+  props: {
+    id: { // 這個 'id' 會接收從路由傳過來的公司 ID
+      type: [String, Number],
+      required: true
+    }
+  },
 
-    const iconHeartRegular = HeartRegular;
-    const iconHeartSolid = HeartSolid;
-    const iconEnvelopeRegular = EnvelopeRegular;
-    const iconEnvelopeSolid = EnvelopeSolid;
-
-    onMounted(async () => {
-      await loadCompanyData();
-      eventBus.on('update-like-status', handleUpdateLikeStatus);
-    });
-
-    onBeforeUnmount(() => {
-      eventBus.off('update-like-status', handleUpdateLikeStatus);
-    });
-
-    const loadCompanyData = async () => {
-      try {
-        const companyId = route.params.id;
-        const response = await getCompanyById(companyId);
-        company.value = {
-          ...response,
-          type: ITEM_TYPE_COMPANY,
-          isLiked: response.is_liked_by_user || false
-        };
-        filterJobs.value = response.jobs.map(job => ({
-          ...job,
-          type: ITEM_TYPE_JOB,
-          isLiked: job.is_liked_by_user || false
-        }));
-      } catch (error) {
-        console.error('Error loading company data:', error);
-      }
+  data() {
+    return {
+      pageSize: 10,
+      dropdownOpenJob: false,
+      dropdownOpenProfile: false,
+      profileOptions: ['分享', '檢舉'],
+      showApplyModal: false,
+      showShare: false,
+      showReport: false,
+      applyJobId: 0,
+      shareLink: 'https://example.com/share',
+      reportReason: '',
+      company: null,
+      jjobs: [],
     };
+  },
+  watch: {
+    // 監聽 id prop 的變化，當 id 改變時重新載入公司資料
+    id: {
+      immediate: true, // 組件載入時立即執行一次
+      async handler(newId) {
+        if (newId) {
+          const companyData = await getCompanyInfo(newId);
+          //console.log(companyData);
+          this.company = companyData;
 
-    const toggleLike = async (item) => {
-      if (!item || !item.id) {
-        console.error('toggleLike: Invalid item data', item);
-        return;
+          // 圖片抓色更改背景
+          this.$nextTick(() => {
+          const img = this.$refs.avatar;
+          if(img) {
+            if (img.complete) {
+            this.handleImage(img);
+            } else {
+              img.onload = () => {
+                this.handleImage(img);
+              };
+            }
+          }
+        });
+        }
+      }
+    }
+  },
+  mounted() {
+
+    Promise.all([
+      axios.get('http://127.0.0.1:8000/api/jobs/'),
+
+    ])
+      .then(([jjobsRes]) => {
+
+        this.jjobs = jjobsRes.data;
+        
+      })
+      .catch(error => {
+        console.error('讀取 JSON 發生錯誤：', error);
+      });
+  },
+  computed: {
+    paginatedJobs() {
+      return Array.isArray(this.jjobs) ? this.jjobs.slice(0, this.pageSize) : [0, 0, 0, 0, 0];
+    },
+    iconHeartSolid() {
+      return Heart
+    },
+    iconHeartRegular() {
+      return HeartRegular
+    },
+    iconEnvelopeSolid() {
+      return Envelope
+    },
+    iconEnvelopeRegular() {
+      return EnvelopeRegular
+    },
+  },
+  methods: {
+    // data format
+    formatDate(isoString) {    // process job.created_at
+      const date = new Date(isoString);
+      return `${date.getMonth() + 1}/${date.getDate()}`
+    },
+    formatLocation(location) {
+      const loc = location.slice(0, 3);
+      return loc
+    },
+    formattedSalary(jobId) {
+      const job = this.jjobs.find(i => i.id === jobId)
+
+      if (job.salary_type === '月薪') {
+        return `月薪${job.salary_min}~${job.salary_max}元`;
+      } else if (job.salary_type === '時薪') {
+        return `時薪${job.salary_number}元`;
+      } else {
+        return '薪資未提供';
+      }
+    },
+    // dropdown 顯示
+    toggleDropdownJob() {
+      this.dropdownOpenJob = !this.dropdownOpenJob
+    },
+    toggleDropdownProfile() {
+      this.dropdownOpenProfile = !this.dropdownOpenProfile;
+    },
+    selectPageSize(size) {
+      this.pageSize = size
+      this.dropdownOpenJob = false
+    },
+    selectAction(option) {
+      switch (option) {
+        case '分享':
+          console.log('執行分享功能');
+          this.showShare = true;
+          break;
+        case '檢舉':
+          console.log('執行檢舉功能');
+          this.showReport = true;
+          break;
+        default:
+          console.warn('未知選項', option);
+      }
+      this.dropdownOpenProfile = false
+    },
+    // heart icon clicked
+    handleLikeClick(Id) {
+      if (Id === 'company') {
+        this.handleToggleLike(this.company);
+      }
+      else {
+        this.handleToggleLike(this.jjobs, Id);
+      }
+    },
+    handleCardClick(job) {
+      if (typeof this.addViewedItemToSidebar === 'function') {
+        this.addViewedItemToSidebar(job)
+      } else {
+        console.error('addViewedItemToSidebar is not available from BaseLayout')
       }
 
-      const originalLikedStatus = item.isLiked;
-      const newLikedStatus = !item.isLiked;
-
-      // 1. 樂觀更新 UI
-      item.isLiked = newLikedStatus;
+      if (typeof this.openRightSidebar === 'function') {
+        this.openRightSidebar(job)
+      } else {
+        console.error('openRightSidebar is not available from BaseLayout')
+      }
+    },
+    handleTitleClick(job) {
+      console.log('Title clicked for job:', job.title, 'Company:', job.company.name)
+      alert(`Navigating to company page for: ${job.company.name}. Implement Vue Router push here.`)
+    },
+    //like 處理
+    async handleToggleLike(list, itemId) {
+      let item;
+      
+      if (Array.isArray(list)) {
+        // 處理職缺的按讚
+        item = list.find(i => i.id === itemId);
+        if (!item) {
+          console.warn('Item not found:', itemId);
+          return;
+        }
+      } else {
+        // 處理公司的按讚
+        item = list;
+        itemId = item.id;
+      }
 
       try {
-        // 2. 調用相應的 API
-        if (item.type === ITEM_TYPE_COMPANY) {
-          await updateLikedCompanies(item.id, newLikedStatus);
-        } else {
-          if (newLikedStatus) {
-            await likeJob(item.id);
-          } else {
-            await unlikeJob(item.id);
-          }
+        // 先更新 UI
+        const newLikedStatus = !item.isLiked;
+        item.isLiked = newLikedStatus;
+
+        // 調用 API 更新後端
+        await updateLikedCompanies(itemId, newLikedStatus);
+
+        // 更新側邊欄
+        if (typeof this.updateLikedItemInSidebar === 'function') {
+          // 確保傳遞的數據包含必要的屬性
+          const itemForSidebar = {
+            ...item,
+            type: 'company',  // 添加 type 屬性
+            id: itemId,       // 確保 id 存在
+            name: item.name || '',  // 公司名稱
+            industry: item.industry || '',  // 產業類別
+            isLiked: newLikedStatus
+          };
+          this.updateLikedItemInSidebar(itemForSidebar, newLikedStatus);
         }
 
-        // 3. 通知 BaseLayout 更新側邊欄
-        if (typeof updateLikedItemInSidebar === 'function') {
-          updateLikedItemInSidebar(item, newLikedStatus);
-        }
-
-        // 4. 通知其他組件更新 UI
-        eventBus.emit('update-like-status', {
-          id: item.id,
-          type: item.type,
+        // 發出事件通知其他組件
+        this.$emit('like-status-change', {
+          companyId: itemId,
           isLiked: newLikedStatus
         });
+
       } catch (error) {
-        console.error(`Failed to update like status for ${item.type} ID ${item.id}:`, error);
-        alert(`收藏操作失敗，請稍後再試`);
-
-        // 恢復 UI 狀態
-        item.isLiked = originalLikedStatus;
-        if (typeof updateLikedItemInSidebar === 'function') {
-          updateLikedItemInSidebar(item, originalLikedStatus);
-        }
-        eventBus.emit('update-like-status', {
-          id: item.id,
-          type: item.type,
-          isLiked: originalLikedStatus
-        });
+        // 如果 API 調用失敗，恢復原來的狀態
+        item.isLiked = !item.isLiked;
+        console.error('Failed to update like status:', error);
       }
-    };
+    },
+    openModal(id) {
+      this.applyJobId = id;
+      this.currentItem = this.paginatedJobs.find(job => job.id === id);
+      this.showApplyModal = true;
+      // 重置表單
+      this.formData = {
+        title: '',
+        content: ''
+      };
+      this.selectedFiles = [];
+    },
+    closeModal() {
+      this.showApplyModal = false;
+    },
+    handleFileUpload(event) {
+      //file when apply
+      this.selectedFiles = Array.from(event.target.files);
+    },
+    handleSubmit(jobId) {
+      const item = this.paginatedJobs.find(job => job.id === jobId);
+      console.log("item",item);
+      // 這裡可以處理送出邏輯
+      console.log('送出資料:', {
+        item: item,
+        formData: this.formData,
+        files: this.selectedFiles
+      });
 
-    const handleUpdateLikeStatus = (data) => {
-      const { id, type, isLiked } = data;
-      if (type === ITEM_TYPE_COMPANY && company.value?.id === id) {
-        company.value.isLiked = isLiked;
-      } else if (type === ITEM_TYPE_JOB) {
-        const jobToUpdate = filterJobs.value.find(job => job.id === id);
-        if (jobToUpdate) {
-          jobToUpdate.isLiked = isLiked;
-        }
+      alert('資料已送出！');
+      item.isApplied = true;
+
+      this.closeModal();
+    },
+    copyLink() {
+      navigator.clipboard.writeText(shareLink.value)
+      alert('已複製連結')
+    },
+    submitReport() {
+      if (!reason.value.trim()) {
+        alert('請填寫檢舉原因')
+        return
       }
-    };
+      alert(`檢舉已送出：${reason.value}`)
+      reason.value = ''
+      showReport.value = false
+    },
+    //head image 擷取顏色，並更改背景
+    handleImage(img) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
 
-    // ... 其他方法保持不變 ...
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      ctx.drawImage(img, 0, 0);
 
-    return {
-      company,
-      filterJobs,
-      dropdownOpenProfile,
-      dropdownOpenJob,
-      pageSize,
-      currentPage,
-      showApplyModal,
-      currentItem,
-      selectedFiles,
-      formData,
-      profileOptions,
-      iconHeartRegular,
-      iconHeartSolid,
-      iconEnvelopeRegular,
-      iconEnvelopeSolid,
-      toggleLike,
-      // ... 其他方法保持不變 ...
-    };
+      const imageData = ctx.getImageData(0, 0, img.naturalWidth, 50);
+      const pixels = imageData.data;
+
+      let r = 0, g = 0, b = 0, count = 0;
+      for (let i = 0; i < pixels.length; i += 4) {
+        r += pixels[i];
+        g += pixels[i + 1];
+        b += pixels[i + 2];
+        count++;
+      }
+
+      r = Math.floor(r / count);
+      g = Math.floor(g / count);
+      b = Math.floor(b / count);
+
+      const avgColor = `rgb(${r}, ${g}, ${b})`;
+
+      // 改變背景
+      const contentEl = document.querySelector('.middle-content');
+      contentEl.style.background = `linear-gradient(
+                                    to bottom,
+                                    ${avgColor} 0%,
+                                    #121212 20%,
+                                    #121212 100%
+                                    )`;
+    }
   }
-};
+})
 </script>
 
 <style scoped>

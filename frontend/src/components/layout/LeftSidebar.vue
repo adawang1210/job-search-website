@@ -66,6 +66,7 @@
 
 <script>
 import eventBus from '/src/eventBus.js';
+import { updateLikedCompanies } from '@/api/company';
 
 export default {
   name: 'LeftSidebar',
@@ -107,25 +108,36 @@ export default {
       this.$emit('toggle-collapse');
     },
 
-    handleUnlikeFromSidebar(itemToUnlike) {
+    async handleUnlikeFromSidebar(itemToUnlike) {
       if (itemToUnlike) {
-        // 1. Notify Home.vue via eventBus to update its UI (e.g., heart icon)
-        eventBus.emit('unlike-item-in-home-via-sidebar', itemToUnlike.id);
+        try {
+          // 1. 調用 API 更新後端狀態
+          await updateLikedCompanies(itemToUnlike.id, false);
 
-        // 2. Notify BaseLayout.vue to remove this item from the main liked list
-        this.$emit('remove-item-from-liked-list', itemToUnlike.id);
+          // 2. Notify Home.vue via eventBus to update its UI (e.g., heart icon)
+          eventBus.emit('unlike-item-in-home-via-sidebar', itemToUnlike.id);
+
+          // 3. Notify BaseLayout.vue to remove this item from the main liked list
+          this.$emit('remove-item-from-liked-list', itemToUnlike.id);
+        } catch (error) {
+          console.error('Failed to update like status:', error);
+          // 可以在這裡添加錯誤處理，比如顯示錯誤提示
+        }
       }
     },
 
-    handleLikeFromViewed(itemToLike) {
+    async handleLikeFromViewed(itemToLike) {
       if (itemToLike) {
-        // 1. Notify Home.vue via eventBus to update its UI and trigger adding to liked list.
-        // This assumes Home.vue listens to 'like-item-in-home-via-sidebar',
-        // sets its local job.isLiked = true, and then calls the injected
-        // updateLikedItemInSidebar(job, true) which is a method in BaseLayout.
-        // BaseLayout's updateLikedItemInSidebar method should then also handle
-        // removing the item from its 'viewedItems' list.
-        eventBus.emit('like-item-in-home-via-sidebar', itemToLike.id);
+        try {
+          // 1. 調用 API 更新後端狀態
+          await updateLikedCompanies(itemToLike.id, true);
+
+          // 2. Notify Home.vue via eventBus to update its UI and trigger adding to liked list
+          eventBus.emit('like-item-in-home-via-sidebar', itemToLike.id);
+        } catch (error) {
+          console.error('Failed to update like status:', error);
+          // 可以在這裡添加錯誤處理，比如顯示錯誤提示
+        }
       }
     },
 
@@ -156,8 +168,18 @@ export default {
     }
   },
   watch: {
-    likedItems(newVal) {
-      console.log('LeftSidebar.vue: likedItems prop updated:', JSON.parse(JSON.stringify(newVal)));
+    likedItems: {
+      handler(newVal) {
+        console.log('LeftSidebar.vue: likedItems prop updated:', JSON.parse(JSON.stringify(newVal)));
+        // 檢查每個項目的 isLiked 狀態
+        newVal.forEach(item => {
+          if (!item.isLiked) {
+            // 如果發現某個項目的 isLiked 為 false，觸發移除操作
+            this.handleUnlikeFromSidebar(item);
+          }
+        });
+      },
+      deep: true // 啟用深度監聽，以監測 isLiked 的變化
     }
   }
 }

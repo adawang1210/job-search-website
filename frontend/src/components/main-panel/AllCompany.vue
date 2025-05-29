@@ -3,26 +3,66 @@
     <div v-if="isLoadingCompanies" class="loading-message">
       正在載入優質企業...
     </div>
-    <div v-if="errorCompanies" class="error-message">
+    <div v-else-if="errorCompanies" class="error-message">
       {{ errorCompanies }}
     </div>
-    <template v-if="!isLoadingCompanies && !errorCompanies">
-      <div v-if="companies.length > 0" class="company-grid">
-        <div class="content-wrapper" v-for="(company, cIndex) in companies" :key="'company-' + cIndex"
-          @click="handleCompanyCardClick(company)">
-          <div class="company-icon" :style="{ backgroundImage: 'url(' + company.image + ')' }"></div>
-          <p class="company-name">{{ company.name }}</p>
+    <div v-else>
+      <div v-if="companies.length > 0">
+        <div class="company-grid">
+          <div class="company-card" v-for="(company, cIndex) in companies" :key="'company-' + cIndex"
+            @click="handleCompanyCardClick(company)">
+            <div class="card-image-container">
+              <div class="company-image" :style="{ backgroundImage: 'url(' + company.image + ')' }"></div>
+              <div class="play-button">
+                <n-icon size="30">
+                  <play-circle-outline />
+                </n-icon>
+              </div>
+            </div>
+            <div class="card-content">
+              <h3 class="company-name">{{ company.name }}</h3>
+              <p class="company-description">{{ company.industry }}</p>
+              <div class="company-stats">
+                <span class="employee-count">{{ formatEmployeeCount(company.employees) }}人</span>
+                <span class="capital">資本額 {{ formatCapital(company.capital) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="all-companies-button">
+          <span class="view-all-text">看全部</span>
+        </div>
+
+        <div class="carousel-section">
+          <n-carousel
+            effect="card"
+            prev-slide-style="transform: translateX(-150%) translateZ(-800px);"
+            next-slide-style="transform: translateX(50%) translateZ(-800px);"
+            style="height: 240px"
+            :show-dots="false"
+          >
+            <n-carousel-item v-for="(photo, index) in carouselPhotos" :key="index" :style="{ width: '60%' }">
+              <img
+                class="carousel-img"
+                :src="photo.url"
+                :alt="'Carousel image ' + (index + 1)"
+              >
+            </n-carousel-item>
+          </n-carousel>
         </div>
       </div>
       <div v-else class="no-data-message">
         目前沒有優質企業資料。
       </div>
-    </template>
+    </div>
   </div>
 </template>
 
 <script>
-import { getGreatCompanies } from '@/api/home.js'; // 假設您的 API 函數在此
+import { getGreatCompanies } from '@/api/home';
+import { PlayCircleOutline } from '@vicons/ionicons5'
+import { NCarousel, NCarouselItem } from 'naive-ui'
 
 export default {
   name: 'AllCompany',
@@ -30,14 +70,52 @@ export default {
   data() {
     return {
       companies: [],
+      likedCompanies: [],
       isLoadingCompanies: false,
       errorCompanies: null,
+      carouselPhotos: [
+        { url: 'https://images.1111.com.tw/aidma/zone/newhome2023_banner_228_3957267719.jpg' },
+        { url: 'https://images.1111.com.tw/aidma/zone/newhome2023_banner_234_3956376983.jpg' },
+        { url: 'https://images.1111.com.tw/aidma/zone/newhome2023_banner_226_3954569761.jpg' },
+        { url: 'https://images.1111.com.tw/aidma/zone/newhome2023_banner_238_3956376456.jpg' }
+      ]
     };
   },
+  components: {
+    PlayCircleOutline,
+    NCarousel,
+    NCarouselItem
+  },
   async mounted() {
-    this.loadCompaniesData();
+    await Promise.all([
+      this.loadCompaniesData(),
+      this.loadLikedCompanies()
+    ]);
   },
   methods: {
+    formatEmployeeCount(count) {
+      return count ? count.toLocaleString() : '未提供';
+    },
+    formatCapital(capital) {
+      if (!capital) return '未提供';
+      return (capital / 10000000).toFixed(1) + '億';
+    },
+    async loadLikedCompanies() {
+      try {
+        const response = await getGreatCompanies();
+        const companies = response.results || response || [];
+        this.likedCompanies = companies
+          .filter(company => company.isLiked === true)
+          .map(company => ({
+            id: company.id,
+            name: company.name,
+            logo: company.media?.logo || 'default_company_logo_path.png',
+            industry: company.industry || '未提供'
+          }));
+      } catch (error) {
+        console.error('Error fetching liked companies:', error);
+      }
+    },
     async loadCompaniesData() {
       this.isLoadingCompanies = true;
       this.errorCompanies = null;
@@ -47,8 +125,13 @@ export default {
         this.companies = rawCompanies.map(company => ({
           id: company.id,
           name: company.name,
-          image: company.media && company.media.logo ? company.media.logo : 'default_company_logo_path.png',
-          originalData: company, // 保留原始API數據
+          image: company.media?.logo || 'default_company_logo_path.png',
+          industry: company.industry || '未提供',
+          industry_description: company.industry_description || '',
+          employees: company.employees,
+          capital: company.capital,
+          isLiked: company.isLiked || false,
+          originalData: company,
         }));
       } catch (error) {
         console.error('Error fetching companies:', error);
@@ -80,6 +163,7 @@ export default {
 </script>
 
 <style scoped>
+
 /* AllCompany.vue 的樣式修改 */
 .all-companies-container {
   display: flex;
@@ -99,60 +183,117 @@ export default {
 
 .company-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* 響應式網格佈局 */
-  gap: 25px; /* 增大間距 */
-  width: 100%;
-  justify-items: center; /* 讓每個項目在網格單元格中居中 */
-  padding: 0 15px; /* 左右內邊距 */
-  box-sizing: border-box;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 24px;
+  padding: 20px;
 }
 
-/* 從 Home.vue 複製過來的公司卡片樣式 */
-.content-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* 內容居中 */
-  background-color: #594f4f00; /* 保持透明 */
-  border-radius: 5px;
-  padding: 10px 25px;
-  width: 250px; /* 固定寬度，或調整為響應式 */
-  box-sizing: border-box;
-  color: white;
-  transition: transform 0.3s ease-out, /* 加快過渡速度 */
-    box-shadow 0.3s ease-out,
-    background-color 0.3s ease-out;
+.company-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.3s ease;
   cursor: pointer;
 }
 
-.content-wrapper:hover {
-  background-color: #594f4f;
-  transform: translateY(-3px) scale(1.02); /* 輕微放大效果 */
-  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.4); /* 更明顯的陰影 */
+.company-card:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-4px);
 }
 
-.company-icon {
-  width: 200px;
-  height: 200px;
-  border-radius: 5px;
-  background-color: #ffffff;
+.card-image-container {
+  position: relative;
+  width: 100%;
+  padding-bottom: 100%;
+  margin-bottom: 16px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.company-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background-size: cover;
   background-position: center;
-  border: none;
-  padding: 0;
-  flex-shrink: 0;
-  margin-bottom: 8px; /* 增加與名稱的間距 */
+  background-repeat: no-repeat;
+}
+
+.play-button {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 48px;
+  height: 48px;
+  background: #1DB954;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.3s ease;
+}
+
+.company-card:hover .play-button {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.play-button :deep(.n-icon) {
+  color: white;
+}
+
+.card-content {
+  padding: 12px 8px;
 }
 
 .company-name {
-  font-size: 16px; /* 稍大一點 */
-  font-weight: bold;
   color: white;
-  margin: 0;
-  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
   overflow: hidden;
-  white-space: nowrap;
   text-overflow: ellipsis;
-  width: 100%; /* 確保文本寬度與父容器對齊 */
+  white-space: nowrap;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.company-info {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0 0 4px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.company-description {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  margin: 0 0 8px 0;
+  margin-top: -10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.company-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.employee-count, .capital {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
 /* 消息提示樣式 */
@@ -178,5 +319,40 @@ export default {
 
 .loading-message {
   font-style: italic;
+}
+
+.all-companies-button {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 8px 0;
+  margin: 20px auto;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 150px;
+}
+
+.all-companies-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.view-all-text {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+  font-weight: 600;  /* 增加文字粗細 */
+  letter-spacing: 1px;  /* 增加字間距 */
+}
+
+.carousel-section {
+  margin-top: 40px;
+  padding: 0 20px;
+}
+
+.carousel-img {
+  margin: 0 auto;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
 }
 </style>

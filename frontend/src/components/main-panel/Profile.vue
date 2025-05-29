@@ -49,41 +49,47 @@
     </section>
 
       <!-- 關於 -->
-      <h2>關於</h2>
+      <div class="about-container">
+        <div class="title-with-icon">
+          <h2>About 關於</h2>
+        </div>
+      </div>
       <section class="about" ref="aboutSection">
         <n-descriptions 
-          label-placement="left"
-          :theme-overrides="descriptionThemeOverrides"
+          label-placement="top"
+          :column="4"
+          :labelStyle="{ color: '#ffffff', fontSize: '18px', fontWeight: 'bold' }"
+          :contentStyle="{ color: '#ffffff', fontSize: '16px' }"
         >
-          <n-descriptions-item class="white-text" label="姓名">
-            <span style="color: white;">{{ profile.about.user_name }}</span>
+          <n-descriptions-item label="姓名">
+            {{ profile.about.user_name }}
           </n-descriptions-item>
-          <n-descriptions-item class="white-text" label="年齡">
-            <span style="color: white;">{{ profile.about.age }}</span>
+          <n-descriptions-item label="年齡">
+            {{ profile.about.age }}
           </n-descriptions-item>
-          <n-descriptions-item class="white-text" label="性別">
-            <span style="color: white;">{{ profile.about.sex }}</span>
+          <n-descriptions-item label="性別">
+            {{ profile.about.sex }}
           </n-descriptions-item>
-          <n-descriptions-item class="white-text" label="學歷">
-            <span style="color: white;">{{ profile.about.education }}</span>
+          <n-descriptions-item label="學歷">
+            {{ profile.about.education }}
           </n-descriptions-item>
-          <n-descriptions-item class="white-text" label="手機">
-            <span style="color: white;">{{ profile.about.phone_number }}</span>
+          <n-descriptions-item label="手機">
+            {{ profile.about.phone_number }}
           </n-descriptions-item>
-          <n-descriptions-item class="white-text" label="信箱">
-            <span style="color: white;">{{ profile.about.mail }}</span>
+          <n-descriptions-item label="信箱">
+            {{ profile.about.mail }}
           </n-descriptions-item>
-          <n-descriptions-item class="white-text" label="地址">
-            <span style="color: white;">{{ profile.about.address }}</span>
+          <n-descriptions-item label="地址">
+            {{ profile.about.address }}
           </n-descriptions-item>
-          <n-descriptions-item class="white-text" label="語言">
-            <span style="color: white;">{{ profile.about.language }}</span>
+          <n-descriptions-item label="語言">
+            {{ profile.about.language }}
           </n-descriptions-item>
         </n-descriptions>
       </section>
 
       <!-- 技能 -->
-      <h2>技能</h2>
+      <h2>Skills 技能</h2>
       <section class="skills" ref="skillsSection">
         <div class="skill-grid">
           <div v-for="(skill, index) in profile.skills" :key="index" class="skill-item">
@@ -115,7 +121,7 @@
       </section>
 
       <!-- 簡介 -->
-      <h2>履歷表</h2>
+      <h2>Resume 履歷表</h2>
       <section class="intro" ref="resumeSection">
         <h3><n-icon :size="25"><person-outline class="person-outline"/></n-icon> 簡介</h3>
         <p>{{ profile.resume.introduction }}</p>
@@ -198,7 +204,7 @@
       </section>
 
       <!-- 我的專案 -->
-      <h2>我的專案</h2>
+      <h2>Projects 我的專案</h2>
       <section class="projects">
         <n-marquee :play-reversed="true" :auto-play="true" :interval="3000">
           <div class="project-group" v-for="(proj, index) in profile.projects" :key="index">
@@ -230,19 +236,19 @@
         </n-marquee>
       </section>
 
-      <!-- 已按讚 -->
-      <h2>已按讚</h2>
+      <!--isLiked 已按讚 -->
+      <h2>Liked 已按讚</h2>
       <section class="companies">
         <div class="logo-scroll-container">
-          <div v-for="(liked, index) in profile.liked" :key="index">
-            <img :src="liked.img" :alt="liked.company" draggable="false">
-            <p>{{ liked.company }}</p>
+          <div v-for="(company, index) in filteredLikedCompanies" :key="company.id">
+            <img :src="company.media?.logo" :alt="company.name" draggable="false">
+            <p>{{ company.name }}</p>
           </div>
         </div>
       </section>
 
       <!-- 已追蹤 -->
-      <h2>已追蹤</h2>
+      <h2>Following 已追蹤</h2>
       <section class="technologies">
         <div class="logo-scroll-container">
           <div v-for="(person, index) in profile.following" :key="index">
@@ -252,6 +258,11 @@
         </div>
       </section>
     </div>
+    <Company 
+      v-if="company" 
+      :id="company.id" 
+      @like-status-change="handleLikeStatusChange"
+    />
   </div>
 </template>
 
@@ -259,7 +270,7 @@
 <script>
 import axios from 'axios';
 import { NIcon, NDescriptions, NDescriptionsItem, useThemeVars, NStatistic, NNumberAnimation, NButton, NMarquee, NImage, NBreadcrumb, NBreadcrumbItem } from 'naive-ui';
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, onMounted, nextTick, computed } from 'vue';
 import {
   CreateOutline,
   PersonOutline,
@@ -269,16 +280,12 @@ import {
 import profileIcon from '@/assets/icons/profile-icon.svg';
 import skillIcon from '@/assets/icons/skill-icon.svg';
 import resumeIcon from '@/assets/icons/resume-icon.svg';
+import aboutIcon from '@/assets/icons/about-icon.svg';
 import {
   getUserProfile,
-  getUserSkills,
-  getUserEducation,
-  getUserExperience,
-  getUserProjects,
-  getLikedCompanies,
-  getFollowedUsers
 } from '@/api/profile';
-
+import { getGreatCompanies } from '@/api/home';
+import Company from './Company.vue';  // 確保已導入 Company 組件
 
 export default {
   name: 'Profile',
@@ -296,7 +303,8 @@ export default {
     NMarquee,
     NImage,
     NBreadcrumb,
-    NBreadcrumbItem
+    NBreadcrumbItem,
+    Company
   },
   setup() {
     const themeVars = useThemeVars();
@@ -370,6 +378,7 @@ export default {
       isSkillsVisible,
       startObservation,
       profileIcon,
+      aboutIcon,
       skillIcon,
       resumeIcon,
       aboutSection,
@@ -380,13 +389,20 @@ export default {
   data() {
     return {
       profile: null,
+      likedCompanies: [],
+      isLoadingLikedCompanies: false,
       descriptionThemeOverrides: {
         itemTextColor: '#ffffff',
         labelTextColor: '#ffffff'
-      }
+      },
+      company: null
     };
   },
-
+  computed: {
+    filteredLikedCompanies() {
+      return this.likedCompanies.filter(company => company.isLiked === true);
+    }
+  },
   methods: {
     handleImage() {
       // 使用固定的渐变背景
@@ -399,27 +415,34 @@ export default {
           #2b2b2b 100%
         )`;
       }
-    }
-  },
-
-  mounted() {
-    Promise.all([
-      getUserProfile(),
-      getUserSkills(),
-      getUserEducation(),
-      getUserExperience(),
-      getUserProjects(),
-    ])
-      .then(([profileRes, skillsRes, educationRes, experienceRes, projectRes]) => {
-        console.log('Profile Data:', profileRes);
-        const userData = profileRes.find(user => user.id === 2) || {};
-
-        // 處理項目數據，確保技術棧信息存在
-        const processedProjects = (userData.projects || []).map(project => ({
-          ...project,
-          technologies: project.technologies || []  // 確保技術棧是一個數組
+    },
+    async loadLikedCompanies() {
+      this.isLoadingLikedCompanies = true;
+      try {
+        const response = await getGreatCompanies();
+        const companies = response.results || response || [];
+        // 確保每個公司對象都有 isLiked 屬性
+        this.likedCompanies = companies.map(company => ({
+          ...company,
+          isLiked: company.isLiked || false
         }));
-
+      } catch (error) {
+        console.error('Error fetching liked companies:', error);
+      } finally {
+        this.isLoadingLikedCompanies = false;
+      }
+    },
+    // 新增更新公司按讚狀態的方法
+    updateCompanyLikeStatus(companyId, isLiked) {
+      const company = this.likedCompanies.find(c => c.id === companyId);
+      if (company) {
+        company.isLiked = isLiked;
+      }
+    },
+    async loadProfileData() {
+      try {
+        const profileRes = await getUserProfile();
+        const userData = profileRes.find(user => user.id === 2) || {};
         this.profile = {
           profile: {
             img: userData.picture || '/default.jpg',
@@ -459,11 +482,10 @@ export default {
               company_image: item.company_image
             }))
           },
-          projects: processedProjects,
+          projects: userData.projects || [],
           liked: [],
           following: []
         };
-
         // 数据加载完成后初始化观察器
         this.startObservation();
 
@@ -475,16 +497,38 @@ export default {
             img.onload = () => this.handleImage();
           }
         });
-      })
-      .catch(error => {
-        console.error('Error fetching profile data:', error);
-      });
+      } catch (error) {
+        console.error('Error loading profile data:', error);
+      }
+    },
+    // 處理公司按讚狀態變化
+    handleLikeStatusChange({ companyId, isLiked }) {
+      this.updateCompanyLikeStatus(companyId, isLiked);
+    }
+  },
+  watch: {
+    // 監聽 likedCompanies 中每個公司的 isLiked 狀態
+    likedCompanies: {
+      deep: true,
+      handler(newCompanies) {
+        // 當 likedCompanies 發生變化時，重新過濾已按讚的公司
+        this.filteredLikedCompanies = newCompanies.filter(company => company.isLiked);
+      }
+    }
+  },
+  async mounted() {
+    await Promise.all([
+      this.loadProfileData(),
+      this.loadLikedCompanies()
+    ]);
   }
 };
 </script>
 
 
 <style scoped>
+
+
 /* 覆蓋 naive-ui 描述列表樣式 */
 .about :deep(.n-descriptions-item-label),
 .about :deep(.n-descriptions-item-content),
@@ -1143,6 +1187,34 @@ section {
 .work-info .description {
   color: #ffffff;
   line-height: 1.6;
+}
+
+.about-container {
+  margin-bottom: 0px;
+}
+
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.title-with-icon h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.title-with-icon .n-icon {
+  display: flex;
+  align-items: center;
+}
+
+/* 移除 about section 的上邊距 */
+.about {
+  margin-top: -30px;
+  padding-top: 15px;
 }
 
 </style>

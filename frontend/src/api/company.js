@@ -36,18 +36,13 @@ export function getCompanyGallery(companyId) {
   })
 }
 
-// 關注公司
-export function followCompany(companyId) {
+// 更新公司按讚狀態
+export function updateLikedCompanies(companyId, isLiked) {
   return request({
-    url: `/api/companies/${companyId}/follow`,
-    method: 'post'
+    url: `/api/companies/${companyId}/isLiked/`,
+    method: 'post',
+    data: {
+      isLiked: isLiked
+    }
   })
 }
-
-// 取消關注公司
-export function unfollowCompany(companyId) {
-  return request({
-    url: `/api/companies/${companyId}/unfollow`,
-    method: 'post'
-  })
-} 

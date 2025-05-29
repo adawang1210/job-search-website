@@ -309,7 +309,7 @@
 <script>
 import { ref } from 'vue'
 import axios from 'axios';
-import { getCompanyInfo } from '@/api/company';
+import { getCompanyInfo, updateLikedCompanies } from '@/api/company';
 import { defineComponent } from 'vue'
 import { NIcon } from 'naive-ui'
 import { Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular } from '@vicons/fa'
@@ -317,6 +317,7 @@ import { Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular } 
 export default defineComponent({
   name: 'Company',
   inject: ['updateLikedItemInSidebar', 'openRightSidebar', 'addViewedItemToSidebar'], // 注入來自 BaseLayout 的方法
+  emits: ['like-status-change'],
   components: {
     NIcon, Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular,
   },
@@ -452,8 +453,8 @@ export default defineComponent({
     },
     // heart icon clicked
     handleLikeClick(Id) {
-      if (Id == 'company') {
-        this.handleToggleLike(this.company, this.company.id);
+      if (Id === 'company') {
+        this.handleToggleLike(this.company);
       }
       else {
         this.handleToggleLike(this.jjobs, Id);
@@ -477,21 +478,45 @@ export default defineComponent({
       alert(`Navigating to company page for: ${job.company.name}. Implement Vue Router push here.`)
     },
     //like 處理
-    handleToggleLike(list, itemId) {
-      var item = list// 預設company
-      if (Array.isArray(list)) {// 是陣列，item is job
+    async handleToggleLike(list, itemId) {
+      let item;
+      
+      if (Array.isArray(list)) {
+        // 處理職缺的按讚
         item = list.find(i => i.id === itemId);
-      }
-      if (item) {
-        item.isLiked = !item.isLiked;
-
-        if (typeof this.updateLikedItemInSidebar === 'function') {
-          this.updateLikedItemInSidebar(item, item.isLiked);
-        } else {
-          console.warn('updateLikedItemInSidebar is not available from BaseLayout');
+        if (!item) {
+          console.warn('Item not found:', itemId);
+          return;
         }
       } else {
-        console.warn(`找不到 id 為 ${itemId} 的項目`);
+        // 處理公司的按讚
+        item = list;
+        itemId = item.id;
+      }
+
+      try {
+        // 先更新 UI
+        const newLikedStatus = !item.isLiked;
+        item.isLiked = newLikedStatus;
+
+        // 調用 API 更新後端
+        await updateLikedCompanies(itemId, newLikedStatus);
+
+        // 更新側邊欄
+        if (typeof this.updateLikedItemInSidebar === 'function') {
+          this.updateLikedItemInSidebar(item, item.isLiked);
+        }
+
+        // 發出事件通知其他組件
+        this.$emit('like-status-change', {
+          companyId: itemId,
+          isLiked: newLikedStatus
+        });
+
+      } catch (error) {
+        // 如果 API 調用失敗，恢復原來的狀態
+        item.isLiked = !item.isLiked;
+        console.error('Failed to update like status:', error);
       }
     },
     openModal(id) {

@@ -315,7 +315,7 @@ export default {
       }
     },
 
-    // 【修改】處理來自 eventBus 的通用愛心狀態更新事件
+    // 處理來自 eventBus 的通用愛心狀態更新事件
     handleUpdateLikeStatus(data) { // data 預期為 { id: itemId, type: itemType, isLiked: newStatus }
       const { id, type, isLiked } = data;
       // 1. 更新 sections 中的職缺愛心狀態

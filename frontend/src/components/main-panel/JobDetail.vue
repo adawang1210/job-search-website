@@ -27,7 +27,7 @@
         </div>
         <div class="profile-button actions-button">
           <button type="button" class="like-btn" :class="{ active: jobDetail.isLiked }"
-            @click.stop="handleLikeClick('job')">
+            @click.stop="toggleLike(jobDetail)">
             <n-icon class="heart-icon">
               <component :is="jobDetail.isLiked ? iconHeartSolid : iconHeartRegular" />
             </n-icon>
@@ -186,12 +186,15 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, defineComponent } from 'vue'
 import axios from 'axios';
+import eventBus from '/src/eventBus.js';
 import { getJobDetail } from '@/api/home';//暫時用home
-import { defineComponent } from 'vue'
+import { likeJob, unlikeJob } from '@/api/home.js';
 import { NIcon } from 'naive-ui'
 import { Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular } from '@vicons/fa'
+
+const ITEM_TYPE_JOB = 'job';
 
 export default defineComponent({
   name: 'JobDetail',
@@ -232,7 +235,32 @@ export default defineComponent({
         if (newId) {
           const jobDetailData = await getJobDetail(newId);
           //console.log("jobDetailData",jobDetailData);
-          this.jobDetail = jobDetailData;
+          //this.jobDetail = jobDetailData;
+          const rawJobDetail = jobDetailData.results || jobDetailData || [];
+          this.jobDetail = {
+            id: rawJobDetail.id,
+            title: rawJobDetail.title,
+            image: rawJobDetail.company_logo || 'default_job_image.png',
+            company: {
+              name: rawJobDetail.company?.name || '未知公司',
+              industry: rawJobDetail.company?.industry || '',
+            },
+            salary: rawJobDetail.salary_max ? `$${rawJobDetail.salary_max}` : '面議',
+            characteristics: rawJobDetail.characteristics || '為提供',
+            recruitment_type: rawJobDetail.recruitment_type || '為提供',
+            location: rawJobDetail.location || '',
+            experience_required: rawJobDetail.experience_required || '不拘',
+            education_required: rawJobDetail.education_required || '不拘',
+            major_required: rawJobDetail.major_required || '不拘',
+            created_at: rawJobDetail.created_at,
+            description: rawJobDetail.description,
+            isLiked: rawJobDetail.is_liked_by_user || false,
+            isApplied: rawJobDetail.is_applied_by_user || false,
+            benefits: rawJobDetail.benefits || [],
+            applicants: rawJobDetail.applicants || 0,
+            originalData: { ...rawJobDetail, type: ITEM_TYPE_JOB },
+            type: ITEM_TYPE_JOB,
+          };
 
           // 圖片抓色更改背景
           this.$nextTick(() => {
@@ -252,20 +280,11 @@ export default defineComponent({
       }
     }
   },
-  mounted() {
-
-    /* Promise.all([
-      axios.get('http://127.0.0.1:8000/api/jobs/'),
-
-    ])
-      .then(([jjobsRes]) => {
-
-        this.jjobs = jjobsRes.data;
-        
-      })
-      .catch(error => {
-        console.error('讀取 JSON 發生錯誤：', error);
-      }); */
+  async mounted() {
+    eventBus.on('update-like-status', this.handleUpdateLikeStatus);
+  },
+  beforeUnmount() {
+    eventBus.off('update-like-status', this.handleUpdateLikeStatus);
   },
   computed: {
     companyLink() {
@@ -341,31 +360,73 @@ export default defineComponent({
       this.dropdownOpenProfile = false
     },
     // heart icon clicked
-    handleLikeClick(Id) {
-      if (Id == 'company') {
-        this.handleToggleLike(this.company, this.company.id);
+    // item 可能是 job 或 company 物件，它已經包含 isLiked 和 originalData (其中包含 type)
+    async toggleLike(item) {
+      // 假設需要登入才能收藏
+      // if (!this.isUserLoggedIn) { 
+      //   alert('您需要先登入才能收藏！');
+      //   return;
+      // }
+
+      if (!item || !item.id || !item.type) {
+        console.error('toggleLike: 無效的項目數據或缺少 ID/類型', item);
+        return;
       }
-      else {
-        //alert("收藏工作")
-        this.handleToggleLike(this.jobDetail, Id);
+
+      const originalLikedStatus = item.isLiked;
+      const newLikedStatus = !item.isLiked;
+
+      // 1. 樂觀更新 UI (直接修改傳入的 item 物件)
+      item.isLiked = newLikedStatus;
+
+      try {
+        // 2. 呼叫後端 API (統一使用 likeJob/unlikeJob)
+        if (newLikedStatus) {
+          await likeJob(item.id); // 假設 likeJob API 能處理職缺和公司 ID
+        } else {
+          await unlikeJob(item.id); // 假設 unlikeJob API 能處理職缺和公司 ID
+        }
+
+        // 3. 通知 BaseLayout 更新側邊欄的收藏和瀏覽紀錄列表
+        // 傳遞 item.originalData 和新的 isLiked 狀態
+        if (typeof this.updateLikedItemInSidebar === 'function') {
+          this.updateLikedItemInSidebar(item.originalData || item, newLikedStatus); // originalData 已經包含 type
+        }
+
+        // 4. 透過 eventBus 通知所有頁面同步愛心狀態
+        // 統一事件名稱 'update-like-status'，並傳遞 ID, 類型, 和新狀態
+        eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: newLikedStatus });
+
+      } catch (error) {
+        console.error(`Failed to update ${item.type} like status for ID ${item.id}:`, error);
+        // API 失敗，恢復 UI 狀態
+        item.isLiked = originalLikedStatus;
+        alert(`收藏操作失敗，請稍後再試。`);
+
+        // 恢復 BaseLayout 列表狀態
+        if (typeof this.updateLikedItemInSidebar === 'function') {
+          this.updateLikedItemInSidebar(item.originalData || item, originalLikedStatus);
+        }
+        // 通知所有頁面恢復愛心狀態
+        eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: originalLikedStatus });
       }
     },
-    //like 處理
-    handleToggleLike(list, itemId) {
-      var item = list// 預設list是object
-/*       if (Array.isArray(list)) {// 是陣列，item is job
-        item = list.find(i => i.id === itemId);
-      } */
-      if (item) {
-        item.isLiked = !item.isLiked;
-
-        if (typeof this.updateLikedItemInSidebar === 'function') {
-          this.updateLikedItemInSidebar(item, item.isLiked);
-        } else {
-          console.warn('updateLikedItemInSidebar is not available from BaseLayout');
+    // 處理來自 eventBus 的通用愛心狀態更新事件
+    handleUpdateLikeStatus(data) { // data 預期為 { id: itemId, type: itemType, isLiked: newStatus }
+      const { id, type, isLiked } = data;
+      // 1. 更新 sections 中的職缺愛心狀態
+      if (type === ITEM_TYPE_JOB) {
+        const jobInSection = this.jobDetail;
+          if (jobInSection) {
+            jobInSection.isLiked = isLiked;
+          }
+      }
+      // 2. 更新 companies 中的公司愛心狀態
+      else if (type === ITEM_TYPE_COMPANY) {
+        const companyToUpdate = this.company;
+        if (companyToUpdate) {
+          companyToUpdate.isLiked = isLiked;
         }
-      } else {
-        console.warn(`找不到 id 為 ${itemId} 的項目`);
       }
     },
     openModal(id) {

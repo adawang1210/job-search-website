@@ -60,6 +60,7 @@
 
 <script>
 import eventBus from '/src/eventBus.js';
+import { likeJob, unlikeJob } from '@/api/home.js';
 
 const ITEM_TYPE_JOB = 'job';
 const ITEM_TYPE_COMPANY = 'company';
@@ -114,15 +115,42 @@ export default {
       }
     },
 
-     toggleLikeFromViewed(itemToToggle) {
+    async toggleLikeFromViewed(itemToToggle) { // 【新增】加上 async
       if (itemToToggle && itemToToggle.originalData) {
-        const newLikedStatus = !itemToToggle.isItemLiked;
-        // 通知 BaseLayout 更新收藏列表和瀏覽列表的愛心狀態
-        // itemToToggle.originalData 應該包含了 type 屬性
-        this.updateLikedItemInSidebar(itemToToggle.originalData, newLikedStatus);
+        const originalLikedStatus = itemToToggle.isItemLiked; // 儲存原始狀態用於回滾
+        const newLikedStatus = !itemToToggle.isItemLiked; // 計算新的愛心狀態
 
-        // 透過 eventBus 通知所有頁面同步愛心狀態
-        eventBus.emit('update-like-status', { id: itemToToggle.id, type: itemToToggle.type, isLiked: newLikedStatus });
+        // 1. 樂觀更新 UI (在 LeftSidebar 自己的數據中，雖然通常由 BaseLayout 統一管理)
+        // 但如果希望立即看到 UI 響應，可以在這裡先更新。
+        itemToToggle.isItemLiked = newLikedStatus;
+
+        try {
+          // 2. 呼叫後端 API (統一使用 likeJob/unlikeJob)
+          // 假設 likeJob/unlikeJob API 能處理職缺和公司 ID
+          if (newLikedStatus) {
+            await likeJob(itemToToggle.id); // 呼叫收藏 API
+          } else {
+            await unlikeJob(itemToToggle.id); // 呼叫取消收藏 API
+          }
+
+          // 3. 通知 BaseLayout 更新數據：
+          //    傳遞原始數據 (`originalData`) 和新的收藏狀態 (`newLikedStatus`) 給 BaseLayout。
+          this.updateLikedItemInSidebar(itemToToggle.originalData, newLikedStatus);
+
+          // 4. 透過 eventBus 通知所有頁面同步愛心狀態
+          eventBus.emit('update-like-status', { id: itemToToggle.id, type: itemToToggle.type, isLiked: newLikedStatus });
+
+        } catch (error) {
+          console.error(`Failed to update like status from viewed item for ID ${itemToToggle.id}:`, error);
+          alert(`收藏操作失敗，請稍後再試。`);
+
+          // API 失敗，恢復 UI 狀態 (如果之前有樂觀更新)
+          itemToToggle.isItemLiked = originalLikedStatus; // 如果有樂觀更新，這裡需要回滾
+
+          // 同時通知 BaseLayout 和其他組件恢復愛心狀態
+          this.updateLikedItemInSidebar(itemToToggle.originalData, originalLikedStatus);
+          eventBus.emit('update-like-status', { id: itemToToggle.id, type: itemToToggle.type, isLiked: originalLikedStatus });
+        }
       }
     },
     handleItemClick(item) {

@@ -6,6 +6,7 @@ import NotificationView from '../views/NotificationView.vue'
 import SearchResultView from '../views/SearchResultView.vue'
 import FavoriteJobsView from '../views/FavoriteJobsView.vue'
 import AllCompanyView from '../views/AllCompanyView.vue'
+import JobDetailView from '@/views/JobDetailView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -43,9 +44,15 @@ const router = createRouter({
       component: FavoriteJobsView,
     },
     {
-    path: '/allcompany',
-    name: 'AllCompany',
-    component: AllCompanyView
+      path: '/allcompany',
+      name: 'AllCompany',
+      component: AllCompanyView
+    },
+    {
+      path: '/jobdetail/:id',
+      name: 'jobdetail',
+      component: JobDetailView,
+      props: true,
     },
   ],
 })

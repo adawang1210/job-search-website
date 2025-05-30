@@ -203,6 +203,38 @@
         </div>
       </section>
 
+      <h2>我的專案</h2>
+      <section class="projects">
+        <n-marquee :play-reversed="true" :auto-play="true" :interval="3000">
+          <div class="project-group" v-for="(proj, index) in profile.projects" :key="index">
+            <div class="project-item">
+              <div class="project-cover">
+                <n-image
+                  width="160"
+                  height="100"
+                  :src="proj.cover_photo"
+                  :alt="proj.title"
+                  object-fit="contain"
+                  class="project-image"
+                />
+              </div>
+              <div class="project-title">{{ proj.title }}</div>
+              <div class="tech-stack">
+                <div class="tech-item" v-for="(tech, techIndex) in proj.technologies" :key="techIndex">
+                  <n-image
+                    width="40"
+                    height="40"
+                    :src="tech.icon"
+                    :alt="tech.name"
+                  />
+                  <p>{{ tech.name }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </n-marquee>
+      </section>
+
       <!--isLiked 已按讚 -->
       <h2>Liked 已按讚</h2>
       <section class="companies">
@@ -220,8 +252,8 @@
           </template>
         </div>
       </section>
-
-      <!-- 已追蹤 -->
+      
+      <!-- 已追蹤 
       <h2>Following 已追蹤</h2>
       <section class="technologies">
         <div class="logo-scroll-container">
@@ -230,14 +262,15 @@
             <p>{{ person.name }}</p>
           </div>
         </div>
-      </section>
+      </section>-->
     </div>
     <Company 
       v-if="company" 
       :id="company.id" 
       @like-status-change="handleLikeStatusChange"
     />
-  </div>
+  </div> 
+
 </template>
 
 

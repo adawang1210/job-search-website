@@ -150,11 +150,11 @@ export default {
       companies: [],
       favoriteJobs: [
         { id: 'fav_dentist', name: '最愛牙醫師', image: '/favorite-bg-1.jpg', icon: '/favorite-icon-1.png', description: '雅德斯牙醫診所、蒔美牙醫集團和更多', isLiked: false },
-        { id: 'fav_designer', name: '最愛室內設計師', image: '/favorite-bg-2.jpg', icon: '/favorite-icon-2.png', description: '雅和室內設計、拾間室內裝修設計有限公司和更多', isLiked: false },
-        { id: 'fav_barista', name: '最愛咖啡師', image: '/favorite-bg-3.jpeg', icon: '/favorite-icon-3.png', description: '咖碼股份有限公司、路易莎職人咖啡股份有限公司和更多', isLiked: false },
-        { id: 'fav_baker', name: '最愛烘焙技師', image: '/favorite-bg-4.jpg', icon: '/favorite-icon-4.png', description: '歐立食品股份有限公司、亞尼克菓子工房股份有限公司和更多', isLiked: false },
+        { id: 'fav_designer', name: '最愛室內設計師', image: '/favorite-bg-2.jpg', icon: '/favorite-icon-2.png', description: '雅和室內設計、拾間室內裝修設計和更多', isLiked: false },
+        { id: 'fav_barista', name: '最愛咖啡師', image: '/favorite-bg-3.jpeg', icon: '/favorite-icon-3.png', description: '咖碼、路易莎和更多', isLiked: false },
+        { id: 'fav_baker', name: '最愛烘焙技師', image: '/favorite-bg-4.jpg', icon: '/favorite-icon-4.png', description: '歐立食品、亞尼克和更多', isLiked: false },
         { id: 'fav_engineer', name: '最愛半導體工程師', image: '/favorite-bg-5.jpg', icon: '/favorite-icon-5.png', description: 'nvidia台灣分公司、台積電和更多', isLiked: false },
-        { id: 'fav_staff', name: '最愛門市人員', image: '/favorite-bg-6.jpg', icon: '/favorite-icon-6.png', description: '宜得利家居股份有限公司、無印良品和更多', isLiked: false }
+        { id: 'fav_staff', name: '最愛門市人員', image: '/favorite-bg-6.jpg', icon: '/favorite-icon-6.png', description: '宜得利、無印良品和更多', isLiked: false }
       ],
       isLoadingCompanies: false,
       errorCompanies: null,
@@ -396,11 +396,7 @@ export default {
       }
     },
     handleTitleClick(job) {
-      console.log('Title clicked for job:', job.title, 'Company:', job.company);
-      // 通常點擊職位標題或公司名稱會導航到公司或職缺詳情頁
-      // 假設您有一個路由到公司頁面，並且需要公司ID
-      // job.originalData.company.id
-      alert(`預計導航至公司頁面: ${job.company}. (此功能需 Vue Router 支持)`);
+      this.$router.push({ name: 'jobdetail', params: { id: job.id } });
     },
     handleCompanyCardClick(company) {
       // 這個方法只處理公司卡片點擊和路由導向，不會開啟右側邊欄或新增到已瀏覽

@@ -117,68 +117,63 @@ export default {
   },
   methods: {
     async fetchSearchResults() {
-      // 修改執行條件：只要任一條件存在就搜尋
-      if (!this.searchQuery && this.activePositions.length === 0 && this.activeRegions.length === 0) {
-        // 如果所有條件都為空，可以選擇清空結果或顯示提示，然後返回
-        this.searchResults = [];
-        this.isLoading = false; // 確保重置 loading 狀態
-        // 可以在 p v-else-if 中處理 "請輸入關鍵字或選擇篩選條件進行搜尋"
-        return;
-      }
+  this.isLoading = true;
+  this.error = null;
 
-      this.isLoading = true;
-      this.error = null;
-      // this.searchResults = []; // 可以在 watch 中清空
-      try {
-        const criteria = {
-          search: this.searchQuery,
-          positions: this.activePositions.join(','), // 這些是陣列
-          regions: this.activeRegions.join(','),     // 這些是陣列
-        };
+  try {
+    // 不帶參數，直接抓全部職缺
+    const apiResponse = await getJobs();
+    const rawJobs = apiResponse.results || apiResponse || [];
 
-        // Remove parameters that are empty, so they don't get sent as empty strings
-        const nonEmptyCriteria = {};
-        if (criteria.search) nonEmptyCriteria.search = criteria.search;
-        if (this.activePositions.length > 0) nonEmptyCriteria.positions = criteria.positions;
-        if (this.activeRegions.length > 0) nonEmptyCriteria.regions = criteria.regions;
+    // 前端過濾：搜尋關鍵字、職位、地區
+    const filtered = rawJobs.filter(job => {
+      const searchText = this.searchQuery?.toLowerCase() || '';
 
-        const apiResponse = await getJobs(nonEmptyCriteria);
-        const rawJobs = apiResponse.results || apiResponse || [];
+      // 模糊比對職缺名稱或公司名稱
+      const titleMatch = job.title?.toLowerCase().includes(searchText);
+      const companyMatch = job.company?.name?.toLowerCase().includes(searchText);
+      const keywordMatch = searchText ? (titleMatch || companyMatch) : true;
 
-        // 處理 apiResponse (假設 searchJobsApi 返回 { jobs: [], pagination: ... })
-        if (Array.isArray(rawJobs)) {
-          this.searchResults = rawJobs.map(job => ({
-            id: job.id,
-            title: job.title,
-            image: job.company_logo?.startsWith('http') 
-            ? job.company_logo 
-            : 'http://localhost:8000/' + (job.company_logo || 'default_job_image.png'),
-            company: job.company && job.company.name ? job.company.name : '未知公司',
-            salary: job.salary_max ? `$${job.salary_max}` : '面議',
-            isLiked: job.is_liked_by_user || false, // 初始收藏狀態來自後端
-            originalData: { ...job, type: ITEM_TYPE_JOB }, // 【修改】在原始數據中加入 type 屬性
-            type: ITEM_TYPE_JOB, // 【新增】在頂層也保留 type，方便直接使用 job 物件
-          }));
-        } else {
-          this.searchResults = [];
-          // this.paginationData = null;
-          this.error = '無法獲取搜尋結果，回傳格式不正確。'; // 或其他合適的錯誤訊息
-        }
+      const positionMatch = this.activePositions.length
+        ? this.activePositions.includes(job.characteristics)
+        : true;
 
-        if (typeof this.isItemCurrentlyLiked === 'function') {
-          this.searchResults.forEach(job => {
-            job.isLiked = this.isItemCurrentlyLiked(job.id, job.type);
-          });
-          console.log('SearchResult.vue: Initial liked status synchronized from BaseLayout.');
-        }
+      const address = (job.location || '').toLowerCase(); // 地區是完整地址
+      const regionMatch = this.activeRegions.length
+        ? this.activeRegions.some(region => address.includes(region.toLowerCase()))
+        : true;
 
-      } catch (err) {
-        this.error = '搜尋時發生錯誤，請稍後再試。';
-        this.searchResults = [];
-      } finally {
-        this.isLoading = false;
-      }
-    },
+      return keywordMatch && positionMatch && regionMatch;
+    });
+
+    this.searchResults = filtered.map(job => ({
+      id: job.id,
+      title: job.title,
+      image: job.company_logo?.startsWith('http') 
+        ? job.company_logo 
+        : 'http://localhost:8000/' + (job.company_logo || 'default_job_image.png'),
+      company: job.company?.name || '未知公司',
+      salary: job.salary_max ? `$${job.salary_max}` : '面議',
+      isLiked: job.is_liked_by_user || false,
+      originalData: { ...job, type: ITEM_TYPE_JOB },
+      type: ITEM_TYPE_JOB,
+    }));
+    console.log(this.searchResults)
+
+    // 同步收藏狀態
+    if (typeof this.isItemCurrentlyLiked === 'function') {
+      this.searchResults.forEach(job => {
+        job.isLiked = this.isItemCurrentlyLiked(job.id, job.type);
+      });
+    }
+
+  } catch (err) {
+    this.error = '載入職缺資料時發生錯誤，請稍後再試。';
+    this.searchResults = [];
+  } finally {
+    this.isLoading = false;
+  }
+},
     handleUpdateLikeStatus(data) { // 預期 data 為 { id: itemId, type: itemType, isLiked: newStatus }
       const { id, type, isLiked } = data;
       // SearchResult 只顯示職缺，所以只處理 ITEM_TYPE_JOB 類型

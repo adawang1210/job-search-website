@@ -300,21 +300,25 @@ export default {
   scrollbar-color: #727272 transparent;
 }
 
-.scrollable-block::-webkit-scrollbar {
+.scrollable-block::-webkit-scrollbar,
+.left-side-bar.active .scrollable-block::-webkit-scrollbar  {
   width: 6px;
 }
 
-.scrollable-block::-webkit-scrollbar-track {
+.scrollable-block::-webkit-scrollbar-track,
+.left-side-bar.active .scrollable-block::-webkit-scrollbar-track {
   background: transparent;
   margin: 2px 0;
 }
 
-.scrollable-block::-webkit-scrollbar-thumb {
+.scrollable-block::-webkit-scrollbar-thumb,
+.left-side-bar.active .scrollable-block::-webkit-scrollbar-thumb  {
   background-color: #727272;
   border-radius: 3px;
 }
 
-.scrollable-block::-webkit-scrollbar-thumb:hover {
+.scrollable-block::-webkit-scrollbar-thumb:hover,
+.left-side-bar.active .scrollable-block::-webkit-scrollbar-thumb:hover {
   background-color: #888888;
 }
 
@@ -435,12 +439,13 @@ hr {
 }
 
 .left-side-bar.active .scrollable-block {
-  padding: 0;
+  padding: 2px;
   max-height: none;
-  overflow: visible;
   gap: 8px;
   align-items: center;
   width: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #727272 transparent;
 }
 
 .left-side-bar.active .job-card-in-sidebar {

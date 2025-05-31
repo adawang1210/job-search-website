@@ -23,28 +23,7 @@
             </div>
           </div>
         </div>
-        <div class="profile-button actions-button">
-          <button type="button" class="like-btn" :class="{ active: companies[0].isLiked }"
-            @click.stop="toggleLike(companies[0])">
-            <n-icon class="heart-icon">
-              <component :is="companies[0].isLiked ? iconHeartSolid : iconHeartRegular" />
-            </n-icon>
-          </button>
-          <div class="ellipsis-button">
-            <div class="dropdown">
-              <button type="button" class="dropdown-toggle" @click="toggleDropdownProfile">
-                <n-icon class="ellipsis-icon">
-                  <EllipsisH />
-                </n-icon>
-              </button>
-              <ul v-show="dropdownOpenProfile" class="dropdown-menu bottom-left">
-                <li v-for="(item, index) in profileOptions" :key="index" @click="selectAction(item)">
-                  {{ item }}
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
+        
       </section>
 
       <section class="job-listings">

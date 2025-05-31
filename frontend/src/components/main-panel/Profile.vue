@@ -17,7 +17,7 @@
           <n-breadcrumb-item>
             <div class="breadcrumb-link" @click="scrollToSection('aboutSection')">
               <n-icon>
-                <img :src="profileIcon" alt="profile icon" style="width: 16px; height: 16px;" />
+                <img :src="profileIcon" alt="profile icon" style="width: 16px; height: 16px; filter: invert(1);" />
               </n-icon>
               關於
             </div>
@@ -25,7 +25,7 @@
           <n-breadcrumb-item>
             <div class="breadcrumb-link" @click="scrollToSection('skillsSection')">
               <n-icon>
-                <img :src="skillIcon" alt="skill icon" style="width: 16px; height: 16px;" />
+                <img :src="skillIcon" alt="skill icon" style="width: 16px; height: 16px; filter: invert(1);" />
               </n-icon>
               技能
             </div>
@@ -33,7 +33,7 @@
           <n-breadcrumb-item>
             <div class="breadcrumb-link" @click="scrollToSection('resumeSection')">
               <n-icon>
-                <img :src="resumeIcon" alt="resume icon" style="width: 16px; height: 16px;" />
+                <img :src="resumeIcon" alt="resume icon" style="width: 16px; height: 16px; filter: invert(1);" />
               </n-icon>
               履歷表
             </div>
@@ -1108,6 +1108,7 @@ section {
   display: flex;
   align-items: center;
   gap: 4px;
+  color: white;
 }
 
 .breadcrumb-link:hover {

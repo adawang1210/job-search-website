@@ -65,9 +65,10 @@ export default {
 .footer-in-panel {
   padding: 30px 15px; /* 增加上下內邊距 */
   background-color: #2a2a2a;
+  border-radius: 10px;
   color: #a0a0a0;
   flex-shrink: 0;
-  margin-top: auto;
+  margin-top: 8px;
 }
 
 .footer-content {

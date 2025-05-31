@@ -190,7 +190,6 @@ import { ref, defineComponent } from 'vue'
 import axios from 'axios';
 import eventBus from '/src/eventBus.js';
 import { getJobDetail, getGreatCompanies } from '@/api/home';//暫時用home
-import { likeJob, unlikeJob } from '@/api/home.js';
 import { NIcon } from 'naive-ui'
 import { Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular } from '@vicons/fa'
 

@@ -105,7 +105,7 @@
 
 <script>
 import eventBus from '/src/eventBus.js';
-import { getJobs, getGreatCompanies, likeJob, unlikeJob, getJobDetail } from '@/api/home.js';
+import { getJobs, getGreatCompanies, getJobDetail } from '@/api/home.js';
 
 const ITEM_TYPE_JOB = 'job';
 const ITEM_TYPE_COMPANY = 'company';

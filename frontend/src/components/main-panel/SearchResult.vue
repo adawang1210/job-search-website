@@ -39,7 +39,7 @@
 
 <script>
 
-import {  getJobs, likeJob, unlikeJob, getJobDetail } from '@/api/home.js';
+import {  getJobs, getJobDetail } from '@/api/home.js';
 import eventBus from '/src/eventBus.js'; 
 
 const ITEM_TYPE_JOB = 'job';

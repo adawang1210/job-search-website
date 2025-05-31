@@ -60,7 +60,7 @@
 </template>
 
 <script>
-import { getGreatCompanies, likeJob, unlikeJob } from '@/api/home.js';
+import { getGreatCompanies} from '@/api/home.js';
 import { PlayCircleOutline } from '@vicons/ionicons5';
 import { NCarousel, NCarouselItem } from 'naive-ui';
 import eventBus from '/src/eventBus.js';

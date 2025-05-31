@@ -39,14 +39,14 @@
 
 <script>
 
-import {  getJobs, getJobDetail } from '@/api/home.js';
-import eventBus from '/src/eventBus.js'; 
+import { getJobs, getJobDetail } from '@/api/home.js';
+import eventBus from '/src/eventBus.js';
 
 const ITEM_TYPE_JOB = 'job';
 
 export default {
   name: 'SearchResult',
-  inject: ['openRightSidebar', 'updateLikedItemInSidebar', 'addViewedItemToSidebar'],
+  inject: ['openRightSidebar', 'updateLikedItemInSidebar', 'addViewedItemToSidebar', 'isItemCurrentlyLiked'],
   data() {
     return {
       searchQuery: '',
@@ -55,9 +55,7 @@ export default {
       searchResults: [],
       isLoading: false,
       error: null,
-      defaultImage: 'default_company_logo_path.png', 
-      // 假設的登入狀態，您需要根據您的實際應用來實現
-      // isUserLoggedIn: true, // 或者從 store, localStorage 等地方獲取
+      defaultImage: 'default_company_logo_path.png',
     };
   },
   computed: {
@@ -147,12 +145,14 @@ export default {
         const apiResponse = await getJobs(nonEmptyCriteria);
         const rawJobs = apiResponse.results || apiResponse || [];
 
-              // 處理 apiResponse (假設 searchJobsApi 返回 { jobs: [], pagination: ... })
+        // 處理 apiResponse (假設 searchJobsApi 返回 { jobs: [], pagination: ... })
         if (Array.isArray(rawJobs)) {
           this.searchResults = rawJobs.map(job => ({
             id: job.id,
             title: job.title,
-            image: job.company_logo || this.defaultImage,
+            image: job.company_logo?.startsWith('http') 
+            ? job.company_logo 
+            : 'http://localhost:8000/' + (job.company_logo || 'default_job_image.png'),
             company: job.company && job.company.name ? job.company.name : '未知公司',
             salary: job.salary_max ? `$${job.salary_max}` : '面議',
             isLiked: job.is_liked_by_user || false, // 初始收藏狀態來自後端
@@ -164,6 +164,14 @@ export default {
           // this.paginationData = null;
           this.error = '無法獲取搜尋結果，回傳格式不正確。'; // 或其他合適的錯誤訊息
         }
+
+        if (typeof this.isItemCurrentlyLiked === 'function') {
+          this.searchResults.forEach(job => {
+            job.isLiked = this.isItemCurrentlyLiked(job.id, job.type);
+          });
+          console.log('SearchResult.vue: Initial liked status synchronized from BaseLayout.');
+        }
+
       } catch (err) {
         this.error = '搜尋時發生錯誤，請稍後再試。';
         this.searchResults = [];
@@ -185,24 +193,20 @@ export default {
     // job 已經是 SearchResult.vue 轉換過的格式：{ id, title, ..., isLiked, originalData, type }
     handleCardClick(job) {
       // 確保傳遞給 BaseLayout 的是原始 API 數據 (其中已包含 type)
-      const dataForSidebar = job.originalData || job; 
-      
+      const dataForSidebar = job.originalData || job;
+
       // 1. 新增到瀏覽紀錄 (BaseLayout 的 addViewedItemToSidebar 只處理職缺)
       if (typeof this.addViewedItemToSidebar === 'function') {
-        this.addViewedItemToSidebar(dataForSidebar); 
+        this.addViewedItemToSidebar(dataForSidebar);
       }
       // 2. 開啟右側邊欄
       if (typeof this.openRightSidebar === 'function') {
-        this.openRightSidebar(dataForSidebar); 
+        this.openRightSidebar(dataForSidebar);
       }
     },
     // 【修改】點擊愛心按鈕時，處理收藏/取消收藏邏輯 (與 Home.vue 保持一致)
     // job 參數是 SearchResult.vue 內部轉換過的 job 物件
     async toggleLike(job) { // 這裡的 job 其實就是 item
-      if (!this.isUserLoggedIn) {
-        alert('您需要先登入才能收藏職缺！');
-        return;
-      }
 
       // 檢查是否是有效的職缺數據，包含 ID 和類型
       if (!job || !job.id || job.type !== ITEM_TYPE_JOB) {
@@ -210,37 +214,24 @@ export default {
         return;
       }
 
-      const originalLikedStatus = job.isLiked;
       const newLikedStatus = !job.isLiked;
 
       // 1. 樂觀更新 UI
       job.isLiked = newLikedStatus;
 
-      try {
-        // 2. 呼叫後端 API (統一使用 likeJob/unlikeJob)
-        await (newLikedStatus ? likeJob : unlikeJob)(job.id); // 根據 newLikedStatus 選擇呼叫 likeJob 或 unlikeJob
-
-        // 3. 通知 BaseLayout 更新側邊欄的收藏和瀏覽紀錄列表
-        if (typeof this.updateLikedItemInSidebar === 'function') {
-          // 傳遞 job.originalData (原始 API 數據，包含 type) 和新的 isLiked 狀態
-          this.updateLikedItemInSidebar(job.originalData || job, newLikedStatus); 
-        }
-        
-        // 4. 透過 eventBus 通知所有頁面同步愛心狀態
-        eventBus.emit('update-like-status', { id: job.id, type: job.type, isLiked: newLikedStatus });
-
-      } catch (error) {
-        // API 失敗，恢復 UI 狀態
-        job.isLiked = originalLikedStatus;
-        alert(`更新 "${job.title}" 的收藏狀態失敗，請稍後再試。`);
-        console.error("Error toggling like in SearchResult:", error);
-        
-        // 如果 API 失敗，也要通知 BaseLayout 和其他組件恢復狀態
-        if (typeof this.updateLikedItemInSidebar === 'function') {
-          this.updateLikedItemInSidebar(job.originalData || job, originalLikedStatus);
-        }
-        eventBus.emit('update-like-status', { id: job.id, type: job.type, isLiked: originalLikedStatus });
+      // 2. 通知 BaseLayout 更新側邊欄的收藏和瀏覽紀錄列表
+      // 傳遞 job.originalData (原始 API 數據，包含 type) 和新的 isLiked 狀態
+      if (typeof this.updateLikedItemInSidebar === 'function') {
+        this.updateLikedItemInSidebar(job.originalData || job, newLikedStatus);
       }
+
+      // 3. 透過 eventBus 通知所有頁面同步愛心狀態
+      // 因為沒有 API 失敗回滾，所以這裡直接發送最終狀態即可
+      eventBus.emit('update-like-status', { id: job.id, type: job.type, isLiked: newLikedStatus });
+
+      // 【移除】try-catch 塊及其內部所有 API 呼叫和錯誤處理
+      console.log(`[Frontend Only] 職缺 ${job.id} 的收藏狀態已更新為 ${newLikedStatus} (僅前端處理)`);
+
     },
     handleTitleClick(job) {
       // 與 Home.vue 保持一致的行為，例如導航到公司頁面
@@ -294,15 +285,17 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: transparent; /* 或 #594f4f00 */
+  background-color: transparent;
+  /* 或 #594f4f00 */
   border-radius: 5px;
-  padding: 10px 25px 10px 25px; /* 上下10px，左右15px，您可以根據喜好調整 */
+  padding: 10px 25px 10px 25px;
+  /* 上下10px，左右15px，您可以根據喜好調整 */
   box-sizing: border-box;
   color: white;
   transition: transform 0.3s ease-out, box-shadow 0.3s ease-out, background-color 0.3s ease-out;
   cursor: pointer;
   min-width: 0;
-  width: 200px; 
+  width: 200px;
 }
 
 .job-card-wrapper:hover {
@@ -319,11 +312,11 @@ export default {
   font-size: 15px;
   font-weight: bold;
   margin-bottom: 4px;
-  margin-top: -6px; 
+  margin-top: -6px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  width: 150px; 
+  width: 150px;
 }
 
 .job-card-title:hover {
@@ -331,32 +324,39 @@ export default {
 }
 
 .job-card-image {
-  width: 150px;        
-  height: 150px;       
-  background-color: white; /* 占位符背景 */
+  width: 150px;
+  height: 150px;
+  background-color: white;
+  /* 占位符背景 */
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
   border-radius: 5px;
-  margin-bottom: 5px;  /* 圖片與下方詳情的間距 */
+  margin-bottom: 5px;
+  /* 圖片與下方詳情的間距 */
 }
 
 .job-card-details {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  width: 100%;        /* 占滿卡片padding內的寬度 */
-  margin-top: auto;   /* 如果卡片內容高度不一致，確保details部分在底部 */
+  width: 100%;
+  /* 占滿卡片padding內的寬度 */
+  margin-top: auto;
+  /* 如果卡片內容高度不一致，確保details部分在底部 */
 }
 
 .job-card-info-left {
   display: flex;
   flex-direction: column;
-  align-items: flex-start; /* 文字左對齊 */
+  align-items: flex-start;
+  /* 文字左對齊 */
   text-align: left;
   overflow: hidden;
-  padding-right: 8px; /* 與愛心按鈕之間留點空隙 */
-  flex-grow: 1; /* 佔據剩餘空間 */
+  padding-right: 8px;
+  /* 與愛心按鈕之間留點空隙 */
+  flex-grow: 1;
+  /* 佔據剩餘空間 */
 }
 
 .job-card-company,
@@ -366,7 +366,8 @@ export default {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  width: 100%; /* 佔滿 .job-card-info-left 的寬度 */
+  width: 100%;
+  /* 佔滿 .job-card-info-left 的寬度 */
 }
 
 .job-card-company {
@@ -379,11 +380,14 @@ export default {
   color: #E0E0E0;
 }
 
-.job-card-like-btn.like-btn { /* .like-btn 已有通用樣式，這裡可微調 */
+.job-card-like-btn.like-btn {
+  /* .like-btn 已有通用樣式，這裡可微調 */
   display: flex;
-  align-items: center; /* 確保愛心垂直居中（如果按鈕有高度） */
+  align-items: center;
+  /* 確保愛心垂直居中（如果按鈕有高度） */
   font-size: 18px;
-  flex-shrink: 0; /* 防止按鈕被壓縮 */
+  flex-shrink: 0;
+  /* 防止按鈕被壓縮 */
   margin-right: 6px;
 }
 
@@ -393,8 +397,10 @@ export default {
   border: none;
   cursor: pointer;
   color: white;
-  font-size: 18px; /* 與 .job-card-like-btn 中的一致 */
-  padding: 0; /* 移除預設 padding */
+  font-size: 18px;
+  /* 與 .job-card-like-btn 中的一致 */
+  padding: 0;
+  /* 移除預設 padding */
   transition: transform 0.2s ease, color 0.2s ease;
 }
 
@@ -403,7 +409,8 @@ export default {
 }
 
 .like-btn.active {
-  color: rgb(235, 178, 189); /* 粉色實心 */
+  color: rgb(235, 178, 189);
+  /* 粉色實心 */
 }
 
 .heart-icon {
@@ -457,8 +464,10 @@ export default {
     grid-template-columns: 1fr;
     gap: 15px;
   }
+
   .job-card-wrapper {
-    padding: 15px; /* 在單列時可以給更多 padding */
+    padding: 15px;
+    /* 在單列時可以給更多 padding */
   }
 }
 </style>

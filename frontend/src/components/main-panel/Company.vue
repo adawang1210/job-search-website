@@ -24,8 +24,7 @@
           </div>
         </div>
         <div class="profile-button actions-button">
-          <button type="button" class="like-btn" :class="{ active: company.isLiked }"
-            @click.stop="toggleLike(company)">
+          <button type="button" class="like-btn" :class="{ active: company.isLiked }" @click.stop="toggleLike(company)">
             <n-icon class="heart-icon">
               <component :is="company.isLiked ? iconHeartSolid : iconHeartRegular" />
             </n-icon>
@@ -97,14 +96,12 @@
               </div>
             </div>
             <div class="actions-button">
-              <button type="button" class="like-btn" :class="{ active: job.isLiked }"
-                @click.stop="toggleLike(job)">
+              <button type="button" class="like-btn" :class="{ active: job.isLiked }" @click.stop="toggleLike(job)">
                 <n-icon class="heart-icon">
                   <component :is="job.isLiked ? iconHeartSolid : iconHeartRegular" />
                 </n-icon>
               </button>
-              <button type="button" class="envelope-btn"
-                @click.stop="openModal(job.id)">
+              <button type="button" class="envelope-btn" @click.stop="openModal(job.id)">
                 <n-icon class="envelope-icon">
                   <component :is="job.isApplied ? iconEnvelopeSolid : iconEnvelopeRegular" />
                 </n-icon>
@@ -308,7 +305,7 @@
 import { ref, defineComponent } from 'vue'
 import axios from 'axios';
 import eventBus from '/src/eventBus.js';
-import { getCompanyInfo, getCompanyJobs } from '@/api/company';
+import { getCompanyInfo, getCompanyJobs, updateLikedCompanies } from '@/api/company';
 import { NIcon } from 'naive-ui'
 import { Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular } from '@vicons/fa'
 
@@ -317,7 +314,7 @@ const ITEM_TYPE_COMPANY = 'company';
 
 export default defineComponent({
   name: 'Company',
-  inject: ['updateLikedItemInSidebar', 'openRightSidebar', 'addViewedItemToSidebar'], // 注入來自 BaseLayout 的方法
+  inject: ['updateLikedItemInSidebar', 'openRightSidebar', 'addViewedItemToSidebar', 'isItemCurrentlyLiked'], // 注入來自 BaseLayout 的方法
   components: {
     NIcon, Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular,
   },
@@ -343,6 +340,7 @@ export default defineComponent({
       reportReason: '',
       company: null,
       filterJobs: [],
+      allApiJobs: [],
     };
   },
   watch: {
@@ -351,82 +349,101 @@ export default defineComponent({
       immediate: true, // 組件載入時立即執行一次
       async handler(newId) {
         if (newId) {
-          const [companyData, jobsData] = await Promise.all([
-            getCompanyInfo(newId),
-            getCompanyJobs(),
-          ]);
-          //console.log(jobsData);
-          // 資料處理邏輯（建議放在 mounted 或 API 請求完成後）
-          // 企業資料處理（只抓一筆 company 顯示詳細頁）
-          const rawCompany = companyData.results || companyData || [];
-          const currentCompany = rawCompany; // 你可以用 ID 過濾正確公司
-          this.company = {
-            id: currentCompany.id,
-            name: currentCompany.name,
-            image: currentCompany.media.logo || 'default_company_logo_path.png',
-            industry: currentCompany.industry || '',
-            industry_description: currentCompany.industry_description || '',
-            employees: currentCompany.employees || '',
-            capital: currentCompany.capital || '',
-            media: currentCompany.media || {},
-            introduction: currentCompany.introduction || '',
-            main_product: currentCompany.main_product || '',
-            contacts: currentCompany.contacts || [],
-            websites: currentCompany.websites || [],
-            benefits: currentCompany.benefits || [{
-              statutory: [],
-              others: [],
-              benefits_description: ''
-            }],
-            photos: (currentCompany.media && currentCompany.media.photos) ? currentCompany.media.photos : [],
-            isLiked: currentCompany.is_liked_by_user || false,
-            originalData: { ...currentCompany, type: ITEM_TYPE_COMPANY },
-            type: ITEM_TYPE_COMPANY
-          };
+          // 重置狀態
+          this.company = null;
+          this.filterJobs = [];
+          try {
+            const [companyData, jobsData] = await Promise.all([
+              getCompanyInfo(newId),
+              getCompanyJobs(), // 假設這個 API 返回所有職缺，您需要在這裡過濾
+            ]);
 
-          const rawJobs = jobsData.results || jobsData || [];
-          this.allApiJobs = rawJobs.map(job => ({
-            id: job.id,
-            title: job.title,
-            image: job.company_logo?.startsWith('http') 
-              ? job.company_logo 
-              : 'http://localhost:8000/' + (job.company_logo || 'default_job_image.png'),
-            company: {
-              name: job.company?.name || '未知公司',
-              industry: job.company?.industry || '',
-            },
-            salary: job.salary_max ? `$${job.salary_max}` : '面議',
-            location: job.location || '',
-            experience_required: job.experience_required || '不拘',
-            education_required: job.education_required || '不拘',
-            created_at: job.created_at,
-            isLiked: job.is_liked_by_user || false,
-            isApplied: job.is_applied_by_user || false,
-            benefits: job.benefits || [],
-            applicants: job.applicants || 0,
-            originalData: { ...job, type: ITEM_TYPE_JOB },
-            type: ITEM_TYPE_JOB,
-          }));
-
-          // 過濾與目前公司有關的工作
-          this.filterJobs = this.allApiJobs.filter(job => job.company.name === this.company.name);
-
-
-          // 圖片抓色更改背景
-          this.$nextTick(() => {
-            const logoUrl = this.company.image || 'default.png';
-            const img = new Image();
-            img.crossOrigin = 'anonymous';  // ⚠️ 這行很重要
-            img.src = logoUrl;
-
-            img.onload = () => {
-              this.handleImage(img);
+            // 企業資料處理
+            const rawCompany = companyData.results || companyData || {};
+            this.company = { // 【修改】確保 company 包含 isLiked 和 type 屬性
+              id: rawCompany.id,
+              name: rawCompany.name,
+              image: rawCompany.media?.logo || 'default_company_logo_path.png',
+              industry: rawCompany.industry || '',
+              industry_description: rawCompany.industry_description || '',
+              employees: rawCompany.employees || '',
+              capital: rawCompany.capital || '',
+              media: rawCompany.media || {},
+              introduction: rawCompany.introduction || '',
+              main_product: rawCompany.main_product || '',
+              contacts: rawCompany.contacts || [],
+              websites: rawCompany.websites || [],
+              benefits: rawCompany.benefits || [{
+                statutory: [],
+                others: [],
+                benefits_description: ''
+              }],
+              photos: (rawCompany.media && rawCompany.media.photos) ? rawCompany.media.photos : [],
+              isLiked: rawCompany.is_liked_by_user || false, // 初始收藏狀態來自後端
+              originalData: { ...rawCompany, type: ITEM_TYPE_COMPANY }, // 在 originalData 中加入 type
+              type: ITEM_TYPE_COMPANY // 在頂層也保留 type
             };
 
-            img.onerror = () => {
-              console.error('圖片載入失敗：', logoUrl);
-            };
-          });
+            // 職缺數據處理
+            const rawJobs = jobsData.results || jobsData || [];
+            this.allApiJobs = rawJobs.map(job => ({ // 【修改】確保每個 job 都包含 isLiked 和 type 屬性
+              id: job.id,
+              title: job.title,
+              image: job.company_logo?.startsWith('http')
+                ? job.company_logo
+                : 'http://localhost:8000/' + (job.company_logo || 'default_job_image.png'),
+              company: {
+                name: job.company?.name || '未知公司',
+                industry: job.company?.industry || '',
+              },
+              salary: job.salary_max ? `$${job.salary_max}` : '面議',
+              location: job.location || '',
+              experience_required: job.experience_required || '不拘',
+              education_required: job.education_required || '不拘',
+              created_at: job.created_at,
+              isLiked: job.is_liked_by_user || false, // 初始收藏狀態來自後端
+              isApplied: job.is_applied_by_user || false,
+              benefits: job.benefits || [],
+              applicants: job.applicants || 0,
+              originalData: { ...job, type: ITEM_TYPE_JOB }, // 在 originalData 中加入 type
+              type: ITEM_TYPE_JOB, // 在頂層也保留 type
+            }));
+
+
+            // 過濾與目前公司有關的工作
+            this.filterJobs = this.allApiJobs.filter(job => job.company.name === this.company.name);
+
+            // 【新增】在數據加載後，從 BaseLayout 獲取最新收藏狀態，覆蓋初始狀態
+            // 由於 isItemCurrentlyLiked 是一個方法，我們在 loaded 的數據上直接調用
+            if (typeof this.isItemCurrentlyLiked === 'function') {
+                // 更新公司自身的收藏狀態
+                this.company.isLiked = this.isItemCurrentlyLiked(this.company.id, this.company.type);
+                
+                // 更新每個職缺的收藏狀態
+                this.filterJobs.forEach(job => {
+                    job.isLiked = this.isItemCurrentlyLiked(job.id, job.type);
+                });
+            }
+
+            // 圖片抓色更改背景
+            this.$nextTick(() => {
+              const logoUrl = this.company.image || 'default.png';
+              const img = new Image();
+              img.crossOrigin = 'anonymous';  // ⚠️ 這行很重要
+              img.src = logoUrl;
+
+              img.onload = () => {
+                this.handleImage(img);
+              };
+
+              img.onerror = () => {
+                console.error('圖片載入失敗：', logoUrl);
+              };
+            });
+            } catch (error) {
+            console.error('Error fetching company or jobs:', error);
+            // 處理錯誤狀態，例如顯示錯誤訊息給用戶
+          }
         }
       }
     }
@@ -503,87 +520,95 @@ export default defineComponent({
     },
     // heart icon clicked
     // item 可能是 job 或 company 物件，它已經包含 isLiked 和 originalData (其中包含 type)
-    async toggleLike(item) {
-      // 假設需要登入才能收藏
-      // if (!this.isUserLoggedIn) { 
-      //   alert('您需要先登入才能收藏！');
-      //   return;
-      // }
-      console.log('test');
-
+    async toggleLike(item) { // item 可能是 company 或 job 物件
       if (!item || !item.id || !item.type) {
         console.error('toggleLike: 無效的項目數據或缺少 ID/類型', item);
         return;
       }
 
-      const originalLikedStatus = item.isLiked;
+      const originalLikedStatus = item.isLiked; // 儲存原始狀態用於回滾
       const newLikedStatus = !item.isLiked;
 
-      // 1. 樂觀更新 UI (直接修改傳入的 item 物件)
+      // 1. 樂觀更新 UI
       item.isLiked = newLikedStatus;
 
+      // 2. 立即通知 BaseLayout 更新側邊欄和 localStorage
+      if (typeof this.updateLikedItemInSidebar === 'function') {
+        this.updateLikedItemInSidebar(item.originalData || item, newLikedStatus); 
+      }
+      // 立即透過 eventBus 通知所有頁面同步愛心狀態
+      // 這行會觸發 Home.vue, SearchResult.vue, AllCompany.vue 的 handleUpdateLikeStatus
+      // 以及 Company.vue 自身的 handleUpdateLikeStatus
+      eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: newLikedStatus });
+
       try {
-        // 2. 呼叫後端 API (統一使用 likeJob/unlikeJob)
-        if (newLikedStatus) {
-          await likeJob(item.id); // 假設 likeJob API 能處理職缺和公司 ID
+        // 3. 區分呼叫 API 還是只處理前端邏輯
+        if (item.type === ITEM_TYPE_JOB) {
+          // 職缺：只處理前端，無需呼叫後端 API
+          console.log(`[Frontend Only] 職缺 ${item.id} 的收藏狀態已更新為 ${newLikedStatus} (僅前端處理)`);
+        } else if (item.type === ITEM_TYPE_COMPANY) {
+          // 公司：呼叫後端 API
+          console.log(`[API Call] 公司 ${item.id} 的收藏狀態更新為 ${newLikedStatus}`);
+          await updateLikedCompanies(item.id, newLikedStatus); // 【呼叫 updateLikedCompanies API】
+          console.log(`[API Success] 公司 ${item.id} 的收藏狀態後端更新成功。`);
         } else {
-          await unlikeJob(item.id); // 假設 unlikeJob API 能處理職缺和公司 ID
+          console.warn(`toggleLike: 未知的項目類型 ${item.type}，未呼叫 API。`);
         }
-
-        // 3. 通知 BaseLayout 更新側邊欄的收藏和瀏覽紀錄列表
-        // 傳遞 item.originalData 和新的 isLiked 狀態
-        if (typeof this.updateLikedItemInSidebar === 'function') {
-          this.updateLikedItemInSidebar(item.originalData || item, newLikedStatus); // originalData 已經包含 type
-        }
-
-        // 4. 透過 eventBus 通知所有頁面同步愛心狀態
-        // 統一事件名稱 'update-like-status'，並傳遞 ID, 類型, 和新狀態
-        eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: newLikedStatus });
 
       } catch (error) {
+        // 4. API 失敗時的回滾邏輯 (只針對公司收藏)
         console.error(`Failed to update ${item.type} like status for ID ${item.id}:`, error);
-        // API 失敗，恢復 UI 狀態
-        item.isLiked = originalLikedStatus;
-        alert(`收藏操作失敗，請稍後再試。`);
+        
+        // 只有公司收藏 API 失敗時才需要回滾
+        if (item.type === ITEM_TYPE_COMPANY) {
+          item.isLiked = originalLikedStatus; // 回滾 Company.vue 自己的 isLiked 狀態
+          alert(`收藏公司操作失敗！請稍後再試。\n錯誤訊息: ${error.message || error}`);
 
-        // 恢復 BaseLayout 列表狀態
-        if (typeof this.updateLikedItemInSidebar === 'function') {
-          this.updateLikedItemInSidebar(item.originalData || item, originalLikedStatus);
+          // 通知 BaseLayout 回滾列表狀態
+          if (typeof this.updateLikedItemInSidebar === 'function') {
+            this.updateLikedItemInSidebar(item.originalData || item, originalLikedStatus); 
+          }
+          // 通知所有頁面回滾愛心狀態
+          eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: originalLikedStatus });
+        } else {
+          // 職缺：API 失敗不會發生，所以這裡理論上不會觸發。
+          console.warn(`職缺收藏錯誤，但沒有 API 呼叫。可能為其他邏輯錯誤：${error.message || error}`);
         }
-        // 通知所有頁面恢復愛心狀態
-        eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: originalLikedStatus });
       }
     },
     // 處理來自 eventBus 的通用愛心狀態更新事件
-    handleUpdateLikeStatus(data) { // data 預期為 { id: itemId, type: itemType, isLiked: newStatus }
+    handleUpdateLikeStatus(data) { 
       const { id, type, isLiked } = data;
-      // 1. 更新 sections 中的職缺愛心狀態
-      if (type === ITEM_TYPE_JOB) {
-        const jobInSection = this.filterJobs.find(j => j.id === id);
-          if (jobInSection) {
-            jobInSection.isLiked = isLiked;
-          }
-      }
-      // 2. 更新 companies 中的公司愛心狀態
-      else if (type === ITEM_TYPE_COMPANY) {
-        const companyToUpdate = this.company;
-        if (companyToUpdate) {
-          companyToUpdate.isLiked = isLiked;
+      // 1. 更新公司本身的愛心狀態 (如果 Company.vue 頁面顯示的就是這個公司)
+      if (type === ITEM_TYPE_COMPANY && this.company && this.company.id === id) {
+        this.company.isLiked = isLiked;
+        console.log(`Company.vue: 公司 ${id} 愛心狀態更新為 ${isLiked}`);
+      } 
+      // 2. 更新該公司發布的職缺的愛心狀態
+      else if (type === ITEM_TYPE_JOB) {
+        const jobToUpdate = this.filterJobs.find(job => job.id === id);
+        if (jobToUpdate) {
+          jobToUpdate.isLiked = isLiked;
+          console.log(`Company.vue: 職缺 ${id} 愛心狀態更新為 ${isLiked}`);
         }
       }
     },
+    // 【修改】handleCardClick (點擊職缺卡片)
     handleCardClick(jobData) {
-      const dataForSidebar = jobData.originalData || jobData; // 確保取得原始 API 數據
+      const dataForSidebar = jobData.originalData || jobData; // 確保取得原始 API 數據 (包含 type)
+      
+      // 1. 新增到瀏覽紀錄 (BaseLayout 的 addViewedItemToSidebar 只處理職缺)
       if (typeof this.addViewedItemToSidebar === 'function') {
-        this.addViewedItemToSidebar(dataForSidebar)
+        this.addViewedItemToSidebar(dataForSidebar); 
       } else {
-        console.error('addViewedItemToSidebar is not available from BaseLayout')
+        console.error('addViewedItemToSidebar is not available from BaseLayout');
       }
 
+      // 2. 開啟右側邊欄
       if (typeof this.openRightSidebar === 'function') {
-        this.openRightSidebar(dataForSidebar)
+        this.openRightSidebar(dataForSidebar); 
       } else {
-        console.error('openRightSidebar is not available from BaseLayout')
+        console.error('openRightSidebar is not available from BaseLayout');
       }
     },
     handleTitleClick(job) {
@@ -610,7 +635,7 @@ export default defineComponent({
     },
     handleSubmit(jobId) {
       const item = this.paginatedJobs.find(job => job.id === jobId);
-      console.log("item",item);
+      console.log("item", item);
       // 這裡可以處理送出邏輯
       console.log('送出資料:', {
         item: item,
@@ -677,7 +702,7 @@ export default defineComponent({
 
 <style scoped>
 .middle-content {
-  background-color: linear-gradient(to bottom,#b3b3b3 0%,#121212 20%,#121212 100%);
+  background-color: linear-gradient(to bottom, #b3b3b3 0%, #121212 20%, #121212 100%);
   border-radius: 10px;
   color: white;
   box-sizing: border-box;
@@ -1163,7 +1188,8 @@ div h3 {
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  backdrop-filter: blur(10px);/* 模糊背景效果 */
+  backdrop-filter: blur(10px);
+  /* 模糊背景效果 */
 }
 
 .modal {
@@ -1172,59 +1198,89 @@ div h3 {
   width: 90%;
   max-width: 500px;
   padding: 30px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);/* 投影效果 */
-  position: relative;/* 相對定位，可用於內部絕對定位元素 */
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  /* 投影效果 */
+  position: relative;
+  /* 相對定位，可用於內部絕對定位元素 */
 }
 
 .modal-header {
-  margin-bottom: 30px;/* 底部間距 */
-  text-align: center;/* 文字置中對齊 */
+  margin-bottom: 30px;
+  /* 底部間距 */
+  text-align: center;
+  /* 文字置中對齊 */
 }
 
 .modal-title {
-  font-size: 18px;/* 文字大小 */
-  font-weight: bold;/* 字體粗體 */
-  color: #D2691E;/* 橘色標題 */
-  margin-bottom: 10px;/* 標題與下方元素的間距 */
+  font-size: 18px;
+  /* 文字大小 */
+  font-weight: bold;
+  /* 字體粗體 */
+  color: #D2691E;
+  /* 橘色標題 */
+  margin-bottom: 10px;
+  /* 標題與下方元素的間距 */
 }
 
 
 /* 表單區塊 */
 .form-group {
-  margin-bottom: 20px;/* 元素間的底部間距 */
+  margin-bottom: 20px;
+  /* 元素間的底部間距 */
 }
 
 .form-label {
-  display: block;/* 佔滿整行 */
-  margin-bottom: 8px;/* 與輸入欄的間距 */
-  font-weight: bold;/* 字體粗體 */
-  color: #ffffff;/* 白色文字 */
-  font-size: 16px;/* 標籤字體大小 */
-  text-transform: uppercase;/* 字母大寫 */
-  letter-spacing: 1px;/* 字元間距 */
+  display: block;
+  /* 佔滿整行 */
+  margin-bottom: 8px;
+  /* 與輸入欄的間距 */
+  font-weight: bold;
+  /* 字體粗體 */
+  color: #ffffff;
+  /* 白色文字 */
+  font-size: 16px;
+  /* 標籤字體大小 */
+  text-transform: uppercase;
+  /* 字母大寫 */
+  letter-spacing: 1px;
+  /* 字元間距 */
 }
 
 .form-input {
-  width: 100%;/* 寬度佔滿父容器 */
-  padding: 15px;/* 內距 */
-  border: 2px solid rgba(255, 255, 255, 0.1);/* 淡白色邊框 */
-  border-radius: 5px;/* 圓角 */
-  background-color: rgba(255, 255, 255, 0.05);/* 半透明白背景 */
-  color: white;/* 輸入文字為白色 */
-  font-size: 1rem;/* 標準字體大小 */
-  transition: all 0.3s ease;/* 動畫過渡效果 */
+  width: 100%;
+  /* 寬度佔滿父容器 */
+  padding: 15px;
+  /* 內距 */
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  /* 淡白色邊框 */
+  border-radius: 5px;
+  /* 圓角 */
+  background-color: rgba(255, 255, 255, 0.05);
+  /* 半透明白背景 */
+  color: white;
+  /* 輸入文字為白色 */
+  font-size: 1rem;
+  /* 標準字體大小 */
+  transition: all 0.3s ease;
+  /* 動畫過渡效果 */
 }
 
 .form-input:focus {
-  outline: none;/* 移除瀏覽器預設外框 */
-  border-color: #D2691E;/* 聚焦時變成橘色邊框 */
-  background-color: rgba(255, 255, 255, 0.1);/* 背景稍微變亮 */
+  outline: none;
+  /* 移除瀏覽器預設外框 */
+  border-color: #D2691E;
+  /* 聚焦時變成橘色邊框 */
+  background-color: rgba(255, 255, 255, 0.1);
+  /* 背景稍微變亮 */
 }
 
 .form-textarea {
-  resize: vertical;/* 垂直方向可調整大小 */
-  min-height: 80px;/* 最小高度為 80px */
-  font-family: inherit;/* 使用繼承字體 */
+  resize: vertical;
+  /* 垂直方向可調整大小 */
+  min-height: 80px;
+  /* 最小高度為 80px */
+  font-family: inherit;
+  /* 使用繼承字體 */
 }
 
 .file-upload-btn {
@@ -1239,7 +1295,8 @@ div h3 {
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
-  line-height: 47px;/* 水平置中 */
+  line-height: 47px;
+  /* 水平置中 */
   font-weight: 600;
   position: relative;
 }

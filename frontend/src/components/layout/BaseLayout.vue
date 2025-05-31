@@ -29,6 +29,7 @@ import LeftSidebar from './LeftSidebar.vue'
 import RightSidebar from './RightSidebar.vue'
 import SiteFooter from './Footer.vue';
 import eventBus from '/src/eventBus.js';
+import { updateLikedCompanies } from '@/api/home.js';
 
 const ITEM_TYPE_JOB = 'job';
 const ITEM_TYPE_COMPANY = 'company';
@@ -46,6 +47,7 @@ export default {
       openRightSidebar: this.handleOpenRightSidebar,
       updateLikedItemInSidebar: this.handleUpdateLikedItemInSidebar,
       addViewedItemToSidebar: this.handleAddViewedItemToSidebar,
+      isItemCurrentlyLiked: this.isItemCurrentlyLiked,
     };
   },
   data() {
@@ -151,38 +153,56 @@ export default {
       this.isRightSidebarVisible = false;
       this.selectedJobForRightSidebar = null;
     },
-    handleRemoveItemFromLikedList(itemId, itemType) {
-      // 找到要移除的項目，必須同時匹配 id 和 type
-      const itemToRemove = this.likedItemsForLeftSidebar.find(item => 
-        item.id === itemId && item.type === itemType
-      );
-
-      if (itemToRemove) {
-        // 從收藏列表中移除，確保只移除完全匹配的項目
-        this.likedItemsForLeftSidebar = this.likedItemsForLeftSidebar.filter(item => 
-          !(item.id === itemId && item.type === itemType)
-        );
-
-        // 更新瀏覽列表中的愛心狀態
-        const viewedItemToUpdate = this.viewedItemsForLeftSidebar.find(item => 
-          item.id === itemId && item.type === itemType
-        );
-        if (viewedItemToUpdate) {
-          viewedItemToUpdate.isItemLiked = false;
-        }
-
-        // 通知其他組件更新狀態
-        eventBus.emit('update-like-status', { 
-          id: itemId, 
-          type: itemType, 
-          isLiked: false 
-        });
-
-        // 更新 localStorage
-        localStorage.setItem('likedJobItems', JSON.stringify(this.likedItemsForLeftSidebar));
-      }
+    isItemCurrentlyLiked(itemId, itemType) {
+      return this.likedItemsForLeftSidebar.some(item => item.id === itemId && item.type === itemType);
     },
-    handleUpdateLikedItemInSidebar(itemOriginalData, isLiked) {
+    // 【關鍵】handleRemoveItemFromLikedList：現在負責處理取消收藏並呼叫 API (如果需要)
+    async handleRemoveItemFromLikedList(itemId, itemType) { // 【新增】async
+      // 找到要移除的項目，以便之後可以更新瀏覽列表的狀態，並獲取原始數據
+      const itemToRemove = this.likedItemsForLeftSidebar.find(item => item.id === itemId && item.type === itemType);
+      
+      // 樂觀更新 BaseLayout 內部列表
+      this.likedItemsForLeftSidebar = this.likedItemsForLeftSidebar.filter(item => item.id !== itemId || item.type !== itemType);
+      const viewedItemToUpdate = this.viewedItemsForLeftSidebar.find(item => item.id === itemId && item.type === itemType);
+      if (viewedItemToUpdate) {
+        viewedItemToUpdate.isItemLiked = false;
+      }
+      
+      // 處理 API 呼叫 (只針對公司)
+      try {
+        if (itemType === ITEM_TYPE_COMPANY) {
+          await updateLikedCompanies(itemId, false); // 取消收藏，所以 isLiked 為 false
+          console.log(`[BaseLayout API Success] 公司 ${itemId} 已取消收藏。`);
+        }
+        // 職缺類型：不呼叫 API
+      } catch (error) {
+        console.error(`[BaseLayout API Error] 無法從後端取消收藏 ${itemType} ID ${itemId}:`, error);
+        alert(`取消收藏操作失敗，請稍後再試。\n錯誤訊息: ${error.message || error}`);
+
+        // API 失敗，執行回滾邏輯 (將項目加回收藏列表，並將瀏覽列表的愛心狀態設為 true)
+        if (itemToRemove) { // itemToRemove 應該是收藏時的 formattedItem
+          const existingLikedItemIndex = this.likedItemsForLeftSidebar.findIndex(item => item.id === itemToRemove.id && item.type === itemToRemove.type);
+          if (existingLikedItemIndex === -1) { // 如果已經被移除了，再加回去
+             this.likedItemsForLeftSidebar.unshift({ ...itemToRemove, isItemLiked: true });
+          } else { // 如果還在，確保是實心
+             this.likedItemsForLeftSidebar[existingLikedItemIndex].isItemLiked = true;
+          }
+          const viewedItemIndex = this.viewedItemsForLeftSidebar.findIndex(item => item.id === itemToRemove.id && item.type === itemToRemove.type);
+          if (viewedItemIndex !== -1) {
+            this.viewedItemsForLeftSidebar[viewedItemIndex].isItemLiked = true;
+          }
+        }
+        // 此處因為是取消收藏失敗，所以最終狀態是 true (仍然被收藏)
+        eventBus.emit('update-like-status', { id: itemId, type: itemType, isLiked: true }); 
+        return; // API 失敗後，直接返回，不再執行下面的成功事件
+      }
+
+      // 無論 API 成功或職缺收藏 (無 API)，都發送 eventBus 事件
+      eventBus.emit('update-like-status', { id: itemId, type: itemType, isLiked: false }); // 最終狀態為取消收藏，所以 isLiked 為 false
+      // localStorage 的更新將由 watcher 自動處理
+    },
+        // 【關鍵】handleUpdateLikedItemInSidebar：現在負責區分職缺和公司，並呼叫 API
+    async handleUpdateLikedItemInSidebar(itemOriginalData, isLiked) { // 【新增】async 關鍵字
       console.log('[BaseLayout] handleUpdateLikedItemInSidebar called with itemOriginalData:', JSON.parse(JSON.stringify(itemOriginalData)), 'isLiked:', isLiked);
 
       if (!itemOriginalData || typeof itemOriginalData.id === 'undefined' || !itemOriginalData.type) {
@@ -190,8 +210,10 @@ export default {
         return;
       }
 
-      // 根據類型構建統一格式
-      let formattedItem = {};
+      const originalIsLikedStatus = isLiked ? false : true; // 如果是收藏操作，原始是false；如果是取消，原始是true
+      let formattedItem = {}; 
+
+      // 構建 formattedItem
       if (itemOriginalData.type === ITEM_TYPE_JOB) {
         formattedItem = {
           id: itemOriginalData.id,
@@ -200,8 +222,7 @@ export default {
           image: itemOriginalData.company_logo || itemOriginalData.image || 'default_job_image.png',
           originalData: itemOriginalData,
           type: ITEM_TYPE_JOB,
-          isLiked: isLiked,
-          isItemLiked: isLiked
+          isItemLiked: isLiked, // 最終的愛心狀態
         };
       } else if (itemOriginalData.type === ITEM_TYPE_COMPANY) {
         formattedItem = {
@@ -211,71 +232,71 @@ export default {
           image: itemOriginalData.media && itemOriginalData.media.logo ? itemOriginalData.media.logo : itemOriginalData.image || 'default_company_logo_path.png',
           originalData: itemOriginalData,
           type: ITEM_TYPE_COMPANY,
-          isLiked: isLiked,
-          isItemLiked: isLiked
+          isItemLiked: isLiked, // 最終的愛心狀態
         };
       } else {
         console.warn('[BaseLayout] Unknown item type for updateLikedItemInSidebar:', itemOriginalData.type);
         return;
       }
 
-      // 檢查項目是否已存在於收藏列表中
-      const existingLikedItemIndex = this.likedItemsForLeftSidebar.findIndex(
-        item => item.id === formattedItem.id && item.type === formattedItem.type
-      );
-
-      // 創建新的收藏列表副本
-      let newLikedItems = [...this.likedItemsForLeftSidebar];
-
-      if (isLiked) {
+      // 【核心邏輯】樂觀更新列表，並呼叫 API (如果需要)
+      // 步驟 1: 更新 BaseLayout 內部的兩個列表 (likedItemsForLeftSidebar 和 viewedItemsForLeftSidebar)
+      if (isLiked) { // 收藏操作
+        const existingLikedItemIndex = this.likedItemsForLeftSidebar.findIndex(item => item.id === formattedItem.id && item.type === formattedItem.type);
         if (existingLikedItemIndex === -1) {
-          // 如果是新項目，添加到列表開頭
-          const itemToAdd = {
-            ...formattedItem,
-            isLiked: true,
-            isItemLiked: true
-          };
-          newLikedItems.unshift(itemToAdd);
+          this.likedItemsForLeftSidebar.unshift({ ...formattedItem, isItemLiked: true });
         } else {
-          // 如果已存在，更新其狀態
-          newLikedItems[existingLikedItemIndex] = {
-            ...newLikedItems[existingLikedItemIndex],
-            ...formattedItem,
-            isLiked: true,
-            isItemLiked: true
-          };
+          this.likedItemsForLeftSidebar[existingLikedItemIndex].isItemLiked = true;
         }
-      } else {
-        // 如果是取消收藏，從列表中移除
-        if (existingLikedItemIndex !== -1) {
-          newLikedItems.splice(existingLikedItemIndex, 1);
+        const existingViewedItemIndex = this.viewedItemsForLeftSidebar.findIndex(item => item.id === formattedItem.id && item.type === formattedItem.type);
+        if (existingViewedItemIndex !== -1) {
+          this.viewedItemsForLeftSidebar[existingViewedItemIndex].isItemLiked = true;
+        }
+      } else { // 取消收藏操作
+        this.likedItemsForLeftSidebar = this.likedItemsForLeftSidebar.filter(item => item.id !== formattedItem.id || item.type !== formattedItem.type);
+        const existingViewedItemIndex = this.viewedItemsForLeftSidebar.findIndex(item => item.id === formattedItem.id && item.type === formattedItem.type);
+        if (existingViewedItemIndex !== -1) {
+          this.viewedItemsForLeftSidebar[existingViewedItemIndex].isItemLiked = false;
         }
       }
 
-      // 更新收藏列表
-      this.likedItemsForLeftSidebar = newLikedItems;
-
-      // 更新瀏覽列表中的狀態
-      const viewedItemIndex = this.viewedItemsForLeftSidebar.findIndex(
-        item => item.id === formattedItem.id && item.type === formattedItem.type
-      );
-      if (viewedItemIndex !== -1) {
-        this.viewedItemsForLeftSidebar[viewedItemIndex].isItemLiked = isLiked;
-        this.viewedItemsForLeftSidebar[viewedItemIndex].isLiked = isLiked;
+      // 步驟 2: 處理 API 呼叫 (只針對公司)
+      try {
+        if (itemOriginalData.type === ITEM_TYPE_COMPANY) {
+          await updateLikedCompanies(itemOriginalData.id, isLiked);
+          console.log(`[BaseLayout API Success] 公司 ${itemOriginalData.id} 收藏狀態已更新為 ${isLiked}。`);
+        }
+        // 職缺類型：不呼叫 API
+      } catch (error) {
+        console.error(`[BaseLayout API Error] 無法更新 ${itemOriginalData.type} ID ${itemOriginalData.id} 的收藏狀態到後端:`, error);
+        alert(`收藏操作失敗，請稍後再試。\n錯誤訊息: ${error.message || error}`);
+        
+        // API 失敗，執行回滾邏輯 (將 BaseLayout 內部的列表狀態回滾)
+        if (isLiked) { // 如果是收藏失敗，則從 likedItems 移除，並將 viewedItems 中的 isItemLiked 設為 false
+          this.likedItemsForLeftSidebar = this.likedItemsForLeftSidebar.filter(item => item.id !== formattedItem.id || item.type !== formattedItem.type);
+          const viewedItemIndex = this.viewedItemsForLeftSidebar.findIndex(item => item.id === formattedItem.id && item.type === formattedItem.type);
+          if (viewedItemIndex !== -1) {
+            this.viewedItemsForLeftSidebar[viewedItemIndex].isItemLiked = false;
+          }
+        } else { // 如果是取消收藏失敗，則將 item 加回 likedItems，並將 viewedItems 中的 isItemLiked 設為 true
+          const existingLikedItemIndex = this.likedItemsForLeftSidebar.findIndex(item => item.id === formattedItem.id && item.type === formattedItem.type);
+          if (existingLikedItemIndex === -1) {
+            this.likedItemsForLeftSidebar.unshift({ ...formattedItem, isItemLiked: true });
+          } else {
+            this.likedItemsForLeftSidebar[existingLikedItemIndex].isItemLiked = true;
+          }
+          const viewedItemIndex = this.viewedItemsForLeftSidebar.findIndex(item => item.id === formattedItem.id && item.type === formattedItem.type);
+          if (viewedItemIndex !== -1) {
+            this.viewedItemsForLeftSidebar[viewedItemIndex].isItemLiked = true;
+          }
+        }
+        // 將 isLiked 變數設置為回滾後的狀態，以便 eventBus 發出正確的事件
+        isLiked = originalIsLikedStatus; 
       }
 
-      // 發送更新事件
-      eventBus.emit('update-like-status', {
-        id: formattedItem.id,
-        type: formattedItem.type,
-        isLiked: isLiked
-      });
-
-      // 立即保存到 localStorage
-      localStorage.setItem('likedJobItems', JSON.stringify(this.likedItemsForLeftSidebar));
-
-      // 打印當前收藏列表，用於調試
-      console.log('Current liked items:', JSON.parse(JSON.stringify(this.likedItemsForLeftSidebar)));
+      // 步驟 3: 無論 API 成功或失敗，都發送 eventBus 事件
+      // 這個事件通知所有組件該項目的最終愛心狀態 (如果 API 失敗則為回滾後的狀態)
+      eventBus.emit('update-like-status', { id: formattedItem.id, type: formattedItem.type, isLiked: isLiked });
     },
     handleAddViewedItemToSidebar(jobOriginalData) {
       if (!jobOriginalData || typeof jobOriginalData.id === 'undefined' || !jobOriginalData.type || jobOriginalData.type !== ITEM_TYPE_JOB) { // 【新增】檢查 type 且必須是職缺

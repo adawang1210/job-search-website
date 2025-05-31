@@ -105,14 +105,14 @@
 
 <script>
 import eventBus from '/src/eventBus.js';
-import { getJobs, getGreatCompanies, getJobDetail } from '@/api/home.js';
+import { getJobs, getGreatCompanies, getJobDetail, updateLikedCompanies } from '@/api/home.js';
 
 const ITEM_TYPE_JOB = 'job';
 const ITEM_TYPE_COMPANY = 'company';
 
 export default {
   name: 'Home',
-  inject: ['openRightSidebar', 'updateLikedItemInSidebar', 'addViewedItemToSidebar'],
+  inject: ['openRightSidebar', 'updateLikedItemInSidebar', 'addViewedItemToSidebar','isItemCurrentlyLiked'],
   data() {
     return {
       isDragging: false,
@@ -202,6 +202,24 @@ export default {
           type: ITEM_TYPE_COMPANY, // 【新增】在頂層也保留 type，方便直接使用 company 物件
         }));
 
+        // 【新增】在所有數據加載並處理完畢後，執行一次全局愛心狀態同步
+        // 確保所有職缺和公司的 isLiked 狀態與 BaseLayout (localStorage) 保持一致
+        if (typeof this.isItemCurrentlyLiked === 'function') {
+            // 同步職缺的 isLiked 狀態
+            this.sections.forEach(section => {
+                section.jobs.forEach(job => {
+                    job.isLiked = this.isItemCurrentlyLiked(job.id, job.type);
+                });
+            });
+            // 同步公司的 isLiked 狀態
+            this.companies.forEach(company => {
+                company.isLiked = this.isItemCurrentlyLiked(company.id, company.type);
+            });
+            console.log('Home.vue: Initial liked status synchronized from BaseLayout.');
+        } else {
+            console.warn('Home.vue: isItemCurrentlyLiked method not injected, initial liked status might be inaccurate.');
+        }
+
       } catch (error) {
         console.error('Error fetching initial data:', error);
         let jobErrorOccurred = false;
@@ -267,11 +285,6 @@ export default {
 
     // item 可能是 job 或 company 物件，它已經包含 isLiked 和 originalData (其中包含 type)
     async toggleLike(item) {
-      // 假設需要登入才能收藏
-      // if (!this.isUserLoggedIn) { 
-      //   alert('您需要先登入才能收藏！');
-      //   return;
-      // }
 
       if (!item || !item.id || !item.type) {
         console.error('toggleLike: 無效的項目數據或缺少 ID/類型', item);
@@ -284,36 +297,47 @@ export default {
       // 1. 樂觀更新 UI (直接修改傳入的 item 物件)
       item.isLiked = newLikedStatus;
 
+      // 2. 立即通知 BaseLayout 更新側邊欄和 localStorage
+      // 這對於職缺（無需 API）和公司（需等待 API 回應）都是立即更新的
+      if (typeof this.updateLikedItemInSidebar === 'function') {
+        this.updateLikedItemInSidebar(item.originalData || item, newLikedStatus); 
+      }
+      // 立即透過 eventBus 通知所有頁面同步愛心狀態
+      eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: newLikedStatus });
+
       try {
-        // 2. 呼叫後端 API (統一使用 likeJob/unlikeJob)
-        if (newLikedStatus) {
-          await likeJob(item.id); // 假設 likeJob API 能處理職缺和公司 ID
+        // 3. 區分呼叫 API 還是只處理前端邏輯
+        if (item.type === ITEM_TYPE_JOB) {
+          // 職缺：只處理前端，無需呼叫後端 API
+          console.log(`[Frontend Only] 職缺 ${item.id} 的收藏狀態已更新為 ${newLikedStatus} (僅前端處理)`);
+          // 如果這裡需要等待任何非同步操作，例如動畫，可以在這裡加 await new Promise(...)
+        } else if (item.type === ITEM_TYPE_COMPANY) {
+          // 公司：呼叫後端 API
+          console.log(`[API Call] 公司 ${item.id} 的收藏狀態更新為 ${newLikedStatus}`);
+          await updateLikedCompanies(item.id, newLikedStatus);
+          console.log(`[API Success] 公司 ${item.id} 的收藏狀態後端更新成功。`);
         } else {
-          await unlikeJob(item.id); // 假設 unlikeJob API 能處理職缺和公司 ID
+          console.warn(`toggleLike: 未知的項目類型 ${item.type}，未呼叫 API。`);
         }
-
-        // 3. 通知 BaseLayout 更新側邊欄的收藏和瀏覽紀錄列表
-        // 傳遞 item.originalData 和新的 isLiked 狀態
-        if (typeof this.updateLikedItemInSidebar === 'function') {
-          this.updateLikedItemInSidebar(item.originalData || item, newLikedStatus); // originalData 已經包含 type
-        }
-
-        // 4. 透過 eventBus 通知所有頁面同步愛心狀態
-        // 統一事件名稱 'update-like-status'，並傳遞 ID, 類型, 和新狀態
-        eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: newLikedStatus });
 
       } catch (error) {
         console.error(`Failed to update ${item.type} like status for ID ${item.id}:`, error);
-        // API 失敗，恢復 UI 狀態
-        item.isLiked = originalLikedStatus;
-        alert(`收藏操作失敗，請稍後再試。`);
+        /// 只有公司收藏 API 失敗時才需要回滾
+        if (item.type === ITEM_TYPE_COMPANY) {
+          item.isLiked = originalLikedStatus; // 回滾 Home.vue 自己的 isLiked 狀態
+          alert(`收藏公司操作失敗！請稍後再試。\n錯誤訊息: ${error.message || error}`);
 
-        // 恢復 BaseLayout 列表狀態
-        if (typeof this.updateLikedItemInSidebar === 'function') {
-          this.updateLikedItemInSidebar(item.originalData || item, originalLikedStatus);
+          // 通知 BaseLayout 回滾列表狀態
+          if (typeof this.updateLikedItemInSidebar === 'function') {
+            this.updateLikedItemInSidebar(item.originalData || item, originalLikedStatus); 
+          }
+          // 通知所有頁面回滾愛心狀態
+          eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: originalLikedStatus });
+        } else {
+          // 職缺：API 失敗不會發生，所以這裡理論上不會觸發。
+          // 但為了安全，如果觸發，可以顯示通用錯誤。
+          console.warn(`職缺收藏錯誤，但沒有 API 呼叫。可能為其他邏輯錯誤：${error.message || error}`);
         }
-        // 通知所有頁面恢復愛心狀態
-        eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: originalLikedStatus });
       }
     },
 
@@ -326,6 +350,7 @@ export default {
           const jobInSection = section.jobs.find(j => j.id === id);
           if (jobInSection) {
             jobInSection.isLiked = isLiked;
+            console.log(`Home.vue: 職缺 ${id} (在 ${section.title} 中) 愛心狀態更新為 ${isLiked}`);
           }
         });
       }
@@ -334,6 +359,7 @@ export default {
         const companyToUpdate = this.companies.find(c => c.id === id);
         if (companyToUpdate) {
           companyToUpdate.isLiked = isLiked;
+          console.log(`Home.vue: 公司 ${id} 愛心狀態更新為 ${isLiked}`);
         }
       }
     },

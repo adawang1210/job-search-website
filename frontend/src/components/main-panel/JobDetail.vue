@@ -10,7 +10,7 @@
           <div class="profile-grid">
             <div class="logo-column">
               <div class="company-logo">
-                <img ref="avatar" src="/company-icon.png" alt="Company Logo" class="logo-image" />
+                <img ref="avatar" :src="jobDetail.image" alt="Company Logo" class="logo-image" />
               </div>
             </div>
             <div class="info-column">
@@ -45,7 +45,7 @@
         <h2 class="section-title">關於</h2>
         <div class="cards">
           <div class="info-card">
-            <h3>工作機會介紹</h3>
+            <h3>{{ jobDetail.title }}</h3>
             <div class="company-details">
               <div>
                 <div class="detail-group">
@@ -189,12 +189,13 @@
 import { ref, defineComponent } from 'vue'
 import axios from 'axios';
 import eventBus from '/src/eventBus.js';
-import { getJobDetail } from '@/api/home';//暫時用home
+import { getJobDetail, getGreatCompanies } from '@/api/home';//暫時用home
 import { likeJob, unlikeJob } from '@/api/home.js';
 import { NIcon } from 'naive-ui'
 import { Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular } from '@vicons/fa'
 
 const ITEM_TYPE_JOB = 'job';
+const ITEM_TYPE_COMPANY = 'company';
 
 export default defineComponent({
   name: 'JobDetail',
@@ -233,14 +234,20 @@ export default defineComponent({
       immediate: true, // 組件載入時立即執行一次
       async handler(newId) {
         if (newId) {
-          const jobDetailData = await getJobDetail(newId);
-          //console.log("jobDetailData",jobDetailData);
-          //this.jobDetail = jobDetailData;
+          const [jobDetailData, companiesData] = await Promise.all([
+            getJobDetail(newId),
+            getGreatCompanies(),
+          ]);
+          
+          //console.log("jobDetailData",companiesData);
+
           const rawJobDetail = jobDetailData.results || jobDetailData || [];
           this.jobDetail = {
             id: rawJobDetail.id,
             title: rawJobDetail.title,
-            image: rawJobDetail.company_logo || 'default_job_image.png',
+            image: rawJobDetail.company_logo?.startsWith('http') 
+              ? rawJobDetail.company_logo 
+              : 'http://localhost:8000/' + (rawJobDetail.company_logo || 'default_job_image.png'),
             company: {
               name: rawJobDetail.company?.name || '未知公司',
               industry: rawJobDetail.company?.industry || '',
@@ -262,20 +269,32 @@ export default defineComponent({
             type: ITEM_TYPE_JOB,
           };
 
+          // 處理企業數據
+          const rawCompanies = companiesData.results || companiesData || [];
+          this.companies = rawCompanies.map(company => ({
+            id: company.id,
+            name: company.name,
+            image: company.media && company.media.logo ? company.media.logo : 'default_company_logo_path.png',
+            isLiked: company.is_liked_by_user || false, // 【新增】初始化公司的收藏狀態
+            originalData: { ...company, type: ITEM_TYPE_COMPANY }, // 【修改】在原始數據中加入 type 屬性
+            type: ITEM_TYPE_COMPANY, // 【新增】在頂層也保留 type，方便直接使用 company 物件
+          }));
+
           // 圖片抓色更改背景
           this.$nextTick(() => {
-          const img = this.$refs.avatar;
-          if(img) {
-            if (img.complete) {
-            this.handleImage(img);
-            } else {
-              img.onload = () => {
-                this.handleImage(img);
-              };
-            }
-          }
+            const logoUrl = this.jobDetail.image || 'default.png';
+            const img = new Image();
+            img.crossOrigin = 'anonymous';  // ⚠️ 這行很重要
+            img.src = logoUrl;
 
-        });
+            img.onload = () => {
+              this.handleImage(img);
+            };
+
+            img.onerror = () => {
+              console.error('圖片載入失敗：', logoUrl);
+            };
+          });
         }
       }
     }
@@ -289,11 +308,14 @@ export default defineComponent({
   computed: {
     companyLink() {
       const companyName = this.jobDetail.company.name;
-      if(companyName == "宜得利") {
-        return '/company/1/'
-      }
-      else {
-        return '../'
+      // 從 this.companies 找出 name 相同的公司
+      const company = this.companies.find(c => c.name === companyName);
+
+      if (company && company.id) {
+        return `/company/${company.id}/`;
+      } else {
+        // 找不到公司，回傳預設路徑或空字串
+        return '../';
       }
     },
     paginatedJobs() {
@@ -688,6 +710,11 @@ export default defineComponent({
   font-size: 40px;
   font-weight: 900;
   margin: 23px 0 0;
+
+  white-space: nowrap;      /* 不換行 */
+  overflow: hidden;         /* 超出部分隱藏 */
+  text-overflow: ellipsis;  /* 顯示省略號 */
+  max-width: 100%;          /* 限制寬度，避免無限延伸 */
 }
 
 .company-tags {
@@ -700,6 +727,11 @@ export default defineComponent({
   color:#fff;
   font-size: 20px;
   font-weight: 700;
+}
+
+.company-link:hover {
+  background-color: transparent !important;
+  text-decoration: underline;
 }
 
 .job-count {

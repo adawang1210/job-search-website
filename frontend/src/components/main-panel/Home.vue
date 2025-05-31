@@ -180,7 +180,9 @@ export default {
         this.allApiJobs = rawJobs.map(job => ({
           id: job.id,
           title: job.title,
-          image: job.company_logo || 'default_job_image.png',
+          image: job.company_logo?.startsWith('http') 
+            ? job.company_logo 
+            : 'http://localhost:8000/' + (job.company_logo || 'default_job_image.png'),
           company: job.company && job.company.name ? job.company.name : '未知公司',
           salary: job.salary_max ? `$${job.salary_max}` : '面議',
           isLiked: job.is_liked_by_user || false, // 初始收藏狀態來自後端

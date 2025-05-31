@@ -352,6 +352,8 @@ export default defineComponent({
       immediate: true, // 組件載入時立即執行一次
       async handler(newId) {
         if (newId) {
+          this.shareLink = window.location.href;
+
           const [companyData, jobsData] = await Promise.all([
             getCompanyInfo(newId),
             getCompanyJobs(),

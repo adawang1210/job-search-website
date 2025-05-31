@@ -9,7 +9,7 @@
     <div v-if="jobData" class="sidebar-content-wrapper">
       <div class="sidebar-content">
         <h4>{{ jobData.title }}</h4>
-        <img v-if="jobData.company_logo || jobData.image" :src="jobData.company_logo || jobData.image" :alt="jobData.title" class="sidebar-main-image" />
+        <img v-if="jobData.company_logo || jobData.image" :src="imgUrl" :alt="jobData.title" class="sidebar-main-image" />
         <p v-if="jobData.company && jobData.company.name"><strong>公司：</strong> {{ jobData.company.name }}</p>
         <p v-if="jobData.location"><strong>地點：</strong> {{ jobData.location }}</p>
         <p v-if="jobData.salary_max"><strong>薪資：</strong> ${{ jobData.salary_max }}</p>
@@ -49,6 +49,15 @@ export default {
       minWidth: 200,
       maxWidth: 600
     };
+  },
+  computed: {
+    imgUrl() {
+      const logo = this.jobData.company_logo;
+      if (logo?.startsWith('http')) {
+        return logo;
+      }
+      return `http://localhost:8000/${logo || 'default_job_image.png'}`;
+    }
   },
   mounted() {
     document.addEventListener('mousemove', this.handleResizeMouseMove);

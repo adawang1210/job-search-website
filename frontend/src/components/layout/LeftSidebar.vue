@@ -16,7 +16,7 @@
         <!-- 遍歷顯示所有收藏的職位卡片 -->
         <div v-for="item in likedItems" :key="item.id + '-' + item.type" class="job-card-in-sidebar liked-job-card"
           @click="handleItemClick(item)">
-          <div v-if="item.image" class="job-image-sidebar" :style="{ backgroundImage: 'url(' + item.image + ')' }">
+          <div v-if="item.image" class="job-image-sidebar" :style="{ backgroundImage: 'url(' + imgUrl(item) + ')' }">
           </div>
           <div class="content-container-sidebar" v-show="!collapsed">
             <p class="title-sidebar">{{ item.title }}</p>
@@ -41,7 +41,7 @@
     <div class="block2 scrollable-block">
       <template v-if="viewedItems && viewedItems.length > 0">
         <div v-for="item in viewedItems" :key="item.id + '-' + item.type" class="job-card-in-sidebar viewed-job-card">
-          <div v-if="item.image" class="job-image-sidebar" :style="{ backgroundImage: 'url(' + item.image + ')' }">
+          <div v-if="item.image" class="job-image-sidebar" :style="{ backgroundImage: 'url(' + imgUrl(item) + ')' }">
           </div>
           <div class="content-container-sidebar" v-show="!collapsed">
             <p class="title-sidebar">{{ item.title }}</p>
@@ -114,6 +114,13 @@ export default {
     document.removeEventListener('mouseup', this.stopResizing);
   },
   methods: {
+    imgUrl(item) {
+      const logo = item.image;
+      if (logo?.startsWith('http')) {
+        return logo;
+      }
+      return `http://localhost:8000/${logo || 'default_job_image.png'}`;
+    },
     // 觸發折疊/展開事件
     toggleCollapseInternal() {
       this.$emit('toggle-collapse');

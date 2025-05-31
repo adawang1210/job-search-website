@@ -483,8 +483,8 @@ export default defineComponent({
       this.closeModal();
     },
     copyLink() {
-      navigator.clipboard.writeText(shareLink.value)
-      alert('已複製連結')
+      navigator.clipboard.writeText(this.shareLink);
+      alert(`已複製連結：${this.shareLink}`);
     },
     submitReport() {
       if (!reason.value.trim()) {

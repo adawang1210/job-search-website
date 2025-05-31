@@ -398,7 +398,10 @@ export default defineComponent({
                 name: job.company?.name || '未知公司',
                 industry: job.company?.industry || '',
               },
-              salary: job.salary_max ? `$${job.salary_max}` : '面議',
+              salary_type: job.salary_type,
+              salary_min: job.salary_min,
+              salary_max: job.salary_max,
+              salary_number: job.salary_number,
               location: job.location || '',
               experience_required: job.experience_required || '不拘',
               education_required: job.education_required || '不拘',
@@ -484,7 +487,8 @@ export default defineComponent({
       return loc
     },
     formattedSalary(jobId) {
-      const job = this.filterJobs.find(i => i.id === jobId)
+      const job = this.filterJobs.find(i => i.id === jobId);
+      console.log(job);
 
       if (job.salary_type === '月薪') {
         return `月薪${job.salary_min}~${job.salary_max}元`;
@@ -508,11 +512,11 @@ export default defineComponent({
     selectAction(option) {
       switch (option) {
         case '分享':
-          console.log('執行分享功能');
+          //console.log('執行分享功能');
           this.showShare = true;
           break;
         case '檢舉':
-          console.log('執行檢舉功能');
+          //console.log('執行檢舉功能');
           this.showReport = true;
           break;
         default:
@@ -651,8 +655,8 @@ export default defineComponent({
       this.closeModal();
     },
     copyLink() {
-      navigator.clipboard.writeText(shareLink.value)
-      alert('已複製連結')
+      navigator.clipboard.writeText(this.shareLink);
+      alert(`已複製連結：${this.shareLink}`);
     },
     submitReport() {
       if (!reason.value.trim()) {

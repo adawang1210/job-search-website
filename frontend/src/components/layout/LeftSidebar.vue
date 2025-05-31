@@ -300,22 +300,28 @@ export default {
   scrollbar-color: #727272 transparent;
 }
 
-.scrollable-block::-webkit-scrollbar {
+.scrollable-block::-webkit-scrollbar{
   width: 6px;
 }
 
-.scrollable-block::-webkit-scrollbar-track {
+.scrollable-block::-webkit-scrollbar-track{
   background: transparent;
   margin: 2px 0;
 }
 
-.scrollable-block::-webkit-scrollbar-thumb {
+.scrollable-block::-webkit-scrollbar-thumb{
   background-color: #727272;
   border-radius: 3px;
 }
 
-.scrollable-block::-webkit-scrollbar-thumb:hover {
+.scrollable-block::-webkit-scrollbar-thumb:hover{
   background-color: #888888;
+}
+
+.left-side-bar.active .scrollable-block::-webkit-scrollbar  {
+  display:none;
+  width: 0;
+  height: 0;
 }
 
 /* 空狀態顯示樣式 */
@@ -435,12 +441,15 @@ hr {
 }
 
 .left-side-bar.active .scrollable-block {
-  padding: 0;
+  padding: 0px;
+  max-height: 45%;
+  overflow-x: hidden;
+  overflow-y: auto;
   max-height: none;
-  overflow: visible;
   gap: 8px;
   align-items: center;
   width: auto;
+  scrollbar-width: none; 
 }
 
 .left-side-bar.active .job-card-in-sidebar {

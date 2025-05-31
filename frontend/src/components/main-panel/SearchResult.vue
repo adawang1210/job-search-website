@@ -72,14 +72,14 @@ export default {
       }
       return '';
     },
-    // 實際的登入狀態檢查
+    /*/ 實際的登入狀態檢查
     isUserLoggedIn() {
       // 這裡應該是您專案中檢查用戶是否登入的邏輯
       // 例如，從 Vuex store, localStorage, 或某個全局狀態獲取
       // return this.$store.state.auth.isLoggedIn;
       // return !!localStorage.getItem('user-token');
       return true; // 暫時假設總是登入
-    }
+    }*/
   },
   // SearchResult.vue - created
   created() {

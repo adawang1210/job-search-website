@@ -14,6 +14,7 @@ export default {
 #app {
   height: 100vh;
   width: 100vw;
+  max-width: 1440px;
   margin: 0;
   padding: 0;
   overflow-x: hidden;

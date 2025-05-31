@@ -41,7 +41,7 @@
       <div class="love-job-content" @mousedown="startDrag" @mousemove="onDrag" @mouseup="stopDrag"
         @mouseleave="stopDrag" :class="{ active: isDragging }">
         <div class="love-job-card" v-for="(item, index) in loveJobItems" :key="'love-job-' + index"
-          :style="{ backgroundImage: 'url(\'/love-job-frame.png\')' }">
+          :style="{ backgroundImage: 'url(\'/love-job-frame.png\')' }" @click="handleLoveCardClick(item.id)">
           <img :src="item.image" :alt="item.name" class="love-job-photo">
           <p class="love-job-name">{{ item.name }}</p>
         </div>
@@ -139,12 +139,12 @@ export default {
         },
       ],
       loveJobItems: [
-        { id: 'love_job_1', name: '金融業', image: '/love-job-1.jpg' },
-        { id: 'love_job_2', name: '傳產', image: '/love-job-2.jpg' },
-        { id: 'love_job_3', name: '科技業', image: '/love-job-3.jpg' },
+        { id: 'love_job_1', name: '航空業', image: '/love-job-1.jpg' },
+        { id: 'love_job_2', name: '傳統產業', image: '/love-job-2.jpg' },
+        { id: 'love_job_3', name: '家具業', image: '/love-job-3.jpg' },
         { id: 'love_job_4', name: '電子產品製造業', image: '/love-job-4.jpg' },
-        { id: 'love_job_5', name: '服務業', image: '/love-job-5.jpg' },
-        { id: 'love_job_6', name: '維修業', image: '/love-job-6.jpg' }
+        { id: 'love_job_5', name: '餐飲服務業', image: '/love-job-5.jpg' },
+        { id: 'love_job_6', name: '速食餐飲業', image: '/love-job-6.jpg' }
       ],
       allApiJobs: [], // 用於存儲從 API 獲取並轉換格式後的所有職缺
       companies: [],
@@ -405,6 +405,9 @@ export default {
     handleCompanyCardClick(company) {
       // 這個方法只處理公司卡片點擊和路由導向，不會開啟右側邊欄或新增到已瀏覽
       this.$router.push({ name: 'company', params: { id: company.id } });
+    },
+    handleLoveCardClick(loveId) {
+      this.$router.push({ name: 'favoritejobs', params: { id: loveId } });
     }
   }
 }

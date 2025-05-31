@@ -525,8 +525,8 @@ export default defineComponent({
       const contentEl = document.querySelector('.middle-content');
       contentEl.style.background = `linear-gradient(
                                     to bottom,
-                                    ${avgColor} 0%,
-                                    #121212 20%,
+                                    ${avgColor} 0px,
+                                    #121212 720px,
                                     #121212 100%
                                     )`;
     }

@@ -349,6 +349,7 @@ export default defineComponent({
       immediate: true, // 組件載入時立即執行一次
       async handler(newId) {
         if (newId) {
+          this.shareLink = window.location.href;
           // 重置狀態
           this.company = null;
           this.filterJobs = [];
@@ -360,6 +361,7 @@ export default defineComponent({
 
             // 企業資料處理
             const rawCompany = companyData.results || companyData || {};
+            const currentCompany = rawCompany; // 你可以用 ID 過濾正確公司
             this.company = { // 【修改】確保 company 包含 isLiked 和 type 屬性
               id: rawCompany.id,
               name: rawCompany.name,

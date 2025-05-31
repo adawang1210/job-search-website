@@ -1,6 +1,6 @@
 <template>
   <div class="middle-content">
-    <div v-if="!ccompany || !jjobs">
+    <div v-if="!companies || !filterJobs">
       載入中...
     </div>
     <!-- 資料載入後才顯示內容 -->
@@ -10,36 +10,36 @@
           <div class="profile-grid">
             <div class="logo-column">
               <div class="company-logo">
-                <img ref="avatar" src="/company-icon.png" alt="Company Logo" class="logo-image" />
+                <img ref="avatar" :src="selectedLoveJob.image" alt="Company Logo" class="logo-image" />
               </div>
             </div>
             <div class="info-column">
               <div class="company-info">
-                <span class="info-label">公司</span>
-                <h1 class="company-name">{{ ccompany.name }}</h1>
-                <p class="company-tags">{{ ccompany.bg_color_hex }}</p>
-                <p class="job-count">{{ jjobs.length }}個工作機會</p>
+                <span class="info-label">行業</span>
+                <h1 class="company-name">最愛{{ selectedLoveJob?.name }}</h1>
+                <!-- <p class="company-tags">標籤</p> -->
+                <p class="job-count">{{ filterJobs.length }}個工作機會</p>
               </div>
             </div>
           </div>
         </div>
         <div class="profile-button actions-button">
-          <button type="button" class="like-btn" :class="{ active: ccompany.isLiked }"
-            @click.stop="handleLikeClick('company')">
+          <button type="button" class="like-btn" :class="{ active: companies[0].isLiked }"
+            @click.stop="toggleLike(companies[0])">
             <n-icon class="heart-icon">
-              <component :is="company.isLiked ? iconHeartSolid : iconHeartRegular" />
+              <component :is="companies[0].isLiked ? iconHeartSolid : iconHeartRegular" />
             </n-icon>
           </button>
           <div class="ellipsis-button">
             <div class="dropdown">
               <button type="button" class="dropdown-toggle" @click="toggleDropdownProfile">
                 <n-icon class="ellipsis-icon">
-                  <component :is="iconEllipsisH" />
+                  <EllipsisH />
                 </n-icon>
               </button>
               <ul v-show="dropdownOpenProfile" class="dropdown-menu bottom-left">
                 <li v-for="(item, index) in profileOptions" :key="index" @click="selectAction(item)">
-                {{ item }}
+                  {{ item }}
                 </li>
               </ul>
             </div>
@@ -55,7 +55,7 @@
             <div class="dropdown">
               <button type="button" class="dropdown-toggle" @click="toggleDropdownJob">
                 <n-icon class="caret-icon">
-                  <component :is="iconCaretDown" />
+                  <CaretDown />
                 </n-icon>
               </button>
               <ul v-show="dropdownOpenJob" class="dropdown-menu bottom-right">
@@ -80,14 +80,13 @@
                 <div class="details">
                   <div class="company-info-job">
                     <span class="company-name-job">{{ job.company.name }}</span>
-                    <span class="industry-job">{{ ccompany?.industry }}</span>
+                    <span class="industry-job">{{ formatJobIndustry(job.company.name) }}</span>
                   </div>
                   <div class="job-specs">
                     <span class="spec">{{ formatLocation(job.location) }}</span>
                     <span class="spec">{{ job.experience_required }}</span>
                     <span class="spec">{{ job.education_required }}</span>
-                    <!-- <span class="spec">{{ job.major_required }}</span> -->
-                    <span class="spec">{{ job.salary }}</span>
+                    <span class="spec">{{ formattedSalary(job.id) }}</span>
                   </div>
                   <div class="benefits">
                     <span v-for="(benefit, index) in job.benefits" :key="index" class="benefit-tag-job">
@@ -99,30 +98,29 @@
             </div>
             <div class="actions-button">
               <button type="button" class="like-btn" :class="{ active: job.isLiked }"
-                @click.stop="handleLikeClick(job.id)">
+                @click.stop="toggleLike(job)">
                 <n-icon class="heart-icon">
                   <component :is="job.isLiked ? iconHeartSolid : iconHeartRegular" />
                 </n-icon>
               </button>
-              <button type="button" class="envelope-btn" :class="{ active: job.isLiked }"
+              <button type="button" class="envelope-btn"
                 @click.stop="openModal(job.id)">
                 <n-icon class="envelope-icon">
-                  <component :is="job.isLiked ? iconEnvelopeSolid : iconEnvelopeRegular" />
+                  <component :is="job.isApplied ? iconEnvelopeSolid : iconEnvelopeRegular" />
                 </n-icon>
               </button>
 
-              <p class="applicants">{{ job.applicants }}</p>
+              <!-- <p class="applicants">{{ job.applicants }}</p> -->
             </div>
           </div>
         </article>
       </section>
-
       <!-- Modal 彈窗 -->
       <transition name="modal">
         <div v-if="showApplyModal" class="modal-overlay" @click="closeModal">
           <div class="modal" @click.stop>
             <div class="modal-header">
-              <h2 class="modal-title">編輯 {{ currentItem }}</h2>
+              <h2 class="modal-title">{{ currentItem.title }}</h2>
             </div>
 
             <form @submit.prevent>
@@ -153,7 +151,7 @@
                 <button type="button" class="btn btn-cancel" @click="closeModal">
                   取消
                 </button>
-                <button type="button" class="btn btn-submit" @click="handleSubmit">
+                <button type="button" class="btn btn-submit" @click="handleSubmit(applyJobId)">
                   送出
                 </button>
               </div>
@@ -164,17 +162,19 @@
       <!-- 分享彈窗 -->
       <transition name="modal">
         <div v-if="showShare" class="modal-overlay" @click="showShare = false">
-          <div class="modal">
+          <div class="modal" @click.stop>
             <div class="modal-header">
               <h2 class="modal-title">分享這個內容</h2>
             </div>
-            <div class="form-group">
-              <input type="text" :value="shareLink" readonly class="share-link"></input>
-            </div>
-            <div class="modal-actions">
-              <button type="button" class="btn btn-submit" @click="copyLink">複製連結</button>
-              <button type="button" class="btn btn-cancel" @click="showShare = false">關閉</button>
-            </div>
+            <form @submit.prevent>
+              <div class="form-group">
+                <input type="text" :value="shareLink" readonly class="form-input"></input>
+              </div>
+              <div class="modal-actions">
+                <button type="button" class="btn btn-cancel" @click="showShare = false">取消</button>
+                <button type="button" class="btn btn-submit" @click="copyLink">複製連結</button>
+              </div>
+            </form>
           </div>
         </div>
       </transition>
@@ -182,16 +182,16 @@
       <!-- 檢舉彈窗 -->
       <transition name="modal">
         <div v-if="showReport" class="modal-overlay" @click="showReport = false">
-          <div class="modal">
+          <div class="modal" @click.stop>
             <div class="modal-header">
               <h2 class="modal-title">檢舉內容</h2>
             </div>
             <div class="form-group">
-              <textarea v-model="reportReason" rows="3" class="w-full my-2"></textarea>
+              <textarea v-model="reportReason" rows="3" class="form-input"></textarea>
             </div>
             <div class="modal-actions">
+              <button type="button" class="btn btn-cancel" @click="showReport = false">取消</button>
               <button type="button" class="btn btn-submit" @click="submitReport">送出檢舉</button>
-              <button type="button" class="btn btn-cancel" @click="showReport = false">關閉</button>
             </div>
           </div>
         </div>
@@ -199,14 +199,17 @@
     </div>
   </div>
 </template>
-<!-- 最愛xxx main-panel -->
 
 <script>
-import { ref } from 'vue'
+import { ref, defineComponent } from 'vue'
 import axios from 'axios';
-import { defineComponent } from 'vue'
+import eventBus from '/src/eventBus.js';
+import { getJobs, getGreatCompanies, likeJob, unlikeJob, getJobDetail } from '@/api/home.js';
 import { NIcon } from 'naive-ui'
 import { Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular } from '@vicons/fa'
+
+const ITEM_TYPE_JOB = 'job';
+const ITEM_TYPE_COMPANY = 'company';
 
 export default defineComponent({
   name: 'FavoriteJobs',
@@ -214,33 +217,133 @@ export default defineComponent({
   components: {
     NIcon, Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular,
   },
+
+  props: {
+    id: { // 這個 'id' 會接收從路由傳過來的公司 ID
+      type: [String, Number],
+      required: true
+    }
+  },
+
   data() {
     return {
+      loveJobItems: [
+        { id: 'love_job_1', name: '航空業', image: '/love-job-1.jpg' },
+        { id: 'love_job_2', name: '傳統產業', image: '/love-job-2.jpg' },
+        { id: 'love_job_3', name: '家具業', image: '/love-job-3.jpg' },
+        { id: 'love_job_4', name: '電子產品製造業', image: '/love-job-4.jpg' },
+        { id: 'love_job_5', name: '餐飲服務業', image: '/love-job-5.jpg' },
+        { id: 'love_job_6', name: '速食餐飲業', image: '/love-job-6.jpg' }
+      ],
+      selectedLoveJob: null,
+      characteristicsMap: {
+        '航空業': ['CHINA AIRLINE', 'STARLUX'],
+        '傳統產業': ['Toyota', '捷安特'],
+        '家具業': ['IKEA', '宜得利'],
+        '電子產品製造業': ['GARMIN', '金寶電子'],
+        '餐飲服務業': ['路易莎', 'Starbucks'],
+        '速食餐飲業': ["mcdonald's", '摩斯漢堡']
+      },
       pageSize: 10,
       dropdownOpenJob: false,
       dropdownOpenProfile: false,
-      profileOptions: ['分享', '檢舉', '忘了'],
+      profileOptions: ['分享', '檢舉'],
       showApplyModal: false,
       showShare: false,
       showReport: false,
+      applyJobId: 0,
       shareLink: 'https://example.com/share',
       reportReason: '',
-      company: {
-        "isLiked": false
-      },
-      jjobs: [],
-      ccompany: null
+      company: null,
+      companies: null,
+      filterJobs: [],
     };
+  },
+  watch: {
+    // 監聽 id prop 的變化，當 id 改變時重新載入公司資料
+    id: {
+      immediate: true, // 組件載入時立即執行一次
+      async handler(newId) {
+        if (newId) {
+          this.shareLink = window.location.href;
+
+          const [companiesData, jobsData] = await Promise.all([
+            getGreatCompanies(),
+            getJobs(),
+          ]);
+          //console.log(jobsData);
+          // 資料處理邏輯（建議放在 mounted 或 API 請求完成後）
+          // 企業資料處理（只抓一筆 company 顯示詳細頁）
+          const rawCompanies = companiesData.results || companiesData || [];
+          this.companies = rawCompanies.map(company => ({
+            id: company.id,
+            name: company.name,
+            image: company.media && company.media.logo ? company.media.logo : 'default_company_logo_path.png',
+            industry: company.industry,
+            isLiked: company.is_liked_by_user || false, // 【新增】初始化公司的收藏狀態
+            originalData: { ...company, type: ITEM_TYPE_COMPANY }, // 【修改】在原始數據中加入 type 屬性
+            type: ITEM_TYPE_COMPANY, // 【新增】在頂層也保留 type，方便直接使用 company 物件
+          }));
+
+          const rawJobs = jobsData.results || jobsData || [];
+          this.allApiJobs = rawJobs.map(job => ({
+            id: job.id,
+            title: job.title,
+            image: job.company_logo?.startsWith('http') 
+              ? job.company_logo 
+              : 'http://localhost:8000/' + (job.company_logo || 'default_job_image.png'),
+            company: {
+              name: job.company?.name || '未知公司',
+              industry: job.company?.industry || '',
+            },
+            salary: job.salary_max ? `$${job.salary_max}` : '面議',
+            location: job.location || '',
+            experience_required: job.experience_required || '不拘',
+            education_required: job.education_required || '不拘',
+            created_at: job.created_at,
+            isLiked: job.is_liked_by_user || false,
+            isApplied: job.is_applied_by_user || false,
+            benefits: job.benefits || [],
+            applicants: job.applicants || 0,
+            originalData: { ...job, type: ITEM_TYPE_JOB },
+            type: ITEM_TYPE_JOB,
+          }));
+
+          // 過濾與目前公司有關的工作
+          this.selectedLoveJob = this.loveJobItems.find(item => item.id === newId);
+          const currentCharacteristic = this.selectedLoveJob ? this.selectedLoveJob.name : null;
+
+          const companyNames = currentCharacteristic ? this.characteristicsMap[currentCharacteristic] || [] : [];
+          this.filterJobs = this.allApiJobs.filter(job => companyNames.includes(job.company.name));
+
+          // 圖片抓色更改背景
+          this.$nextTick(() => {
+            const logoUrl = this.selectedLoveJob.image || 'default.png';
+            const img = new Image();
+            img.crossOrigin = 'anonymous';  // 這行很重要
+            img.src = logoUrl;
+
+            img.onload = () => {
+              this.handleImage(img);
+            };
+
+            img.onerror = () => {
+              console.error('圖片載入失敗：', logoUrl);
+            };
+          });
+        }
+      }
+    }
+  },
+  async mounted() {
+    eventBus.on('update-like-status', this.handleUpdateLikeStatus);
+  },
+  beforeUnmount() {
+    eventBus.off('update-like-status', this.handleUpdateLikeStatus);
   },
   computed: {
     paginatedJobs() {
-      return Array.isArray(this.jjobs) ? this.jjobs.slice(0, this.pageSize) : [0, 0, 0, 0, 0];
-    },
-    iconCaretDown() {
-      return CaretDown
-    },
-    iconEllipsisH() {
-      return EllipsisH
+      return Array.isArray(this.filterJobs) ? this.filterJobs.slice(0, this.pageSize) : [0, 0, 0, 0, 0];
     },
     iconHeartSolid() {
       return Heart
@@ -255,43 +358,29 @@ export default defineComponent({
       return EnvelopeRegular
     },
   },
-  mounted() {
-    Promise.all([
-      axios.get('http://127.0.0.1:8000/api/jobs/'),
-      axios.get('http://127.0.0.1:8000/api/companies/'),
-
-    ])
-      .then(([jjobsRes, ccompanyRes]) => {
-        this.ccompany = ccompanyRes.data[0];
-
-        this.jjobs = jjobsRes.data;
-        //console.log(this.ccompany);
-
-        // 圖片抓色
-        this.$nextTick(() => {
-          const img = this.$refs.avatar;
-          if (img.complete) {
-            this.handleImage(img);
-          } else {
-            img.onload = () => {
-              this.handleImage(img);
-            };
-          }
-        });
-      })
-      .catch(error => {
-        console.error('讀取 JSON 發生錯誤：', error);
-      });
-  },
   methods: {
     // data format
     formatDate(isoString) {    // process job.created_at
       const date = new Date(isoString);
       return `${date.getMonth() + 1}/${date.getDate()}`
     },
+    formatJobIndustry(jobCompany) {
+      return this.companies.find(item => item.name === jobCompany).industry
+    },
     formatLocation(location) {
       const loc = location.slice(0, 3);
       return loc
+    },
+    formattedSalary(jobId) {
+      const job = this.filterJobs.find(i => i.id === jobId)
+
+      if (job.salary_type === '月薪') {
+        return `月薪${job.salary_min}~${job.salary_max}元`;
+      } else if (job.salary_type === '時薪') {
+        return `時薪${job.salary_number}元`;
+      } else {
+        return '薪資未提供';
+      }
     },
     // dropdown 顯示
     toggleDropdownJob() {
@@ -314,61 +403,103 @@ export default defineComponent({
           console.log('執行檢舉功能');
           this.showReport = true;
           break;
-        case '忘了':
-          console.log('你真的忘了喔...');
-          break;
         default:
           console.warn('未知選項', option);
       }
       this.dropdownOpenProfile = false
     },
     // heart icon clicked
-    handleLikeClick(Id) {
-      if (Id == 'company') {
-        this.handleToggleLike(this.ccompany, this.ccompany.id);
+    // item 可能是 job 或 company 物件，它已經包含 isLiked 和 originalData (其中包含 type)
+    async toggleLike(item) {
+      // 假設需要登入才能收藏
+      // if (!this.isUserLoggedIn) { 
+      //   alert('您需要先登入才能收藏！');
+      //   return;
+      // }
+      console.log('test');
+
+      if (!item || !item.id || !item.type) {
+        console.error('toggleLike: 無效的項目數據或缺少 ID/類型', item);
+        return;
       }
-      else {
-        this.handleToggleLike(this.jjobs, Id);
+
+      const originalLikedStatus = item.isLiked;
+      const newLikedStatus = !item.isLiked;
+
+      // 1. 樂觀更新 UI (直接修改傳入的 item 物件)
+      item.isLiked = newLikedStatus;
+
+      try {
+        // 2. 呼叫後端 API (統一使用 likeJob/unlikeJob)
+        if (newLikedStatus) {
+          await likeJob(item.id); // 假設 likeJob API 能處理職缺和公司 ID
+        } else {
+          await unlikeJob(item.id); // 假設 unlikeJob API 能處理職缺和公司 ID
+        }
+
+        // 3. 通知 BaseLayout 更新側邊欄的收藏和瀏覽紀錄列表
+        // 傳遞 item.originalData 和新的 isLiked 狀態
+        if (typeof this.updateLikedItemInSidebar === 'function') {
+          this.updateLikedItemInSidebar(item.originalData || item, newLikedStatus); // originalData 已經包含 type
+        }
+
+        // 4. 透過 eventBus 通知所有頁面同步愛心狀態
+        // 統一事件名稱 'update-like-status'，並傳遞 ID, 類型, 和新狀態
+        eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: newLikedStatus });
+
+      } catch (error) {
+        console.error(`Failed to update ${item.type} like status for ID ${item.id}:`, error);
+        // API 失敗，恢復 UI 狀態
+        item.isLiked = originalLikedStatus;
+        alert(`收藏操作失敗，請稍後再試。`);
+
+        // 恢復 BaseLayout 列表狀態
+        if (typeof this.updateLikedItemInSidebar === 'function') {
+          this.updateLikedItemInSidebar(item.originalData || item, originalLikedStatus);
+        }
+        // 通知所有頁面恢復愛心狀態
+        eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: originalLikedStatus });
       }
     },
-    handleCardClick(job) {
+    // 處理來自 eventBus 的通用愛心狀態更新事件
+    handleUpdateLikeStatus(data) { // data 預期為 { id: itemId, type: itemType, isLiked: newStatus }
+      const { id, type, isLiked } = data;
+      // 1. 更新 sections 中的職缺愛心狀態
+      if (type === ITEM_TYPE_JOB) {
+        const jobInSection = this.filterJobs.find(j => j.id === id);
+          if (jobInSection) {
+            jobInSection.isLiked = isLiked;
+          }
+      }
+      // 2. 更新 companies 中的公司愛心狀態
+      else if (type === ITEM_TYPE_COMPANY) {
+        const companyToUpdate = this.company;
+        if (companyToUpdate) {
+          companyToUpdate.isLiked = isLiked;
+        }
+      }
+    },
+    handleCardClick(jobData) {
+      const dataForSidebar = jobData.originalData || jobData; // 確保取得原始 API 數據
       if (typeof this.addViewedItemToSidebar === 'function') {
-        this.addViewedItemToSidebar(job)
+        this.addViewedItemToSidebar(dataForSidebar)
       } else {
         console.error('addViewedItemToSidebar is not available from BaseLayout')
       }
 
       if (typeof this.openRightSidebar === 'function') {
-        this.openRightSidebar(job)
+        this.openRightSidebar(dataForSidebar)
       } else {
         console.error('openRightSidebar is not available from BaseLayout')
       }
     },
     handleTitleClick(job) {
-      console.log('Title clicked for job:', job.title, 'Company:', job.company.name)
-      alert(`Navigating to company page for: ${job.company.name}. Implement Vue Router push here.`)
+      this.$router.push({ name: 'jobdetail', params: { id: job.id } });
     },
-    //like 處理
-    handleToggleLike(list, itemId) {
-      var item = list// 預設company
-      if (Array.isArray(list)) {// 是陣列，item is job
-        item = list.find(i => i.id === itemId);
-      }
-      if (item) {
-        item.isLiked = !item.isLiked;
-
-        if (typeof this.updateLikedItemInSidebar === 'function') {
-          this.updateLikedItemInSidebar(item, item.isLiked);
-        } else {
-          console.warn('updateLikedItemInSidebar is not available from BaseLayout');
-        }
-      } else {
-        console.warn(`找不到 id 為 ${itemId} 的項目`);
-      }
-    },
-    //打開應徵彈窗
-    openModal(itemName) {
-      this.currentItem = itemName;
+    //應徵彈窗
+    openModal(id) {
+      this.applyJobId = id;
+      this.currentItem = this.paginatedJobs.find(job => job.id === id);
       this.showApplyModal = true;
       // 重置表單
       this.formData = {
@@ -384,18 +515,19 @@ export default defineComponent({
       //file when apply
       this.selectedFiles = Array.from(event.target.files);
     },
-    handleSubmit() {
+    handleSubmit(jobId) {
+      const item = this.paginatedJobs.find(job => job.id === jobId);
+      console.log("item",item);
       // 這裡可以處理送出邏輯
       console.log('送出資料:', {
-        item: this.currentItem,
+        item: item,
         formData: this.formData,
         files: this.selectedFiles
       });
 
-      // 顯示成功訊息（可選）
       alert('資料已送出！');
+      item.isApplied = true;
 
-      // 關閉彈窗
       this.closeModal();
     },
     copyLink() {
@@ -441,8 +573,8 @@ export default defineComponent({
       const contentEl = document.querySelector('.middle-content');
       contentEl.style.background = `linear-gradient(
                                     to bottom,
-                                    ${avgColor} 0%,
-                                    #121212 20%,
+                                    ${avgColor} 0px,
+                                    #121212 720px,
                                     #121212 100%
                                     )`;
     }
@@ -452,7 +584,7 @@ export default defineComponent({
 
 <style scoped>
 .middle-content {
-  background-color: #121212;
+  background-color: linear-gradient(to bottom,#b3b3b3 0%,#121212 20%,#121212 100%);
   border-radius: 10px;
   color: white;
   box-sizing: border-box;
@@ -468,7 +600,7 @@ export default defineComponent({
   max-width: 100%;
 }
 
-.profile-button{
+.profile-button {
   margin-top: 16px;
 }
 
@@ -574,7 +706,7 @@ export default defineComponent({
   display: flex;
   width: 100%;
   flex-direction: column;
-  padding: 40px 36px 28px 28px;
+  padding: 48px 28px 40px;
   background: transparent;
 }
 
@@ -645,14 +777,14 @@ export default defineComponent({
   font-family: 'Noto Sans', sans-serif;
   font-size: 32px;
   font-weight: 600;
-  margin: 80px 0 30px;
+  margin-bottom: 16px;
 }
 
 /* job listings */
 .job-listings {
   margin: 0;
   padding: 28px;
-  background: transparent;
+  background-color: rgba(0, 0, 0, 0.3);
 }
 
 .listings-header {
@@ -674,7 +806,7 @@ export default defineComponent({
   letter-spacing: -0.18px;
 }
 
-/* 合并的 JobCard 样式 */
+/* JobCard 样式 */
 .job-card {
   border-radius: 10px;
   background-color: rgba(255, 255, 255, 0.1);
@@ -695,6 +827,7 @@ export default defineComponent({
 }
 
 .date-block {
+  margin-top: 3px;
   width: 40px;
 }
 
@@ -725,8 +858,12 @@ export default defineComponent({
   cursor: pointer;
 }
 
+.title:hover {
+  text-decoration: underline;
+}
+
 .details {
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .company-info-job {
@@ -750,7 +887,7 @@ export default defineComponent({
 .job-specs {
   display: flex;
   align-items: center;
-  margin-top: 3px;
+  margin-top: 10px;
   gap: 24px;
   font-family: Noto Sans, -apple-system, Roboto, Helvetica, sans-serif;
   color: #f5f5f5;
@@ -758,9 +895,13 @@ export default defineComponent({
   font-weight: 600;
 }
 
+.spec {
+  font-weight: bold;
+}
+
 .benefits {
   display: flex;
-  margin: 8px 0;
+  margin: 6px 0;
   flex-wrap: wrap;
   gap: 12px;
 }
@@ -784,6 +925,139 @@ export default defineComponent({
   margin: 6px 0 0;
 }
 
+/*company information*/
+.company-information {
+  margin: 0;
+  padding: 28px;
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+div h3 {
+  font-family: 'Noto Sans', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+/* Info Cards */
+.info-card {
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0;
+  padding: 24px;
+  border-radius: 10px;
+}
+
+.company-details {
+  display: grid;
+  grid-template-columns: 227px 1fr;
+  gap: 30px;
+}
+
+.detail-group {
+  margin-bottom: 50px;
+  overflow: hidden;
+}
+
+.detail-item {
+  margin-bottom: 20px;
+}
+
+.detail-item .label {
+  font-size: 16px;
+  font-weight: 600;
+  font-family: 'Noto Sans', sans-serif;
+}
+
+.detail-item .value {
+  font-size: 14px;
+  color: #b3b3b3;
+  margin-top: 5px;
+}
+
+.description {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #b3b3b3;
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: 227px 1fr;
+  gap: 30px;
+}
+
+.benefit-tags h4 {
+  font-family: 'Noto Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.benefit-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.benefit-tag {
+  background: rgba(179, 179, 179, 0.25);
+  padding: 5px 10px;
+  border-radius: 16px;
+  font-size: 14px;
+  width: fit-content;
+}
+
+.benefits-description h4 {
+  font-size: 14px;
+  color: #b3b3b3;
+  margin-bottom: 10px;
+}
+
+/* Gallery */
+.gallery {
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0;
+  padding: 24px;
+  border-radius: 10px;
+}
+
+.gallery-scroll-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.gallery-grid {
+  display: flex;
+  gap: 24px;
+  width: max-content;
+  height: 200px;
+  background: transparent;
+  margin: 0;
+}
+
+.gallery-item {
+  flex: 0 0 auto;
+  aspect-ratio: 3 / 2;
+  background: transparent;
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.gallery-item img {
+  display: block;
+  width: auto;
+  height: 100%;
+  max-height: 200px;
+  object-fit: contain;
+}
+
 /* Modal 樣式 */
 .modal-overlay {
   position: fixed;
@@ -796,100 +1070,103 @@ export default defineComponent({
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);/* 模糊背景效果 */
 }
 
 .modal {
   background: linear-gradient(135deg, #191414, #2a2a2a);
-  border-radius: 20px;
+  border-radius: 5px;
   width: 90%;
   max-width: 500px;
   padding: 30px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);/* 投影效果 */
+  position: relative;/* 相對定位，可用於內部絕對定位元素 */
 }
 
 .modal-header {
-  margin-bottom: 30px;
-  text-align: center;
+  margin-bottom: 30px;/* 底部間距 */
+  text-align: center;/* 文字置中對齊 */
 }
 
 .modal-title {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #1db954;
-  margin-bottom: 10px;
+  font-size: 18px;/* 文字大小 */
+  font-weight: bold;/* 字體粗體 */
+  color: #D2691E;/* 橘色標題 */
+  margin-bottom: 10px;/* 標題與下方元素的間距 */
 }
 
+
+/* 表單區塊 */
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 20px;/* 元素間的底部間距 */
 }
 
 .form-label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: #b3b3b3;
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  display: block;/* 佔滿整行 */
+  margin-bottom: 8px;/* 與輸入欄的間距 */
+  font-weight: bold;/* 字體粗體 */
+  color: #ffffff;/* 白色文字 */
+  font-size: 16px;/* 標籤字體大小 */
+  text-transform: uppercase;/* 字母大寫 */
+  letter-spacing: 1px;/* 字元間距 */
 }
 
 .form-input {
-  width: 100%;
-  padding: 15px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  background-color: rgba(255, 255, 255, 0.05);
-  color: white;
-  font-size: 1rem;
-  transition: all 0.3s ease;
+  width: 100%;/* 寬度佔滿父容器 */
+  padding: 15px;/* 內距 */
+  border: 2px solid rgba(255, 255, 255, 0.1);/* 淡白色邊框 */
+  border-radius: 5px;/* 圓角 */
+  background-color: rgba(255, 255, 255, 0.05);/* 半透明白背景 */
+  color: white;/* 輸入文字為白色 */
+  font-size: 1rem;/* 標準字體大小 */
+  transition: all 0.3s ease;/* 動畫過渡效果 */
 }
 
 .form-input:focus {
-  outline: none;
-  border-color: #1db954;
-  background-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 0 3px rgba(29, 185, 84, 0.2);
+  outline: none;/* 移除瀏覽器預設外框 */
+  border-color: #D2691E;/* 聚焦時變成橘色邊框 */
+  background-color: rgba(255, 255, 255, 0.1);/* 背景稍微變亮 */
 }
 
 .form-textarea {
-  resize: vertical;
-  min-height: 80px;
-  font-family: inherit;
-}
-
-.file-upload-container {
-  position: relative;
-  margin-bottom: 30px;
+  resize: vertical;/* 垂直方向可調整大小 */
+  min-height: 80px;/* 最小高度為 80px */
+  font-family: inherit;/* 使用繼承字體 */
 }
 
 .file-upload-btn {
+  box-sizing: border-box;
   width: 100%;
+  height: 80px;
   padding: 15px;
-  border: 2px dashed rgba(29, 185, 84, 0.5);
+  border: 2px dashed #D2691E;
   border-radius: 10px;
-  background-color: rgba(29, 185, 84, 0.1);
-  color: #1db954;
+  background-color: rgba(244, 188, 103, 0.1);
+  color: #D2691E;
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
+  line-height: 47px;/* 水平置中 */
   font-weight: 600;
+  position: relative;
 }
 
 .file-upload-btn:hover {
-  border-color: #1db954;
-  background-color: rgba(29, 185, 84, 0.2);
+  border-color: #D2691E;
+  background-color: rgba(244, 188, 103, 0.4);
 }
 
 .file-input {
   position: absolute;
+  top: 0;
+  left: 0;
   opacity: 0;
   width: 100%;
-  height: 100%;
+  height: 80px;
   cursor: pointer;
 }
+
+
 
 .modal-actions {
   display: flex;
@@ -897,16 +1174,17 @@ export default defineComponent({
   justify-content: flex-end;
   margin-top: 30px;
 }
+
 /* btns for modal */
 .btn {
-  padding: 12px 30px;
+  padding: 4px 20px;
   border: none;
   border-radius: 25px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: 100px;
+  min-width: 50px;
 }
 
 .btn-cancel {
@@ -922,14 +1200,14 @@ export default defineComponent({
 }
 
 .btn-submit {
-  background: linear-gradient(135deg, #1db954, #1ed760);
+  background: linear-gradient(135deg, #D2691E, #D2691E);
   color: white;
-  box-shadow: 0 4px 15px rgba(29, 185, 84, 0.3);
+  box-shadow: 0 4px 10px rgba(244, 188, 103, 0.3);
 }
 
 .btn-submit:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(29, 185, 84, 0.4);
+  box-shadow: 0 6px 10px rgba(244, 188, 103, 0.4);
 }
 
 .btn-submit:active {

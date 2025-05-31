@@ -39,9 +39,10 @@ const router = createRouter({
       component: SearchResultView,
     },
     {
-      path: '/favoritejobs',
+      path: '/favoritejobs/:id',
       name: 'favoritejobs',
       component: FavoriteJobsView,
+      props: true,
     },
     {
       path: '/allcompany',

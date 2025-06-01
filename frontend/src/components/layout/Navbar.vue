@@ -291,7 +291,7 @@ export default defineComponent({
   padding: 4px 8px;
   gap: 8px;
   border-radius: 30px;
-  background-color: #383333;
+  background-color: #2a2a2a;
   height: 32px;
   overflow: hidden;
   box-sizing: border-box;
@@ -320,7 +320,7 @@ export default defineComponent({
   margin-bottom: 8px;
   border-radius: 50%;
   background-color: white;
-  background-image: url("/user-avatar.png");
+  background-image: url("/子源大帥哥.jpg");
   background-size: cover;
   background-position: center;
   cursor: pointer;
@@ -330,31 +330,64 @@ export default defineComponent({
 
 :deep(.n-button) {
   background-color: transparent !important;
+  color: white !important;
   border: none;
 }
 
-/* 確認按鈕樣式 - 修改這裡使所有確認按鈕都有同樣樣式 */
 :deep(.confirm-btn) {
-  background-color: #2080f0 !important;
+  background-color: #585858 !important;
   color: white !important;
   border: none !important;
+  box-shadow: none !important; 
+  outline: none !important;
 }
+
 
 :deep(.confirm-btn:hover) {
-  background-color: #4098fc !important;
-}
-
-/* 只針對navbar中的按鈕應用樣式 */
-:deep(.navbar .n-button:hover),
-:deep(.navbar .n-button:focus),
-:deep(.navbar .n-button:active) {
-  background-color: transparent !important;
+  background-color: #707070 !important;
+  color: white !important;
+  border: none !important;
   box-shadow: none !important;
   outline: none !important;
 }
 
+:deep(.confirm-btn:active),
+:deep(.confirm-btn:focus), 
+:deep(.confirm-btn:focus-visible) { 
+  background-color: #404040 !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important; 
+}
+
+:deep(.n-button--primary:focus-visible .n-button__border) {
+  border: none !important;
+}
+
+:deep(.n-button--primary:focus-visible .n-button__state-border) {
+  border: none !important;
+}
+
 :deep(.n-input) {
   background-color: transparent !important;
+}
+
+:deep(.n-button:focus-visible) {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+:deep(.n-button:focus-visible .n-button__border) {
+    border-color: transparent !important; /* 確保焦點時的邊框透明 */
+}
+
+:deep(.n-button:focus-visible .n-button__state-border) {
+    border-color: transparent !important; /* 確保焦點時的狀態邊框透明 */
+}
+
+:deep(.n-button .n-button__state-border) {
+    border-color: transparent !important; /* 確保狀態邊框透明 */
 }
 
 :deep(.n-input .n-input__input-el),
@@ -364,6 +397,7 @@ export default defineComponent({
   box-shadow: none !important;
   outline: none !important;
   color: #ffffff;
+  border-color: none !important;
 }
 
 :deep(.n-input .n-input__state-border),
@@ -391,7 +425,7 @@ export default defineComponent({
 
 /* 強制設置彈出菜單背景為白色，不透明 */
 :deep(.n-popover-body) {
-  background-color: white !important;
+  background-color: #2a2a2a !important;
   opacity: 1 !important;
   border-radius: 6px !important;
   box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 9px 28px 8px rgba(0, 0, 0, 0.05) !important;
@@ -399,7 +433,7 @@ export default defineComponent({
 
 :deep(.n-popover .n-popover__content) {
   padding: 16px;
-  background-color: white !important;
+  background-color: #2a2a2a !important;
   opacity: 1 !important;
 }
 
@@ -426,14 +460,48 @@ export default defineComponent({
 }
 
 :deep(.n-checkbox) {
-  --n-color: transparent;
-  --n-color-checked: #2080f0;
-  --n-color-checked-hover: #4098fc;
-  --n-text-color: #333333;
+  --n-color: transparent !important; /* 未勾選時的背景色 */
+  --n-color-checked: #ffffff !important; /* 勾選時的背景色 */
+  --n-color-checked-hover: #ffffff !important; /* 勾選時 hover 的背景色 */
+  --n-text-color: #ffffff !important; /* 文字顏色 */
+
+  /* 移除 Naive UI 可能有的預設綠色邊框或陰影 */
+  --n-border-checked: 1px solid #ffffff !important; /* 勾選時的邊框 */
+  --n-border-hover: 1px solid #cccccc !important; /* 未勾選 hover 時的邊框 */
+  --n-border-focus: 1px solid #cccccc !important; /* 焦點時的邊框 */
+  --n-box-shadow-focus: none !important; /* 移除焦點時的陰影 */
+}
+
+/* 確保勾選框內部打勾符號的顏色 */
+:deep(.n-checkbox .n-checkbox__check) {
+  color: #000000 !important; /* 將打勾符號設為深色，才能在白色背景上看到 */
+}
+
+:deep(.n-checkbox--checked .n-checkbox__check) {
+  color: #000000 !important; /* 已勾選時的打勾符號顏色 */
+}
+
+:deep(.n-checkbox:not(.n-checkbox--checked):hover .n-checkbox__box) {
+  border-color: #cccccc !important;
+}
+:deep(.n-checkbox:not(.n-checkbox--checked):focus .n-checkbox__box) {
+  border-color: #cccccc !important;
+  box-shadow: none !important; /* 再次確保焦點陰影為無 */
+}
+:deep(.n-checkbox:not(.n-checkbox--checked):focus-visible .n-checkbox__box) {
+  border-color: #cccccc !important;
+  box-shadow: none !important; /* 再次確保焦點陰影為無 */
+}
+
+
+/* 勾選框被勾選且 hover 時的樣式 */
+:deep(.n-checkbox--checked:hover .n-checkbox__box) {
+  border-color: #ffffff !important; /* 保持白色邊框 */
+  background-color: #ffffff !important; /* 保持白色背景 */
 }
 
 :deep(.n-checkbox__label) {
-  color: #333333;
+  color: #ffffff;
 }
 
 :deep(.n-space) {
@@ -449,7 +517,7 @@ export default defineComponent({
 }
 
 .popup-content {
-  background-color: white !important;
+  background-color: #2a2a2a !important;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   padding: 16px;
@@ -483,19 +551,19 @@ export default defineComponent({
 }
 
 :deep(.n-popover .n-popover__content) {
-  background-color: white !important;
+  background-color: #2a2a2a !important;
 }
 
 :deep(.n-popover-body) {
-  background-color: white !important;
+  background-color: #2a2a2a !important;
 }
 
 :deep(.n-popover .n-popover__arrow-wrapper .n-popover__arrow) {
-  background-color: white !important;
+  background-color: #2a2a2a !important; /* 確保箭頭的背景色也是深灰色 */
 }
 
 :deep(.n-popover .n-popover__arrow-wrapper .n-popover__arrow-mask) {
-  background-color: white !important;
+  background-color: #2a2a2a !important; /* 確保箭頭的遮罩色也是深灰色 */
 }
 
 .divider {

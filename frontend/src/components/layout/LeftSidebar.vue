@@ -14,11 +14,9 @@
     <div class="block1 scrollable-block">
       <template v-if="likedItems && likedItems.length > 0">
         <!-- 遍歷顯示所有收藏的職位卡片 -->
-        <div v-for="item in likedItems.filter(item => item.isLiked || item.isItemLiked)" 
-             :key="item.id + '-' + item.type" 
-             class="job-card-in-sidebar liked-job-card" 
-             @click="handleItemClick(item)">
-          <div v-if="item.image" class="job-image-sidebar" :style="{ backgroundImage: 'url(' + item.image + ')' }">
+        <div v-for="item in likedItems" :key="item.id + '-' + item.type" class="job-card-in-sidebar liked-job-card"
+          @click="handleItemClick(item)">
+          <div v-if="item.image" class="job-image-sidebar" :style="{ backgroundImage: 'url(' + imgUrl(item) + ')' }">
           </div>
           <div class="content-container-sidebar" v-show="!collapsed">
             <p class="title-sidebar">{{ item.title }}</p>
@@ -42,15 +40,16 @@
 
     <div class="block2 scrollable-block">
       <template v-if="viewedItems && viewedItems.length > 0">
-        <div v-for="item in viewedItems" :key="item.id" class="job-card-in-sidebar viewed-job-card">
-          <div v-if="item.image" class="job-image-sidebar" :style="{ backgroundImage: 'url(' + item.image + ')' }">
+        <div v-for="item in viewedItems" :key="item.id + '-' + item.type" class="job-card-in-sidebar viewed-job-card">
+          <div v-if="item.image" class="job-image-sidebar" :style="{ backgroundImage: 'url(' + imgUrl(item) + ')' }">
           </div>
           <div class="content-container-sidebar" v-show="!collapsed">
             <p class="title-sidebar">{{ item.title }}</p>
             <p v-if="item.company" class="company-sidebar">{{ item.company }}</p>
           </div>
-          <button type="button" class="like-btn" @click="handleLikeFromViewed(item)" v-show="!collapsed">
-            <font-awesome-icon :icon="['far', 'heart']" class="heart-icon" />
+          <button type="button" class="like-btn" :class="{ active: item.isItemLiked }"
+            @click.stop="handleLikeFromViewed(item)" v-show="!collapsed">
+            <font-awesome-icon :icon="[item.isItemLiked ? 'fas' : 'far', 'heart']" class="heart-icon" />
           </button>
         </div>
       </template>
@@ -67,7 +66,9 @@
 
 <script>
 import eventBus from '/src/eventBus.js';
-import { updateLikedCompanies } from '@/api/company';
+
+const ITEM_TYPE_JOB = 'job';
+const ITEM_TYPE_COMPANY = 'company';
 
 export default {
   name: 'LeftSidebar',
@@ -93,6 +94,7 @@ export default {
       default: () => []
     }
   },
+  inject: ['openRightSidebar', 'updateLikedItemInSidebar'],
   data() {
     return {
       // 用於控制側邊欄寬度調整的狀態
@@ -112,48 +114,50 @@ export default {
     document.removeEventListener('mouseup', this.stopResizing);
   },
   methods: {
+    imgUrl(item) {
+      const logo = item.image;
+      if (logo?.startsWith('http')) {
+        return logo;
+      }
+      return `http://localhost:8000/${logo || 'default_job_image.png'}`;
+    },
     // 觸發折疊/展開事件
     toggleCollapseInternal() {
       this.$emit('toggle-collapse');
     },
 
     // 從收藏列表中移除職位
-    async handleUnlikeFromSidebar(itemToUnlike) {
-      if (itemToUnlike) {
-        try {
-          // 先調用 API 更新後端狀態
-          await updateLikedCompanies(itemToUnlike.id, false);
-          
-          // 通知父組件移除這個項目，同時傳遞 type
-          this.$emit('remove-item-from-liked-list', itemToUnlike.id, itemToUnlike.type || 'job');
-          
-          // 更新瀏覽列表中該項目的狀態
-          const viewedItemIndex = this.viewedItems.findIndex(item => item.id === itemToUnlike.id);
-          if (viewedItemIndex !== -1) {
-            this.viewedItems[viewedItemIndex].isLiked = false;
-          }
-
-          // 發送事件通知其他組件更新狀態
-          eventBus.emit('update-like-status', {
-            id: itemToUnlike.id,
-            type: itemToUnlike.type || 'job',
-            isLiked: false
-          });
-        } catch (error) {
-          console.error('Failed to unlike item:', error);
-        }
+    // API 呼叫邏輯將被移到 BaseLayout 的 handleRemoveItemFromLikedList 中
+    async handleUnlikeFromSidebar(itemToUnlike) { // 保持 async 以防萬一
+      if (itemToUnlike && itemToUnlike.id && itemToUnlike.type) {
+        // 通知 BaseLayout 從收藏列表刪除該項目，並更新瀏覽列表中該項目的愛心狀態為空心
+        // BaseLayout 會自行處理 API 呼叫 (如果是公司) 和 eventBus 的發送
+        this.$emit('remove-item-from-liked-list', itemToUnlike.id, itemToUnlike.type);
+      } else {
+        console.warn('handleUnlikeFromSidebar: 無效的項目數據或缺少 ID/類型', itemToUnlike);
       }
     },
 
     // 將瀏覽過的職位添加到收藏列表
-    async handleLikeFromViewed(itemToLike) {
-      if (itemToLike) {
-        try {
-          await updateLikedCompanies(itemToLike.id, true);
-          this.$emit('add-item-to-liked-list', itemToLike);
-        } catch (error) {
-          console.error('Failed to like item:', error);
-        }
+    // API 呼叫邏輯將被移到 BaseLayout 的 handleUpdateLikedItemInSidebar 中
+    async handleLikeFromViewed(itemToToggle) { // 保持 async 以防萬一
+      if (itemToToggle && itemToToggle.originalData && itemToToggle.type) { // 【新增】檢查 type 屬性
+        const newLikedStatus = !itemToToggle.isItemLiked; // 計算新的愛心狀態
+
+        this.updateLikedItemInSidebar(itemToToggle.originalData, newLikedStatus);
+
+      } else {
+        console.warn('handleLikeFromViewed: 無效的項目數據或缺少 ID/類型', itemToToggle);
+      }
+    },
+
+    // 點擊收藏或瀏覽過的項目卡片時，開啟右側邊欄
+    handleItemClick(item) {
+      // 確保 item 包含原始數據，因為 openRightSidebar 期望接收原始數據
+      if (item && item.originalData && typeof this.openRightSidebar === 'function') {
+        this.openRightSidebar(item.originalData);
+      } else {
+        console.warn('handleItemClick: 無法開啟右側邊欄，缺少原始數據或 openRightSidebar 未定義', item);
       }
     },
 
@@ -172,8 +176,8 @@ export default {
       if (this.isResizing) {
         const deltaX = e.clientX - this.initialMouseX;
         let newWidth = this.initialWidth + deltaX;
-        const minWidth = 60; 
-        const maxWidth = 400; 
+        const minWidth = 60;
+        const maxWidth = 400;
         newWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
         this.$emit('update-width', newWidth);
       }
@@ -187,20 +191,6 @@ export default {
         document.body.style.cursor = '';
       }
     }
-  },
-  watch: {
-    // 監聽收藏列表變化，處理取消收藏的情況
-    likedItems: {
-      handler(newVal) {
-        console.log('LeftSidebar.vue: likedItems prop updated:', JSON.parse(JSON.stringify(newVal)));
-        newVal.forEach(item => {
-          if (!item.isLiked) {
-            this.handleUnlikeFromSidebar(item);
-          }
-        });
-      },
-      deep: true
-    }
   }
 }
 </script>
@@ -210,7 +200,7 @@ export default {
 .left-side-bar {
   height: 100%;
   padding: 16px;
-  background-color: #383333;
+  background-color: #2a2a2a;
   border-radius: 10px;
   color: white;
   display: flex;
@@ -226,22 +216,27 @@ export default {
 }
 
 /* 各區塊間距控制 */
-.left-side-bar > .header1 {
+.left-side-bar>.header1 {
   margin-bottom: 8px;
 }
-.left-side-bar > .scrollable-block {
+
+.left-side-bar>.scrollable-block {
   margin-bottom: 16px;
 }
-.left-side-bar > hr {
+
+.left-side-bar>hr {
   margin-top: 0;
   margin-bottom: 16px;
 }
-.left-side-bar > .header2 {
+
+.left-side-bar>.header2 {
   margin-bottom: 8px;
 }
-.left-side-bar > .resizer {
+
+.left-side-bar>.resizer {
   margin-bottom: 0;
 }
+
 .left-side-bar .block2.scrollable-block:has(+ .resizer) {
   margin-bottom: 0;
 }
@@ -305,22 +300,28 @@ export default {
   scrollbar-color: #727272 transparent;
 }
 
-.scrollable-block::-webkit-scrollbar {
+.scrollable-block::-webkit-scrollbar{
   width: 6px;
 }
 
-.scrollable-block::-webkit-scrollbar-track {
+.scrollable-block::-webkit-scrollbar-track{
   background: transparent;
   margin: 2px 0;
 }
 
-.scrollable-block::-webkit-scrollbar-thumb {
+.scrollable-block::-webkit-scrollbar-thumb{
   background-color: #727272;
   border-radius: 3px;
 }
 
-.scrollable-block::-webkit-scrollbar-thumb:hover {
+.scrollable-block::-webkit-scrollbar-thumb:hover{
   background-color: #888888;
+}
+
+.left-side-bar.active .scrollable-block::-webkit-scrollbar  {
+  display:none;
+  width: 0;
+  height: 0;
 }
 
 /* 空狀態顯示樣式 */
@@ -361,7 +362,7 @@ hr {
   flex-direction: row;
   align-items: flex-start;
   gap: 12px;
-  background-color: #594f4f;
+  background-color: rgba(255, 255, 255, 0.1);
   border-radius: 5px;
   padding: 8px;
   color: white;
@@ -424,7 +425,8 @@ hr {
   transform: scale(1.1);
 }
 
-.job-card-in-sidebar .like-btn.active { /* For liked items in block1 */
+.job-card-in-sidebar .like-btn.active {
+  /* For liked items in block1 */
   color: rgb(235, 178, 189);
 }
 
@@ -439,12 +441,15 @@ hr {
 }
 
 .left-side-bar.active .scrollable-block {
-  padding: 0;
+  padding: 0px;
+  max-height: 45%;
+  overflow-x: hidden;
+  overflow-y: auto;
   max-height: none;
-  overflow: visible;
   gap: 8px;
   align-items: center;
   width: auto;
+  scrollbar-width: none; 
 }
 
 .left-side-bar.active .job-card-in-sidebar {

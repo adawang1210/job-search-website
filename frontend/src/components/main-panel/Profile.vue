@@ -17,7 +17,7 @@
           <n-breadcrumb-item>
             <div class="breadcrumb-link" @click="scrollToSection('aboutSection')">
               <n-icon>
-                <img :src="profileIcon" alt="profile icon" style="width: 16px; height: 16px;" />
+                <img :src="profileIcon" alt="profile icon" style="width: 16px; height: 16px; filter: invert(1);" />
               </n-icon>
               關於
             </div>
@@ -25,7 +25,7 @@
           <n-breadcrumb-item>
             <div class="breadcrumb-link" @click="scrollToSection('skillsSection')">
               <n-icon>
-                <img :src="skillIcon" alt="skill icon" style="width: 16px; height: 16px;" />
+                <img :src="skillIcon" alt="skill icon" style="width: 16px; height: 16px; filter: invert(1);" />
               </n-icon>
               技能
             </div>
@@ -33,7 +33,7 @@
           <n-breadcrumb-item>
             <div class="breadcrumb-link" @click="scrollToSection('resumeSection')">
               <n-icon>
-                <img :src="resumeIcon" alt="resume icon" style="width: 16px; height: 16px;" />
+                <img :src="resumeIcon" alt="resume icon" style="width: 16px; height: 16px; filter: invert(1);" />
               </n-icon>
               履歷表
             </div>
@@ -327,10 +327,7 @@ export default {
         observer = new IntersectionObserver(
           (entries) => {
             entries.forEach((entry) => {
-              console.log('Intersection ratio:', entry.intersectionRatio);
-              console.log('Is intersecting:', entry.isIntersecting);
               if (entry.isIntersecting) {
-                console.log('Animation triggered');
                 isSkillsVisible.value = true;
               }
             });
@@ -344,21 +341,17 @@ export default {
       }
 
       if (skillsSection.value) {
-        console.log('Skills section mounted:', skillsSection.value);
         observer.observe(skillsSection.value);
-        console.log('Observer started');
       }
     };
 
     onMounted(() => {
-      console.log('Component mounted');
       initializeObserver();
     });
 
     // 监听 profile 数据变化
     const startObservation = () => {
       nextTick(() => {
-        console.log('Profile data loaded, initializing observer');
         initializeObserver();
       });
     };
@@ -1108,6 +1101,7 @@ section {
   display: flex;
   align-items: center;
   gap: 4px;
+  color: white;
 }
 
 .breadcrumb-link:hover {

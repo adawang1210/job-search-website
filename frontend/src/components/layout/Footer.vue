@@ -65,9 +65,11 @@ export default {
 .footer-in-panel {
   padding: 30px 15px; /* 增加上下內邊距 */
   background-color: #2a2a2a;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
   color: #a0a0a0;
   flex-shrink: 0;
-  margin-top: auto;
+  
 }
 
 .footer-content {
@@ -78,10 +80,11 @@ export default {
 
 .footer-links-container {
   display: flex;
-  flex-wrap: wrap; /* 在小螢幕上換行 */
   justify-content: space-between; /* 平均分配空間 */
   gap: 20px; /* 各欄位之間的間距 */
   margin-bottom: 30px; /* 與下方版權資訊的間距 */
+  flex-shrink: 1; 
+  min-width: 0; 
 }
 
 .footer-column {

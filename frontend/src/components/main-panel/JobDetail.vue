@@ -10,7 +10,7 @@
           <div class="profile-grid">
             <div class="logo-column">
               <div class="company-logo">
-                <img ref="avatar" src="/company-icon.png" alt="Company Logo" class="logo-image" />
+                <img ref="avatar" :src="jobDetail.image" alt="Company Logo" class="logo-image" />
               </div>
             </div>
             <div class="info-column">
@@ -45,7 +45,7 @@
         <h2 class="section-title">關於</h2>
         <div class="cards">
           <div class="info-card">
-            <h3>工作機會介紹</h3>
+            <h3>{{ jobDetail.title }}</h3>
             <div class="company-details">
               <div>
                 <div class="detail-group">
@@ -189,12 +189,12 @@
 import { ref, defineComponent } from 'vue'
 import axios from 'axios';
 import eventBus from '/src/eventBus.js';
-import { getJobDetail } from '@/api/home';//暫時用home
-import { likeJob, unlikeJob } from '@/api/home.js';
+import { getJobDetail, getGreatCompanies } from '@/api/home.js';//暫時用home
 import { NIcon } from 'naive-ui'
 import { Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular } from '@vicons/fa'
 
 const ITEM_TYPE_JOB = 'job';
+const ITEM_TYPE_COMPANY = 'company';
 
 export default defineComponent({
   name: 'JobDetail',
@@ -233,14 +233,18 @@ export default defineComponent({
       immediate: true, // 組件載入時立即執行一次
       async handler(newId) {
         if (newId) {
-          const jobDetailData = await getJobDetail(newId);
-          //console.log("jobDetailData",jobDetailData);
-          //this.jobDetail = jobDetailData;
+          const [jobDetailData, companiesData] = await Promise.all([
+            getJobDetail(newId),
+            getGreatCompanies(),
+          ]);
+          
           const rawJobDetail = jobDetailData.results || jobDetailData || [];
           this.jobDetail = {
             id: rawJobDetail.id,
             title: rawJobDetail.title,
-            image: rawJobDetail.company_logo || 'default_job_image.png',
+            image: rawJobDetail.company_logo?.startsWith('http') 
+              ? rawJobDetail.company_logo 
+              : 'http://localhost:8000/' + (rawJobDetail.company_logo || 'default_job_image.png'),
             company: {
               name: rawJobDetail.company?.name || '未知公司',
               industry: rawJobDetail.company?.industry || '',
@@ -262,38 +266,55 @@ export default defineComponent({
             type: ITEM_TYPE_JOB,
           };
 
+          // 處理企業數據
+          const rawCompanies = companiesData.results || companiesData || [];
+          this.companies = rawCompanies.map(company => ({
+            id: company.id,
+            name: company.name,
+            image: company.media && company.media.logo ? company.media.logo : 'default_company_logo_path.png',
+            isLiked: company.is_liked_by_user || false, // 【新增】初始化公司的收藏狀態
+            originalData: { ...company, type: ITEM_TYPE_COMPANY }, // 【修改】在原始數據中加入 type 屬性
+            type: ITEM_TYPE_COMPANY, // 【新增】在頂層也保留 type，方便直接使用 company 物件
+          }));
+
           // 圖片抓色更改背景
           this.$nextTick(() => {
-          const img = this.$refs.avatar;
-          if(img) {
-            if (img.complete) {
-            this.handleImage(img);
-            } else {
-              img.onload = () => {
-                this.handleImage(img);
-              };
-            }
-          }
+            const logoUrl = this.jobDetail.image || 'default.png';
+            const img = new Image();
+            img.crossOrigin = 'anonymous';  // ⚠️ 這行很重要
+            img.src = logoUrl;
 
-        });
+            img.onload = () => {
+              this.handleImage(img);
+            };
+
+            img.onerror = () => {
+              console.error('圖片載入失敗：', logoUrl);
+            };
+          });
         }
       }
     }
   },
-  async mounted() {
+  mounted() {
+    // 【新增】監聽來自 BaseLayout 或 LeftSidebar 的收藏狀態更新事件
     eventBus.on('update-like-status', this.handleUpdateLikeStatus);
   },
   beforeUnmount() {
+    // 【新增】在組件銷毀前移除事件監聽器
     eventBus.off('update-like-status', this.handleUpdateLikeStatus);
   },
   computed: {
     companyLink() {
       const companyName = this.jobDetail.company.name;
-      if(companyName == "宜得利") {
-        return '/company/1/'
-      }
-      else {
-        return '../'
+      // 從 this.companies 找出 name 相同的公司
+      const company = this.companies.find(c => c.name === companyName);
+
+      if (company && company.id) {
+        return `/company/${company.id}/`;
+      } else {
+        // 找不到公司，回傳預設路徑或空字串
+        return '../';
       }
     },
     paginatedJobs() {
@@ -347,11 +368,9 @@ export default defineComponent({
     selectAction(option) {
       switch (option) {
         case '分享':
-          console.log('執行分享功能');
           this.showShare = true;
           break;
         case '檢舉':
-          console.log('執行檢舉功能');
           this.showReport = true;
           break;
         default:
@@ -361,71 +380,39 @@ export default defineComponent({
     },
     // heart icon clicked
     // item 可能是 job 或 company 物件，它已經包含 isLiked 和 originalData (其中包含 type)
-    async toggleLike(item) {
+    async toggleLike(job) {
       // 假設需要登入才能收藏
       // if (!this.isUserLoggedIn) { 
       //   alert('您需要先登入才能收藏！');
       //   return;
       // }
 
-      if (!item || !item.id || !item.type) {
-        console.error('toggleLike: 無效的項目數據或缺少 ID/類型', item);
+      if (!job || !job.id || job.type !== ITEM_TYPE_JOB) {
+        console.error('toggleLike: 無效的職缺數據或類型不符', job);
         return;
       }
+      const newLikedStatus = !job.isLiked;
 
-      const originalLikedStatus = item.isLiked;
-      const newLikedStatus = !item.isLiked;
-
-      // 1. 樂觀更新 UI (直接修改傳入的 item 物件)
-      item.isLiked = newLikedStatus;
-
-      try {
-        // 2. 呼叫後端 API (統一使用 likeJob/unlikeJob)
-        if (newLikedStatus) {
-          await likeJob(item.id); // 假設 likeJob API 能處理職缺和公司 ID
-        } else {
-          await unlikeJob(item.id); // 假設 unlikeJob API 能處理職缺和公司 ID
-        }
-
-        // 3. 通知 BaseLayout 更新側邊欄的收藏和瀏覽紀錄列表
-        // 傳遞 item.originalData 和新的 isLiked 狀態
-        if (typeof this.updateLikedItemInSidebar === 'function') {
-          this.updateLikedItemInSidebar(item.originalData || item, newLikedStatus); // originalData 已經包含 type
-        }
-
-        // 4. 透過 eventBus 通知所有頁面同步愛心狀態
-        // 統一事件名稱 'update-like-status'，並傳遞 ID, 類型, 和新狀態
-        eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: newLikedStatus });
-
-      } catch (error) {
-        console.error(`Failed to update ${item.type} like status for ID ${item.id}:`, error);
-        // API 失敗，恢復 UI 狀態
-        item.isLiked = originalLikedStatus;
-        alert(`收藏操作失敗，請稍後再試。`);
-
-        // 恢復 BaseLayout 列表狀態
-        if (typeof this.updateLikedItemInSidebar === 'function') {
-          this.updateLikedItemInSidebar(item.originalData || item, originalLikedStatus);
-        }
-        // 通知所有頁面恢復愛心狀態
-        eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: originalLikedStatus });
+      // 1. 樂觀更新 UI
+      job.isLiked = newLikedStatus;
+      // 2. 通知 BaseLayout 更新側邊欄的收藏和瀏覽紀錄列表
+      // 傳遞 job.originalData (原始 API 數據，包含 type) 和新的 isLiked 狀態
+      if (typeof this.updateLikedItemInSidebar === 'function') {
+        this.updateLikedItemInSidebar(job.originalData || job, newLikedStatus);
       }
+
+      // 3. 透過 eventBus 通知所有頁面同步愛心狀態
+      // 因為沒有 API 失敗回滾，所以這裡直接發送最終狀態即可
+      eventBus.emit('update-like-status', { id: job.id, type: job.type, isLiked: newLikedStatus });
     },
     // 處理來自 eventBus 的通用愛心狀態更新事件
-    handleUpdateLikeStatus(data) { // data 預期為 { id: itemId, type: itemType, isLiked: newStatus }
+    handleUpdateLikeStatus(data) { // 預期 data 為 { id: itemId, type: itemType, isLiked: newStatus }
       const { id, type, isLiked } = data;
-      // 1. 更新 sections 中的職缺愛心狀態
+      // SearchResult 只顯示職缺，所以只處理 ITEM_TYPE_JOB 類型
       if (type === ITEM_TYPE_JOB) {
-        const jobInSection = this.jobDetail;
-          if (jobInSection) {
-            jobInSection.isLiked = isLiked;
-          }
-      }
-      // 2. 更新 companies 中的公司愛心狀態
-      else if (type === ITEM_TYPE_COMPANY) {
-        const companyToUpdate = this.company;
-        if (companyToUpdate) {
-          companyToUpdate.isLiked = isLiked;
+        const jobToUpdate = this.searchResults.find(job => job.id === id);
+        if (jobToUpdate) {
+          jobToUpdate.isLiked = isLiked;
         }
       }
     },
@@ -449,12 +436,6 @@ export default defineComponent({
     },
     handleSubmit(jobId) {
       const item = this.jobDetail;
-      // 這裡可以處理送出邏輯
-      console.log('送出資料:', {
-        item: item,
-        formData: this.formData,
-        files: this.selectedFiles
-      });
 
       alert('資料已送出！');
       item.isApplied = true;
@@ -462,8 +443,8 @@ export default defineComponent({
       this.closeModal();
     },
     copyLink() {
-      navigator.clipboard.writeText(shareLink.value)
-      alert('已複製連結')
+      navigator.clipboard.writeText(this.shareLink);
+      alert(`已複製連結：${this.shareLink}`);
     },
     submitReport() {
       if (!reason.value.trim()) {
@@ -504,8 +485,8 @@ export default defineComponent({
       const contentEl = document.querySelector('.middle-content');
       contentEl.style.background = `linear-gradient(
                                     to bottom,
-                                    ${avgColor} 0%,
-                                    #121212 20%,
+                                    ${avgColor} 0px,
+                                    #121212 720px,
                                     #121212 100%
                                     )`;
     }
@@ -688,6 +669,11 @@ export default defineComponent({
   font-size: 40px;
   font-weight: 900;
   margin: 23px 0 0;
+
+  white-space: nowrap;      /* 不換行 */
+  overflow: hidden;         /* 超出部分隱藏 */
+  text-overflow: ellipsis;  /* 顯示省略號 */
+  max-width: 100%;          /* 限制寬度，避免無限延伸 */
 }
 
 .company-tags {
@@ -700,6 +686,11 @@ export default defineComponent({
   color:#fff;
   font-size: 20px;
   font-weight: 700;
+}
+
+.company-link:hover {
+  background-color: transparent !important;
+  text-decoration: underline;
 }
 
 .job-count {

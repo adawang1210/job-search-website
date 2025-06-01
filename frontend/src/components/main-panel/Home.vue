@@ -41,7 +41,7 @@
       <div class="love-job-content" @mousedown="startDrag" @mousemove="onDrag" @mouseup="stopDrag"
         @mouseleave="stopDrag" :class="{ active: isDragging }">
         <div class="love-job-card" v-for="(item, index) in loveJobItems" :key="'love-job-' + index"
-          :style="{ backgroundImage: 'url(\'/love-job-frame.png\')' }">
+          :style="{ backgroundImage: 'url(\'/love-job-frame.png\')' }" @click="handleLoveCardClick(item.id)">
           <img :src="item.image" :alt="item.name" class="love-job-photo">
           <p class="love-job-name">{{ item.name }}</p>
         </div>
@@ -105,14 +105,14 @@
 
 <script>
 import eventBus from '/src/eventBus.js';
-import { getJobs, getGreatCompanies, likeJob, unlikeJob, getJobDetail } from '@/api/home.js';
+import { getJobs, getGreatCompanies, getJobDetail, updateLikedCompanies } from '@/api/home.js';
 
 const ITEM_TYPE_JOB = 'job';
 const ITEM_TYPE_COMPANY = 'company';
 
 export default {
   name: 'Home',
-  inject: ['openRightSidebar', 'updateLikedItemInSidebar', 'addViewedItemToSidebar'],
+  inject: ['openRightSidebar', 'updateLikedItemInSidebar', 'addViewedItemToSidebar','isItemCurrentlyLiked'],
   data() {
     return {
       isDragging: false,
@@ -139,22 +139,22 @@ export default {
         },
       ],
       loveJobItems: [
-        { id: 'love_job_1', name: '金融業', image: '/love-job-1.jpg' },
-        { id: 'love_job_2', name: '傳產', image: '/love-job-2.jpg' },
-        { id: 'love_job_3', name: '科技業', image: '/love-job-3.jpg' },
+        { id: 'love_job_1', name: '航空業', image: '/love-job-1.jpg' },
+        { id: 'love_job_2', name: '傳統產業', image: '/love-job-2.jpg' },
+        { id: 'love_job_3', name: '家具業', image: '/love-job-3.jpg' },
         { id: 'love_job_4', name: '電子產品製造業', image: '/love-job-4.jpg' },
-        { id: 'love_job_5', name: '服務業', image: '/love-job-5.jpg' },
-        { id: 'love_job_6', name: '維修業', image: '/love-job-6.jpg' }
+        { id: 'love_job_5', name: '餐飲服務業', image: '/love-job-5.jpg' },
+        { id: 'love_job_6', name: '速食餐飲業', image: '/love-job-6.jpg' }
       ],
       allApiJobs: [], // 用於存儲從 API 獲取並轉換格式後的所有職缺
       companies: [],
       favoriteJobs: [
         { id: 'fav_dentist', name: '最愛牙醫師', image: '/favorite-bg-1.jpg', icon: '/favorite-icon-1.png', description: '雅德斯牙醫診所、蒔美牙醫集團和更多', isLiked: false },
-        { id: 'fav_designer', name: '最愛室內設計師', image: '/favorite-bg-2.jpg', icon: '/favorite-icon-2.png', description: '雅和室內設計、拾間室內裝修設計有限公司和更多', isLiked: false },
-        { id: 'fav_barista', name: '最愛咖啡師', image: '/favorite-bg-3.jpeg', icon: '/favorite-icon-3.png', description: '咖碼股份有限公司、路易莎職人咖啡股份有限公司和更多', isLiked: false },
-        { id: 'fav_baker', name: '最愛烘焙技師', image: '/favorite-bg-4.jpg', icon: '/favorite-icon-4.png', description: '歐立食品股份有限公司、亞尼克菓子工房股份有限公司和更多', isLiked: false },
+        { id: 'fav_designer', name: '最愛室內設計師', image: '/favorite-bg-2.jpg', icon: '/favorite-icon-2.png', description: '雅和室內設計、拾間室內裝修設計和更多', isLiked: false },
+        { id: 'fav_barista', name: '最愛咖啡師', image: '/favorite-bg-3.jpeg', icon: '/favorite-icon-3.png', description: '咖碼、路易莎和更多', isLiked: false },
+        { id: 'fav_baker', name: '最愛烘焙技師', image: '/favorite-bg-4.jpg', icon: '/favorite-icon-4.png', description: '歐立食品、亞尼克和更多', isLiked: false },
         { id: 'fav_engineer', name: '最愛半導體工程師', image: '/favorite-bg-5.jpg', icon: '/favorite-icon-5.png', description: 'nvidia台灣分公司、台積電和更多', isLiked: false },
-        { id: 'fav_staff', name: '最愛門市人員', image: '/favorite-bg-6.jpg', icon: '/favorite-icon-6.png', description: '宜得利家居股份有限公司、無印良品和更多', isLiked: false }
+        { id: 'fav_staff', name: '最愛門市人員', image: '/favorite-bg-6.jpg', icon: '/favorite-icon-6.png', description: '宜得利、無印良品和更多', isLiked: false }
       ],
       isLoadingCompanies: false,
       errorCompanies: null,
@@ -180,7 +180,9 @@ export default {
         this.allApiJobs = rawJobs.map(job => ({
           id: job.id,
           title: job.title,
-          image: job.company_logo || 'default_job_image.png',
+          image: job.company_logo?.startsWith('http') 
+            ? job.company_logo 
+            : 'http://localhost:8000/' + (job.company_logo || 'default_job_image.png'),
           company: job.company && job.company.name ? job.company.name : '未知公司',
           salary: job.salary_max ? `$${job.salary_max}` : '面議',
           isLiked: job.is_liked_by_user || false, // 初始收藏狀態來自後端
@@ -199,6 +201,23 @@ export default {
           originalData: { ...company, type: ITEM_TYPE_COMPANY }, // 【修改】在原始數據中加入 type 屬性
           type: ITEM_TYPE_COMPANY, // 【新增】在頂層也保留 type，方便直接使用 company 物件
         }));
+
+        // 【新增】在所有數據加載並處理完畢後，執行一次全局愛心狀態同步
+        // 確保所有職缺和公司的 isLiked 狀態與 BaseLayout (localStorage) 保持一致
+        if (typeof this.isItemCurrentlyLiked === 'function') {
+            // 同步職缺的 isLiked 狀態
+            this.sections.forEach(section => {
+                section.jobs.forEach(job => {
+                    job.isLiked = this.isItemCurrentlyLiked(job.id, job.type);
+                });
+            });
+            // 同步公司的 isLiked 狀態
+            this.companies.forEach(company => {
+                company.isLiked = this.isItemCurrentlyLiked(company.id, company.type);
+            });
+        } else {
+            console.warn('Home.vue: isItemCurrentlyLiked method not injected, initial liked status might be inaccurate.');
+        }
 
       } catch (error) {
         console.error('Error fetching initial data:', error);
@@ -265,11 +284,6 @@ export default {
 
     // item 可能是 job 或 company 物件，它已經包含 isLiked 和 originalData (其中包含 type)
     async toggleLike(item) {
-      // 假設需要登入才能收藏
-      // if (!this.isUserLoggedIn) { 
-      //   alert('您需要先登入才能收藏！');
-      //   return;
-      // }
 
       if (!item || !item.id || !item.type) {
         console.error('toggleLike: 無效的項目數據或缺少 ID/類型', item);
@@ -282,36 +296,44 @@ export default {
       // 1. 樂觀更新 UI (直接修改傳入的 item 物件)
       item.isLiked = newLikedStatus;
 
+      // 2. 立即通知 BaseLayout 更新側邊欄和 localStorage
+      // 這對於職缺（無需 API）和公司（需等待 API 回應）都是立即更新的
+      if (typeof this.updateLikedItemInSidebar === 'function') {
+        this.updateLikedItemInSidebar(item.originalData || item, newLikedStatus); 
+      }
+      // 立即透過 eventBus 通知所有頁面同步愛心狀態
+      eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: newLikedStatus });
+
       try {
-        // 2. 呼叫後端 API (統一使用 likeJob/unlikeJob)
-        if (newLikedStatus) {
-          await likeJob(item.id); // 假設 likeJob API 能處理職缺和公司 ID
+        // 3. 區分呼叫 API 還是只處理前端邏輯
+        if (item.type === ITEM_TYPE_JOB) {
+          // 職缺：只處理前端，無需呼叫後端 API
+          // 如果這裡需要等待任何非同步操作，例如動畫，可以在這裡加 await new Promise(...)
+        } else if (item.type === ITEM_TYPE_COMPANY) {
+          // 公司：呼叫後端 API
+          await updateLikedCompanies(item.id, newLikedStatus);
         } else {
-          await unlikeJob(item.id); // 假設 unlikeJob API 能處理職缺和公司 ID
+          console.warn(`toggleLike: 未知的項目類型 ${item.type}，未呼叫 API。`);
         }
-
-        // 3. 通知 BaseLayout 更新側邊欄的收藏和瀏覽紀錄列表
-        // 傳遞 item.originalData 和新的 isLiked 狀態
-        if (typeof this.updateLikedItemInSidebar === 'function') {
-          this.updateLikedItemInSidebar(item.originalData || item, newLikedStatus); // originalData 已經包含 type
-        }
-
-        // 4. 透過 eventBus 通知所有頁面同步愛心狀態
-        // 統一事件名稱 'update-like-status'，並傳遞 ID, 類型, 和新狀態
-        eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: newLikedStatus });
 
       } catch (error) {
         console.error(`Failed to update ${item.type} like status for ID ${item.id}:`, error);
-        // API 失敗，恢復 UI 狀態
-        item.isLiked = originalLikedStatus;
-        alert(`收藏操作失敗，請稍後再試。`);
+        /// 只有公司收藏 API 失敗時才需要回滾
+        if (item.type === ITEM_TYPE_COMPANY) {
+          item.isLiked = originalLikedStatus; // 回滾 Home.vue 自己的 isLiked 狀態
+          alert(`收藏公司操作失敗！請稍後再試。\n錯誤訊息: ${error.message || error}`);
 
-        // 恢復 BaseLayout 列表狀態
-        if (typeof this.updateLikedItemInSidebar === 'function') {
-          this.updateLikedItemInSidebar(item.originalData || item, originalLikedStatus);
+          // 通知 BaseLayout 回滾列表狀態
+          if (typeof this.updateLikedItemInSidebar === 'function') {
+            this.updateLikedItemInSidebar(item.originalData || item, originalLikedStatus); 
+          }
+          // 通知所有頁面回滾愛心狀態
+          eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: originalLikedStatus });
+        } else {
+          // 職缺：API 失敗不會發生，所以這裡理論上不會觸發。
+          // 但為了安全，如果觸發，可以顯示通用錯誤。
+          console.warn(`職缺收藏錯誤，但沒有 API 呼叫。可能為其他邏輯錯誤：${error.message || error}`);
         }
-        // 通知所有頁面恢復愛心狀態
-        eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: originalLikedStatus });
       }
     },
 
@@ -368,15 +390,14 @@ export default {
       }
     },
     handleTitleClick(job) {
-      console.log('Title clicked for job:', job.title, 'Company:', job.company);
-      // 通常點擊職位標題或公司名稱會導航到公司或職缺詳情頁
-      // 假設您有一個路由到公司頁面，並且需要公司ID
-      // job.originalData.company.id
-      alert(`預計導航至公司頁面: ${job.company}. (此功能需 Vue Router 支持)`);
+      this.$router.push({ name: 'jobdetail', params: { id: job.id } });
     },
     handleCompanyCardClick(company) {
       // 這個方法只處理公司卡片點擊和路由導向，不會開啟右側邊欄或新增到已瀏覽
       this.$router.push({ name: 'company', params: { id: company.id } });
+    },
+    handleLoveCardClick(loveId) {
+      this.$router.push({ name: 'favoritejobs', params: { id: loveId } });
     }
   }
 }
@@ -389,7 +410,7 @@ export default {
   flex-direction: column;
   overflow-x: hidden;
   box-sizing: border-box;
-  background-color: #383333;
+  background-color: #2a2a2a;
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
   border-bottom-right-radius: 0;

@@ -60,7 +60,7 @@
 </template>
 
 <script>
-import { getGreatCompanies, likeJob, unlikeJob } from '@/api/home.js';
+import { getGreatCompanies} from '@/api/home.js';
 import { PlayCircleOutline } from '@vicons/ionicons5';
 import { NCarousel, NCarouselItem } from 'naive-ui';
 import eventBus from '/src/eventBus.js';
@@ -214,7 +214,7 @@ export default {
   display: flex;
   flex-direction: column;
   padding: 20px;
-  background-color: #383333;
+  background-color: #2a2a2a;
   /* 深灰色背景 */
   color: white;
   min-height: 100vh;

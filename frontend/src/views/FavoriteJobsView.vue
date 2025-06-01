@@ -1,6 +1,6 @@
 <template>
   <BaseLayout>
-    <FavoriteJobs>
+    <FavoriteJobs :id="id">
 
     </FavoriteJobs>
   </BaseLayout>
@@ -13,6 +13,7 @@ import FavoriteJobs from '@/components/main-panel/FavoriteJobs.vue'
 
 export default {
   name: 'FavoriteJobsView',
+  props: ['id'],
   components: {
     BaseLayout,
     FavoriteJobs,

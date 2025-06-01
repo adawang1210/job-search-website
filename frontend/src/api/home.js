@@ -17,6 +17,17 @@ export function getGreatCompanies() {
   })
 }
 
+// 更新公司按讚狀態
+export function updateLikedCompanies(companyId, isLiked) {
+  return request({
+    url: `/api/companies/${companyId}/isLiked/`,
+    method: 'post',
+    data: {
+      isLiked: isLiked
+    }
+  })
+}
+/*
 // 收藏職缺
 export function likeJob(jobId) {
   return request({
@@ -32,7 +43,7 @@ export function unlikeJob(jobId) {
     method: 'post'
   })
 }
-
+*/
 // 獲取職缺詳情
 export function getJobDetail(jobId) {
   return request({

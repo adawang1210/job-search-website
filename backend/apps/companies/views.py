@@ -8,6 +8,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from .serializers import CompanyMediaSerializer
 from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser, FormParser
 
 # Create your views here.
 
@@ -69,6 +70,30 @@ class CompanyViewSet(viewsets.ModelViewSet):
 class CompanyMediaViewSet(viewsets.ModelViewSet):
     queryset = CompanyMedia.objects.all()
     serializer_class = CompanyMediaSerializer
+    parser_classes = (MultiPartParser, FormParser)
+
+    def perform_create(self, serializer):
+        # 检查是否已存在该公司的媒体记录
+        company = serializer.validated_data.get('company')
+        try:
+            existing_media = CompanyMedia.objects.get(company=company)
+            # 如果存在，则更新而不是创建
+            existing_media.logo = serializer.validated_data.get('logo')
+            existing_media.save()
+        except CompanyMedia.DoesNotExist:
+            # 如果不存在，则创建新记录
+            serializer.save()
+
+    def create(self, request, *args, **kwargs):
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 # class CompanyPhotoViewSet(APIView):
 #     def get(self, request):
 #         photos = CompanyPhoto.objects.all()

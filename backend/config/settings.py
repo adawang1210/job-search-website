@@ -55,7 +55,21 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'config.middleware.PermissionsPolicyMiddleware',  # 添加权限策略中间件
 ]
+
+# 安全头配置
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+# 权限策略配置
+PERMISSIONS_POLICY = {
+    'unload': ['self'],
+    'camera': [],
+    'microphone': [],
+    'geolocation': [],
+}
 
 ROOT_URLCONF = 'config.urls'
 

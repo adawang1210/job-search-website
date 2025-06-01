@@ -320,7 +320,7 @@ export default defineComponent({
   margin-bottom: 8px;
   border-radius: 50%;
   background-color: white;
-  background-image: url("/user-avatar.png");
+  background-image: url("/子源大帥哥.jpg");
   background-size: cover;
   background-position: center;
   cursor: pointer;

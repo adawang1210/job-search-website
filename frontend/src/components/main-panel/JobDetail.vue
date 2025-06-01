@@ -500,7 +500,7 @@ export default defineComponent({
 <style scoped>
 .middle-content {
   background-color: linear-gradient(to bottom,#b3b3b3 0%,#121212 20%,#121212 100%);
-  border-radius: 10px;
+  border-radius: 10px 10px 0 0;
   color: white;
   box-sizing: border-box;
   font-family: 'Roboto', sans-serif;

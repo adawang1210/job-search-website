@@ -604,13 +604,13 @@ export default {
 /* middle-content 區塊 */
 .middle-content {
     width: 100%;
-    max-width: 1005px;
-    margin: 0 auto;   
+    max-width: 1000px;
+    margin: 0 auto 24px;   
     background: linear-gradient(to bottom, #bbbbbb 0%, #bbbbbb 160px, #2b2b2b 100%);
     padding: 48px 32px;
     color: #fff;
     box-sizing: border-box;
-    border-radius: 12px;
+    border-radius: 10px;
     overflow: hidden;
 }
 

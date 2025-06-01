@@ -76,6 +76,20 @@
       <div class="divider">|</div>
 
       <n-input v-model:value="searchQuery" placeholder="工作職稱、公司名稱" @keydown.enter.prevent="handleSearch">
+        <template #prefix v-if="selectedTags.length > 0">
+          <n-space :size="4">
+            <n-tag 
+              v-for="tag in selectedTags" 
+              :key="tag.id"
+              size="small"
+              round
+              closable
+              @close="removeTag(tag)"
+            >
+              {{ tag.name }}
+            </n-tag>
+          </n-space>
+        </template>
         <template #suffix>
           <n-button quaternary @click="handleSearch">
             <template #icon>
@@ -120,7 +134,8 @@ import {
   NCheckboxGroup,
   NGrid,
   NGridItem,
-  NSpace
+  NSpace,
+  NTag
 } from 'naive-ui'
 import {
   HomeOutline as HomeIcon,
@@ -142,6 +157,7 @@ export default defineComponent({
     NGrid,
     NGridItem,
     NSpace,
+    NTag,
     HomeIcon,
     SearchIcon,
     BellIcon,
@@ -195,7 +211,8 @@ export default defineComponent({
         { id: '澎湖縣', name: '澎湖縣' },
         { id: '金門縣', name: '金門縣' },
         { id: '連江縣', name: '連江縣' }
-      ]
+      ],
+      selectedTags: []
     }
   },
   methods: {
@@ -204,14 +221,34 @@ export default defineComponent({
       this.showRegionPopup = false;
     },
     confirmPosition() {
+      // 更新已选择的职务标签
+      this.selectedTags = [
+        ...this.selectedTags.filter(tag => !this.positions.find(p => p.value === tag.id)),
+        ...this.selectedPositions.map(posValue => {
+          const position = this.positions.find(p => p.value === posValue);
+          return {
+            id: position.value,
+            name: position.label,
+            type: 'position'
+          };
+        })
+      ];
       this.showPositionPopup = false;
-      // 可以在這裡考慮是否自動觸發搜尋，如果 searchQuery 有值
-      if (this.searchQuery.trim() !== '') this.handleSearch();
     },
     confirmRegion() {
+      // 更新已选择的地区标签
+      this.selectedTags = [
+        ...this.selectedTags.filter(tag => !this.regions.find(r => r.id === tag.id)),
+        ...this.selectedRegions.map(regionId => {
+          const region = this.regions.find(r => r.id === regionId);
+          return {
+            id: region.id,
+            name: region.name,
+            type: 'region'
+          };
+        })
+      ];
       this.showRegionPopup = false;
-      // 同上
-      if (this.searchQuery.trim() !== '') this.handleSearch();
     },
     handleSearch() {
       const query = {};
@@ -243,6 +280,15 @@ export default defineComponent({
       }
 
       this.closeAllPopups();
+    },
+    removeTag(tag) {
+      this.selectedTags = this.selectedTags.filter(t => t.id !== tag.id);
+      // 根据标签类型更新相应的选择数组
+      if (tag.type === 'position') {
+        this.selectedPositions = this.selectedPositions.filter(p => p !== tag.id);
+      } else if (tag.type === 'region') {
+        this.selectedRegions = this.selectedRegions.filter(r => r !== tag.id);
+      }
     }
   }
 })
@@ -570,5 +616,28 @@ export default defineComponent({
   color: rgb(137, 137, 137);
   font-size: 14px;
   padding: 0 4px;
+}
+
+:deep(.n-tag) {
+  background-color: #404040 !important;
+  border: none !important;
+  color: #ffffff !important;
+}
+
+:deep(.n-tag__close) {
+  color: #ffffff !important;
+  background-color: transparent !important;
+}
+
+:deep(.n-tag__close:hover) {
+  color: #cccccc !important;
+}
+
+:deep(.n-input-wrapper) {
+  padding-right: 8px !important;
+}
+
+:deep(.n-input__prefix) {
+  margin-right: 8px !important;
 }
 </style>

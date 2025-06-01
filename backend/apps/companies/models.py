@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 
 # Create your models here.
 class Company(models.Model):
@@ -61,11 +62,21 @@ class CompanyWebsite(models.Model):
         return f"{self.company.name} 相關連結"
     
 class CompanyMedia(models.Model):
-    company = models.OneToOneField(Company, on_delete=models.CASCADE, related_name='media')
-    logo = models.FileField(upload_to='company_logo/')
+    company = models.OneToOneField(Company, on_delete=models.CASCADE, related_name='media', verbose_name='公司')
+    logo = models.ImageField(upload_to='company_logo/', verbose_name='公司標誌')
+
+    class Meta:
+        verbose_name = '公司媒體'
+        verbose_name_plural = '公司媒體'
 
     def __str__(self):
         return f"{self.company.name} Media"
+
+    def clean(self):
+        # 验证文件类型
+        if self.logo:
+            if not self.logo.name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                raise ValidationError('只支持 PNG、JPG、JPEG 和 GIF 格式的图片文件')
 
 class CompanyPhoto(models.Model):
     media = models.ForeignKey(CompanyMedia, on_delete=models.CASCADE, related_name='photos')

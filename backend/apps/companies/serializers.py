@@ -37,9 +37,28 @@ class CompanyPhotoSerializer(serializers.ModelSerializer):
     
 class CompanyMediaSerializer(serializers.ModelSerializer):
     photos = CompanyPhotoSerializer(many=True, read_only=True)
+    
     class Meta:
         model = CompanyMedia
-        fields = ['id', 'logo', 'photos']
+        fields = ['id', 'company', 'logo', 'photos']
+
+    def create(self, validated_data):
+        company = validated_data.get('company')
+        try:
+            # 尝试获取现有记录
+            instance = CompanyMedia.objects.get(company=company)
+            # 更新 logo
+            instance.logo = validated_data.get('logo')
+            instance.save()
+            return instance
+        except CompanyMedia.DoesNotExist:
+            # 如果不存在，创建新记录
+            return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        instance.logo = validated_data.get('logo', instance.logo)
+        instance.save()
+        return instance
 
 class CompanySerializer(serializers.ModelSerializer):
     benefits = CompanyBenefitSerializer(many=True, read_only=True)

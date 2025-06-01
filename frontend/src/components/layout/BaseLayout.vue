@@ -350,7 +350,6 @@ export default {
   box-sizing: border-box;
   overflow: hidden;
   min-height: 0;
-  /* Flexbox 修正，防止內容溢出時 flex item 計算錯誤 */
 }
 
 .main-panel {
@@ -382,7 +381,5 @@ export default {
   flex-shrink: 0;
   transition: width 0.3s ease;
   height: 100%;
-  /* overflow-y: auto; */
-  /* 如果 RightSidebar 也需要獨立滾動 */
 }
 </style>

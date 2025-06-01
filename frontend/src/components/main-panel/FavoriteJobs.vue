@@ -250,7 +250,6 @@ export default defineComponent({
             getGreatCompanies(),
             getJobs(),
           ]);
-          //console.log(jobsData);
           // 資料處理邏輯（建議放在 mounted 或 API 請求完成後）
           // 企業資料處理（只抓一筆 company 顯示詳細頁）
           const rawCompanies = companiesData.results || companiesData || [];
@@ -375,11 +374,9 @@ export default defineComponent({
     selectAction(option) {
       switch (option) {
         case '分享':
-          console.log('執行分享功能');
           this.showShare = true;
           break;
         case '檢舉':
-          console.log('執行檢舉功能');
           this.showReport = true;
           break;
         default:
@@ -390,12 +387,6 @@ export default defineComponent({
     // heart icon clicked
     // item 可能是 job 或 company 物件，它已經包含 isLiked 和 originalData (其中包含 type)
     async toggleLike(item) {
-      // 假設需要登入才能收藏
-      // if (!this.isUserLoggedIn) { 
-      //   alert('您需要先登入才能收藏！');
-      //   return;
-      // }
-      console.log('test');
 
       if (!item || !item.id || !item.type) {
         console.error('toggleLike: 無效的項目數據或缺少 ID/類型', item);
@@ -496,14 +487,6 @@ export default defineComponent({
     },
     handleSubmit(jobId) {
       const item = this.paginatedJobs.find(job => job.id === jobId);
-      console.log("item",item);
-      // 這裡可以處理送出邏輯
-      console.log('送出資料:', {
-        item: item,
-        formData: this.formData,
-        files: this.selectedFiles
-      });
-
       alert('資料已送出！');
       item.isApplied = true;
 

@@ -215,7 +215,6 @@ export default {
             this.companies.forEach(company => {
                 company.isLiked = this.isItemCurrentlyLiked(company.id, company.type);
             });
-            console.log('Home.vue: Initial liked status synchronized from BaseLayout.');
         } else {
             console.warn('Home.vue: isItemCurrentlyLiked method not injected, initial liked status might be inaccurate.');
         }
@@ -309,13 +308,10 @@ export default {
         // 3. 區分呼叫 API 還是只處理前端邏輯
         if (item.type === ITEM_TYPE_JOB) {
           // 職缺：只處理前端，無需呼叫後端 API
-          console.log(`[Frontend Only] 職缺 ${item.id} 的收藏狀態已更新為 ${newLikedStatus} (僅前端處理)`);
           // 如果這裡需要等待任何非同步操作，例如動畫，可以在這裡加 await new Promise(...)
         } else if (item.type === ITEM_TYPE_COMPANY) {
           // 公司：呼叫後端 API
-          console.log(`[API Call] 公司 ${item.id} 的收藏狀態更新為 ${newLikedStatus}`);
           await updateLikedCompanies(item.id, newLikedStatus);
-          console.log(`[API Success] 公司 ${item.id} 的收藏狀態後端更新成功。`);
         } else {
           console.warn(`toggleLike: 未知的項目類型 ${item.type}，未呼叫 API。`);
         }
@@ -350,7 +346,6 @@ export default {
           const jobInSection = section.jobs.find(j => j.id === id);
           if (jobInSection) {
             jobInSection.isLiked = isLiked;
-            console.log(`Home.vue: 職缺 ${id} (在 ${section.title} 中) 愛心狀態更新為 ${isLiked}`);
           }
         });
       }
@@ -359,7 +354,6 @@ export default {
         const companyToUpdate = this.companies.find(c => c.id === id);
         if (companyToUpdate) {
           companyToUpdate.isLiked = isLiked;
-          console.log(`Home.vue: 公司 ${id} 愛心狀態更新為 ${isLiked}`);
         }
       }
     },

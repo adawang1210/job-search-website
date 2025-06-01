@@ -327,10 +327,7 @@ export default {
         observer = new IntersectionObserver(
           (entries) => {
             entries.forEach((entry) => {
-              console.log('Intersection ratio:', entry.intersectionRatio);
-              console.log('Is intersecting:', entry.isIntersecting);
               if (entry.isIntersecting) {
-                console.log('Animation triggered');
                 isSkillsVisible.value = true;
               }
             });
@@ -344,21 +341,17 @@ export default {
       }
 
       if (skillsSection.value) {
-        console.log('Skills section mounted:', skillsSection.value);
         observer.observe(skillsSection.value);
-        console.log('Observer started');
       }
     };
 
     onMounted(() => {
-      console.log('Component mounted');
       initializeObserver();
     });
 
     // 监听 profile 数据变化
     const startObservation = () => {
       nextTick(() => {
-        console.log('Profile data loaded, initializing observer');
         initializeObserver();
       });
     };

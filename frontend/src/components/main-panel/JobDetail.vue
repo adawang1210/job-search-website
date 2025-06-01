@@ -368,11 +368,9 @@ export default defineComponent({
     selectAction(option) {
       switch (option) {
         case '分享':
-          console.log('執行分享功能');
           this.showShare = true;
           break;
         case '檢舉':
-          console.log('執行檢舉功能');
           this.showReport = true;
           break;
         default:
@@ -406,10 +404,6 @@ export default defineComponent({
       // 3. 透過 eventBus 通知所有頁面同步愛心狀態
       // 因為沒有 API 失敗回滾，所以這裡直接發送最終狀態即可
       eventBus.emit('update-like-status', { id: job.id, type: job.type, isLiked: newLikedStatus });
-
-      // 【移除】try-catch 塊及其內部所有 API 呼叫和錯誤處理
-      console.log(`[Frontend Only] 職缺 ${job.id} 的收藏狀態已更新為 ${newLikedStatus} (僅前端處理)`);
-
     },
     // 處理來自 eventBus 的通用愛心狀態更新事件
     handleUpdateLikeStatus(data) { // 預期 data 為 { id: itemId, type: itemType, isLiked: newStatus }
@@ -442,12 +436,6 @@ export default defineComponent({
     },
     handleSubmit(jobId) {
       const item = this.jobDetail;
-      // 這裡可以處理送出邏輯
-      console.log('送出資料:', {
-        item: item,
-        formData: this.formData,
-        files: this.selectedFiles
-      });
 
       alert('資料已送出！');
       item.isApplied = true;

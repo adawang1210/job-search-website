@@ -12,7 +12,6 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => {
     //請求成功時，直接傳回 response.data，簡化在前端的處理
-    console.log('response', response)
     return response.data
   },
   (error) => {

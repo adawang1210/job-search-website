@@ -488,7 +488,6 @@ export default defineComponent({
     },
     formattedSalary(jobId) {
       const job = this.filterJobs.find(i => i.id === jobId);
-      console.log(job);
 
       if (job.salary_type === '月薪') {
         return `月薪${job.salary_min}~${job.salary_max}元`;
@@ -512,11 +511,9 @@ export default defineComponent({
     selectAction(option) {
       switch (option) {
         case '分享':
-          //console.log('執行分享功能');
           this.showShare = true;
           break;
         case '檢舉':
-          //console.log('執行檢舉功能');
           this.showReport = true;
           break;
         default:
@@ -551,12 +548,9 @@ export default defineComponent({
         // 3. 區分呼叫 API 還是只處理前端邏輯
         if (item.type === ITEM_TYPE_JOB) {
           // 職缺：只處理前端，無需呼叫後端 API
-          console.log(`[Frontend Only] 職缺 ${item.id} 的收藏狀態已更新為 ${newLikedStatus} (僅前端處理)`);
         } else if (item.type === ITEM_TYPE_COMPANY) {
           // 公司：呼叫後端 API
-          console.log(`[API Call] 公司 ${item.id} 的收藏狀態更新為 ${newLikedStatus}`);
           await updateLikedCompanies(item.id, newLikedStatus); // 【呼叫 updateLikedCompanies API】
-          console.log(`[API Success] 公司 ${item.id} 的收藏狀態後端更新成功。`);
         } else {
           console.warn(`toggleLike: 未知的項目類型 ${item.type}，未呼叫 API。`);
         }
@@ -588,14 +582,12 @@ export default defineComponent({
       // 1. 更新公司本身的愛心狀態 (如果 Company.vue 頁面顯示的就是這個公司)
       if (type === ITEM_TYPE_COMPANY && this.company && this.company.id === id) {
         this.company.isLiked = isLiked;
-        console.log(`Company.vue: 公司 ${id} 愛心狀態更新為 ${isLiked}`);
       } 
       // 2. 更新該公司發布的職缺的愛心狀態
       else if (type === ITEM_TYPE_JOB) {
         const jobToUpdate = this.filterJobs.find(job => job.id === id);
         if (jobToUpdate) {
           jobToUpdate.isLiked = isLiked;
-          console.log(`Company.vue: 職缺 ${id} 愛心狀態更新為 ${isLiked}`);
         }
       }
     },
@@ -641,17 +633,8 @@ export default defineComponent({
     },
     handleSubmit(jobId) {
       const item = this.paginatedJobs.find(job => job.id === jobId);
-      console.log("item", item);
-      // 這裡可以處理送出邏輯
-      console.log('送出資料:', {
-        item: item,
-        formData: this.formData,
-        files: this.selectedFiles
-      });
-
       alert('資料已送出！');
       item.isApplied = true;
-
       this.closeModal();
     },
     copyLink() {

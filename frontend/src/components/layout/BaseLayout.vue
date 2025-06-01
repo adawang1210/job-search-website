@@ -64,7 +64,6 @@ export default {
   created() {
     // 從 localStorage 加載收藏的項目
     const storedLikedItems = localStorage.getItem('likedJobItems');
-    console.log('Loading stored items from localStorage:', storedLikedItems);
     
     if (storedLikedItems) {
       try {
@@ -79,7 +78,6 @@ export default {
           isLiked: true,
           type: item.type,
         }));
-        console.log('Loaded liked items:', this.likedItemsForLeftSidebar);
       } catch (e) {
         console.error("Error parsing likedJobItems from localStorage:", e);
         this.likedItemsForLeftSidebar = [];
@@ -172,7 +170,6 @@ export default {
       try {
         if (itemType === ITEM_TYPE_COMPANY) {
           await updateLikedCompanies(itemId, false); // 取消收藏，所以 isLiked 為 false
-          console.log(`[BaseLayout API Success] 公司 ${itemId} 已取消收藏。`);
         }
         // 職缺類型：不呼叫 API
       } catch (error) {
@@ -203,7 +200,6 @@ export default {
     },
         // 【關鍵】handleUpdateLikedItemInSidebar：現在負責區分職缺和公司，並呼叫 API
     async handleUpdateLikedItemInSidebar(itemOriginalData, isLiked) { // 【新增】async 關鍵字
-      console.log('[BaseLayout] handleUpdateLikedItemInSidebar called with itemOriginalData:', JSON.parse(JSON.stringify(itemOriginalData)), 'isLiked:', isLiked);
 
       if (!itemOriginalData || typeof itemOriginalData.id === 'undefined' || !itemOriginalData.type) {
         console.error('[BaseLayout] Received itemOriginalData with undefined id or type:', JSON.parse(JSON.stringify(itemOriginalData)));
@@ -264,7 +260,6 @@ export default {
       try {
         if (itemOriginalData.type === ITEM_TYPE_COMPANY) {
           await updateLikedCompanies(itemOriginalData.id, isLiked);
-          console.log(`[BaseLayout API Success] 公司 ${itemOriginalData.id} 收藏狀態已更新為 ${isLiked}。`);
         }
         // 職缺類型：不呼叫 API
       } catch (error) {

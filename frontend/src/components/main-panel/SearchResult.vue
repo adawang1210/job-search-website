@@ -158,7 +158,6 @@ export default {
       originalData: { ...job, type: ITEM_TYPE_JOB },
       type: ITEM_TYPE_JOB,
     }));
-    console.log(this.searchResults)
 
     // 同步收藏狀態
     if (typeof this.isItemCurrentlyLiked === 'function') {
@@ -224,13 +223,9 @@ export default {
       // 因為沒有 API 失敗回滾，所以這裡直接發送最終狀態即可
       eventBus.emit('update-like-status', { id: job.id, type: job.type, isLiked: newLikedStatus });
 
-      // 【移除】try-catch 塊及其內部所有 API 呼叫和錯誤處理
-      console.log(`[Frontend Only] 職缺 ${job.id} 的收藏狀態已更新為 ${newLikedStatus} (僅前端處理)`);
-
     },
     handleTitleClick(job) {
       // 與 Home.vue 保持一致的行為，例如導航到公司頁面
-      // 這裡可以先 console.log 或 alert
       alert(`職缺標題 "${job.title}" 被點擊，預計導航或執行其他操作。`);
       // 實際導航邏輯:
       // if (job.originalData && job.originalData.company && job.originalData.company.id) {

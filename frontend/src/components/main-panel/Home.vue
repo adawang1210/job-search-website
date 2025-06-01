@@ -410,7 +410,7 @@ export default {
   flex-direction: column;
   overflow-x: hidden;
   box-sizing: border-box;
-  background-color: #383333;
+  background-color: #2a2a2a;
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
   border-bottom-right-radius: 0;

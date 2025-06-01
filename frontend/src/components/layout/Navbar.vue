@@ -291,7 +291,7 @@ export default defineComponent({
   padding: 4px 8px;
   gap: 8px;
   border-radius: 30px;
-  background-color: #383333;
+  background-color: #2a2a2a;
   height: 32px;
   overflow: hidden;
   box-sizing: border-box;
@@ -330,6 +330,7 @@ export default defineComponent({
 
 :deep(.n-button) {
   background-color: transparent !important;
+  color: white !important;
   border: none;
 }
 

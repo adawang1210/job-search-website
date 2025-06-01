@@ -236,7 +236,7 @@ export default {
 .search-results-page {
   padding: 20px;
   color: white;
-  background-color: #383333;
+  background-color: #2a2a2a;
   border-radius: 10px;
   width: 100%;
   box-sizing: border-box;

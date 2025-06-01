@@ -214,7 +214,7 @@ export default {
   display: flex;
   flex-direction: column;
   padding: 20px;
-  background-color: #383333;
+  background-color: #2a2a2a;
   /* 深灰色背景 */
   color: white;
   min-height: 100vh;

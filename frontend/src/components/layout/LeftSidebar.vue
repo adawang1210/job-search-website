@@ -200,7 +200,7 @@ export default {
 .left-side-bar {
   height: 100%;
   padding: 16px;
-  background-color: #383333;
+  background-color: #2a2a2a;
   border-radius: 10px;
   color: white;
   display: flex;
@@ -362,7 +362,7 @@ hr {
   flex-direction: row;
   align-items: flex-start;
   gap: 12px;
-  background-color: #594f4f;
+  background-color: rgba(255, 255, 255, 0.1);
   border-radius: 5px;
   padding: 8px;
   color: white;

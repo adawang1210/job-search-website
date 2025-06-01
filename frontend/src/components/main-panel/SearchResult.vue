@@ -225,12 +225,7 @@ export default {
 
     },
     handleTitleClick(job) {
-      // 與 Home.vue 保持一致的行為，例如導航到公司頁面
-      alert(`職缺標題 "${job.title}" 被點擊，預計導航或執行其他操作。`);
-      // 實際導航邏輯:
-      // if (job.originalData && job.originalData.company && job.originalData.company.id) {
-      //   this.$router.push({ name: 'CompanyDetail', params: { id: job.originalData.company.id } });
-      // }
+      this.$router.push({ name: 'jobdetail', params: { id: job.id } });
     }
   }
 };

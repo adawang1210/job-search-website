@@ -198,7 +198,7 @@ const ITEM_TYPE_COMPANY = 'company';
 
 export default defineComponent({
   name: 'JobDetail',
-  inject: ['updateLikedItemInSidebar', 'openRightSidebar', 'addViewedItemToSidebar'], // 注入來自 BaseLayout 的方法
+  inject: ['updateLikedItemInSidebar', 'openRightSidebar', 'addViewedItemToSidebar','isItemCurrentlyLiked'], // 注入來自 BaseLayout 的方法
   components: {
     NIcon, Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular,
   },
@@ -258,13 +258,21 @@ export default defineComponent({
             major_required: rawJobDetail.major_required || '不拘',
             created_at: rawJobDetail.created_at,
             description: rawJobDetail.description,
-            isLiked: rawJobDetail.is_liked_by_user || false,
+            //isLiked: rawJobDetail.is_liked_by_user || false,
             isApplied: rawJobDetail.is_applied_by_user || false,
             benefits: rawJobDetail.benefits || [],
             applicants: rawJobDetail.applicants || 0,
             originalData: { ...rawJobDetail, type: ITEM_TYPE_JOB },
             type: ITEM_TYPE_JOB,
           };
+
+          // 【新增】在數據加載後，從 BaseLayout 獲取最新收藏狀態，覆蓋初始狀態
+        if (typeof this.isItemCurrentlyLiked === 'function') {
+          this.jobDetail.isLiked = this.isItemCurrentlyLiked(this.jobDetail.id, this.jobDetail.type);
+        } else {
+            // 如果 isItemCurrentlyLiked 未被注入，則使用 API 返回的原始值
+            this.jobDetail.isLiked = rawJobDetail.is_liked_by_user || false;
+        }
 
           // 處理企業數據
           const rawCompanies = companiesData.results || companiesData || [];
@@ -381,39 +389,34 @@ export default defineComponent({
     // heart icon clicked
     // item 可能是 job 或 company 物件，它已經包含 isLiked 和 originalData (其中包含 type)
     async toggleLike(job) {
-      // 假設需要登入才能收藏
-      // if (!this.isUserLoggedIn) { 
-      //   alert('您需要先登入才能收藏！');
-      //   return;
-      // }
-
+      // 檢查是否是有效的職缺數據，包含 ID 和類型
       if (!job || !job.id || job.type !== ITEM_TYPE_JOB) {
         console.error('toggleLike: 無效的職缺數據或類型不符', job);
         return;
       }
-      const newLikedStatus = !job.isLiked;
 
       // 1. 樂觀更新 UI
+      const newLikedStatus = !job.isLiked;
       job.isLiked = newLikedStatus;
+
       // 2. 通知 BaseLayout 更新側邊欄的收藏和瀏覽紀錄列表
       // 傳遞 job.originalData (原始 API 數據，包含 type) 和新的 isLiked 狀態
       if (typeof this.updateLikedItemInSidebar === 'function') {
         this.updateLikedItemInSidebar(job.originalData || job, newLikedStatus);
+      } else {
+        console.warn('updateLikedItemInSidebar is not available from BaseLayout.');
       }
 
       // 3. 透過 eventBus 通知所有頁面同步愛心狀態
-      // 因為沒有 API 失敗回滾，所以這裡直接發送最終狀態即可
+      // 因為收藏職缺不需要後端，所以沒有 API 失敗回滾的問題，直接發送最終狀態即可。
       eventBus.emit('update-like-status', { id: job.id, type: job.type, isLiked: newLikedStatus });
     },
     // 處理來自 eventBus 的通用愛心狀態更新事件
-    handleUpdateLikeStatus(data) { // 預期 data 為 { id: itemId, type: itemType, isLiked: newStatus }
+    handleUpdateLikeStatus(data) {
       const { id, type, isLiked } = data;
-      // SearchResult 只顯示職缺，所以只處理 ITEM_TYPE_JOB 類型
-      if (type === ITEM_TYPE_JOB) {
-        const jobToUpdate = this.searchResults.find(job => job.id === id);
-        if (jobToUpdate) {
-          jobToUpdate.isLiked = isLiked;
-        }
+      // 只處理當前頁面 jobDetail 的收藏狀態
+      if (type === ITEM_TYPE_JOB && this.jobDetail && this.jobDetail.id === id) {
+        this.jobDetail.isLiked = isLiked;
       }
     },
     openModal(id) {

@@ -192,7 +192,7 @@ const ITEM_TYPE_COMPANY = 'company';
 
 export default defineComponent({
   name: 'FavoriteJobs',
-  inject: ['updateLikedItemInSidebar', 'openRightSidebar', 'addViewedItemToSidebar'], // 注入來自 BaseLayout 的方法
+  inject: ['updateLikedItemInSidebar', 'openRightSidebar', 'addViewedItemToSidebar', 'isItemCurrentlyLiked'], // 注入來自 BaseLayout 的方法
   components: {
     NIcon, Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular,
   },
@@ -294,6 +294,13 @@ export default defineComponent({
           const companyNames = currentCharacteristic ? this.characteristicsMap[currentCharacteristic] || [] : [];
           this.filterJobs = this.allApiJobs.filter(job => companyNames.includes(job.company.name));
 
+          // 【新增】在 filterJobs 被賦值後，同步其內部職缺的收藏狀態
+          if (typeof this.isItemCurrentlyLiked === 'function') {
+            this.filterJobs.forEach(job => {
+              job.isLiked = this.isItemCurrentlyLiked(job.id, job.type);
+            });
+          }
+
           // 圖片抓色更改背景
           this.$nextTick(() => {
             const logoUrl = this.selectedLoveJob.image || 'default.png';
@@ -387,65 +394,34 @@ export default defineComponent({
     // heart icon clicked
     // item 可能是 job 或 company 物件，它已經包含 isLiked 和 originalData (其中包含 type)
     async toggleLike(item) {
-
-      if (!item || !item.id || !item.type) {
-        console.error('toggleLike: 無效的項目數據或缺少 ID/類型', item);
+      if (!item || !item.id || item.type !== ITEM_TYPE_JOB) {
+        console.error('toggleLike: 無效的職缺數據或類型不符', item);
         return;
       }
 
-      const originalLikedStatus = item.isLiked;
+      // 1. 樂觀更新 UI
       const newLikedStatus = !item.isLiked;
-
-      // 1. 樂觀更新 UI (直接修改傳入的 item 物件)
       item.isLiked = newLikedStatus;
 
-      try {
-        // 2. 呼叫後端 API (統一使用 likeJob/unlikeJob)
-        if (newLikedStatus) {
-          await likeJob(item.id); // 假設 likeJob API 能處理職缺和公司 ID
-        } else {
-          await unlikeJob(item.id); // 假設 unlikeJob API 能處理職缺和公司 ID
-        }
-
-        // 3. 通知 BaseLayout 更新側邊欄的收藏和瀏覽紀錄列表
-        // 傳遞 item.originalData 和新的 isLiked 狀態
-        if (typeof this.updateLikedItemInSidebar === 'function') {
-          this.updateLikedItemInSidebar(item.originalData || item, newLikedStatus); // originalData 已經包含 type
-        }
-
-        // 4. 透過 eventBus 通知所有頁面同步愛心狀態
-        // 統一事件名稱 'update-like-status'，並傳遞 ID, 類型, 和新狀態
-        eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: newLikedStatus });
-
-      } catch (error) {
-        console.error(`Failed to update ${item.type} like status for ID ${item.id}:`, error);
-        // API 失敗，恢復 UI 狀態
-        item.isLiked = originalLikedStatus;
-        alert(`收藏操作失敗，請稍後再試。`);
-
-        // 恢復 BaseLayout 列表狀態
-        if (typeof this.updateLikedItemInSidebar === 'function') {
-          this.updateLikedItemInSidebar(item.originalData || item, originalLikedStatus);
-        }
-        // 通知所有頁面恢復愛心狀態
-        eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: originalLikedStatus });
+      // 2. 通知 BaseLayout 更新側邊欄的收藏和瀏覽紀錄列表
+      if (typeof this.updateLikedItemInSidebar === 'function') {
+        this.updateLikedItemInSidebar(item.originalData || item, newLikedStatus);
+      } else {
+        console.warn('updateLikedItemInSidebar is not available from BaseLayout.');
       }
+
+      // 3. 透過 eventBus 通知所有頁面同步愛心狀態
+      eventBus.emit('update-like-status', { id: item.id, type: item.type, isLiked: newLikedStatus });
+
+      // 【移除】與後端 API 互動的 try-catch 區塊
     },
     // 處理來自 eventBus 的通用愛心狀態更新事件
-    handleUpdateLikeStatus(data) { // data 預期為 { id: itemId, type: itemType, isLiked: newStatus }
+    handleUpdateLikeStatus(data) {
       const { id, type, isLiked } = data;
-      // 1. 更新 sections 中的職缺愛心狀態
       if (type === ITEM_TYPE_JOB) {
         const jobInSection = this.filterJobs.find(j => j.id === id);
-          if (jobInSection) {
-            jobInSection.isLiked = isLiked;
-          }
-      }
-      // 2. 更新 companies 中的公司愛心狀態
-      else if (type === ITEM_TYPE_COMPANY) {
-        const companyToUpdate = this.company;
-        if (companyToUpdate) {
-          companyToUpdate.isLiked = isLiked;
+        if (jobInSection) {
+          jobInSection.isLiked = isLiked;
         }
       }
     },

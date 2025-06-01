@@ -205,13 +205,14 @@
 
           <div class="gallery">
             <h3>企業照片</h3>
-            <div class="gallery-scroll-wrapper">
-              <div class="gallery-grid">
-                <div v-for="(photo, index) in company.photos" :key="photo.id" class="gallery-item">
-                  <img :src="photo.photo" :alt="'Photo ' + (index + 1)" />
+            <n-marquee :play-reversed="true" :auto-play="true" :interval="3000" :style="{ padding: '0', margin: '0' }">
+              <div class="project-group" v-for="(photo, index) in company.photos" :key="photo.id">
+                <div class="project-cover">
+                  <n-image :src="photo.photo" :alt="'Photo ' + (index + 1)" class="project-image" />
                 </div>
               </div>
-            </div>
+            </n-marquee>
+
           </div>
 
         </div>
@@ -306,7 +307,7 @@ import { ref, defineComponent } from 'vue'
 import axios from 'axios';
 import eventBus from '/src/eventBus.js';
 import { getCompanyInfo, getCompanyJobs, updateLikedCompanies } from '@/api/company';
-import { NIcon } from 'naive-ui'
+import { NIcon, NMarquee, NImage } from 'naive-ui'
 import { Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular } from '@vicons/fa'
 
 const ITEM_TYPE_JOB = 'job';
@@ -316,7 +317,7 @@ export default defineComponent({
   name: 'Company',
   inject: ['updateLikedItemInSidebar', 'openRightSidebar', 'addViewedItemToSidebar', 'isItemCurrentlyLiked'], // 注入來自 BaseLayout 的方法
   components: {
-    NIcon, Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular,
+    NIcon, NMarquee, NImage, Heart, HeartRegular, CaretDown, EllipsisH, Envelope, EnvelopeRegular,
   },
 
   props: {
@@ -1135,35 +1136,32 @@ div h3 {
   border-radius: 10px;
 }
 
-.gallery-scroll-wrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.gallery-grid {
-  display: flex;
-  gap: 24px;
-  width: max-content;
+.project-group {
+  display: inline-block;
+  margin-right: 24px;
   height: 200px;
-  background: transparent;
-  margin: 0;
-}
-
-.gallery-item {
-  flex: 0 0 auto;
-  aspect-ratio: 3 / 2;
-  background: transparent;
-  box-shadow: 0 0 24px rgba(0, 0, 0, 0.25);
+  width: auto;
   overflow: hidden;
 }
 
-.gallery-item img {
-  display: block;
-  width: auto;
+.project-cover {
   height: 100%;
-  max-height: 200px;
-  object-fit: contain;
+  display: flex;
+  align-items: center;
 }
+
+.project-image {
+  height: 100%;
+  width: auto; /* 這才會依比例縮放 */
+}
+
+/* 選中 n-image 裡面的 img，讓它高度滿，高寬等比 */
+::v-deep(.project-image img) {
+  height: 100%;
+  width: auto;
+  display: block;
+}
+
 
 /* Modal 樣式 */
 .modal-overlay {
